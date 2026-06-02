@@ -1,47 +1,52 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import Login from './auth/Login';
 import Home from './home_page/Home';
+import Header from './header/Header';
 
 function App() {
-  // стейт для збереження статусу входу користувача
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // стейт для керування тим, яку сторінку зараз показувати ('home' або 'login')
-  const [currentPage, setCurrentPage] = useState('home');
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [currentPage, setCurrentPage] = useState('home');
+    const [role, setRole] = useState(null);
 
-  const handleLoginSuccess = () => {
-    setIsLoggedIn(true);
-    setCurrentPage('home'); // Після успішного входу повертаємо на головну
-  };
+    const handleLoginSuccess = (userRole) => {
+        setIsLoggedIn(true);
+        setRole(userRole);
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentPage('home'); // При виході залишаємо на головній, але статус змінюється
-  };
+        if (userRole === 'HEAD') {
+            setCurrentPage('head_dashboard');
+        } else {
+            setCurrentPage('home');
+        }
+    };
 
-  const handleNavigateToLogin = () => {
-    setCurrentPage('login');
-  };
+    const handleLogout = () => {
+        setIsLoggedIn(false);
+        setRole(null);
+        setCurrentPage('home');
+    };
 
-  const handleNavigateToHome = () => {
-    setCurrentPage('home');
-  };
+    return (
+        <>
+            {currentPage === 'login' && (
+                <Login
+                    onLoginSuccess={handleLoginSuccess}
+                    onBackToHome={() => setCurrentPage('home')}
+                />
+            )}
 
-  return (
-      <>
-        {currentPage === 'login' ? (
-            <Login
-                onLoginSuccess={handleLoginSuccess}
-                onBackToHome={handleNavigateToHome}
-            />
-        ) : (
-            <Home
-                isLoggedIn={isLoggedIn}
-                onLogOut={handleLogout}
-                onNavigateToLogin={handleNavigateToLogin}
-            />
-        )}
-      </>
-  );
+            {currentPage === 'home' && (
+                <Home
+                    isLoggedIn={isLoggedIn}
+                    onLogOut={handleLogout}
+                    onNavigateToLogin={() => setCurrentPage('login')}
+                />
+            )}
+
+            {currentPage === 'head_dashboard' && (
+                <Header onLogOut={handleLogout}/>
+            )}
+        </>
+    );
 }
 
 export default App;
