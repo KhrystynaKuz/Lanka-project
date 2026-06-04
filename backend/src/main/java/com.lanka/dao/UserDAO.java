@@ -2,8 +2,10 @@ package com.lanka.dao;
 
 import com.lanka.database.DatabaseConfig;
 import com.lanka.models.User;
+import com.lanka.models.User.UserRole;
 
 import java.sql.*;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -11,139 +13,146 @@ import java.util.UUID;
 
 public class UserDAO {
 
-    public void createUser(User user) {
+    public void addUser(User user) throws SQLException {
         String sql = "INSERT INTO users (id, email, first_name, last_name, patronymic, dob, role, phone_number, created_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?::user_role, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
             if (user.getId() == null) {
                 user.setId(UUID.randomUUID());
             }
+            if (user.getCreated_at() == null) {
+                user.setCreated_at(java.time.OffsetDateTime.now());
+            }
 
-            stmt.setObject(1, user.getId());
-            stmt.setString(2, user.getEmail());
-            stmt.setString(3, user.getFirst_name());
-            stmt.setString(4, user.getLast_name());
-            stmt.setString(5, user.getPatronymic());
-            stmt.setDate(6, user.getDob() != null ? Date.valueOf(user.getDob()) : null);
-            stmt.setString(7, user.getRole().name()); // Передасть "HEAD", "VOLUNTEER" або "CUSTOMER"
-            stmt.setString(8, user.getPhone_number());
-            stmt.setObject(9, user.getCreated_at()); // Тепер індекс правильний (9 замість 11)
+            ps.setObject(1, user.getId());
+            ps.setString(2, user.getEmail());
+            ps.setString(3, user.getFirst_name());
+            ps.setString(4, user.getLast_name());
+            ps.setString(5, user.getPatronymic());
+            ps.setDate(6, user.getDob() != null ? Date.valueOf(user.getDob()) : null);
+            ps.setString(7, user.getRole().name());
+            ps.setString(8, user.getPhone_number());
+            ps.setObject(9, user.getCreated_at());
 
-            stmt.executeUpdate();
-            System.out.println("Користувача успішно зареєстровано: " + user.getEmail());
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Помилка при збереженні користувача", e);
+            ps.executeUpdate();
         }
     }
 
-    public Optional<User> findById(UUID id) {
-        String sql = "SELECT * FROM users WHERE id = ?";
+    public Optional<User> findById(UUID id) throws SQLException {
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role, phone_number, created_at FROM users WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            stmt.setObject(1, id);
+            ps.setObject(1, id);
 
-            try (ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapRowToUser(rs));
                 }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Помилка при пошуку користувача за ID", e);
         }
         return Optional.empty();
     }
 
-    public Optional<User> findByEmail(String email) {
-        String sql = "SELECT * FROM users WHERE email = ?";
+    public User getUserByEmail(String email) throws SQLException {
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role, phone_number, created_at FROM users WHERE email = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, email);
+            ps.setString(1, email);
 
-            try (ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(mapRowToUser(rs));
+                    return mapRowToUser(rs);
                 }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Помилка при пошуку користувача за email", e);
         }
-        return Optional.empty();
+        return null;
     }
 
-    public List<User> findUnverifiedUsers() {
-        String sql = "SELECT * FROM users WHERE is_verified = false AND document_url IS NOT NULL ORDER BY created_at ASC";
-        List<User> unverifiedUsers = new ArrayList<>();
+    public List<User> getUnverifiedUsers() throws SQLException {
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role, phone_number, created_at " +
+                "FROM users WHERE is_verified = false AND document_url IS NOT NULL ORDER BY created_at ASC";
+        List<User> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                unverifiedUsers.add(mapRowToUser(rs));
+                list.add(mapRowToUser(rs));
             }
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Помилка при отриманні списку неверифікованих користувачів", e);
         }
-        return unverifiedUsers;
+        return list;
     }
 
-    public void updateVerificationStatus(UUID id, boolean isVerified) {
+    public void updateVerificationStatus(UUID id, boolean isVerified) throws SQLException {
         String sql = "UPDATE users SET is_verified = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            stmt.setBoolean(1, isVerified);
-            stmt.setObject(2, id);
+            ps.setBoolean(1, isVerified);
+            ps.setObject(2, id);
 
-            stmt.executeUpdate();
-            System.out.println("Статус верифікації користувача " + id + " змінено на: " + isVerified);
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Помилка при оновленні статусу верифікації", e);
+            ps.executeUpdate();
         }
     }
 
-    public void updateUser(User user) {
+    public void updateUser(User user) throws SQLException {
         String sql = "UPDATE users SET first_name = ?, last_name = ?, patronymic = ?, phone_number = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, user.getFirst_name());
-            stmt.setString(2, user.getLast_name());
-            stmt.setString(3, user.getPatronymic());
-            stmt.setString(4, user.getPhone_number());
-            stmt.setObject(5, user.getId());
+            ps.setString(1, user.getFirst_name());
+            ps.setString(2, user.getLast_name());
+            ps.setString(3, user.getPatronymic());
+            ps.setString(4, user.getPhone_number());
+            ps.setObject(5, user.getId());
 
-            stmt.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Помилка при оновленні профілю користувача", e);
+            ps.executeUpdate();
         }
     }
 
-    public void deleteUser(UUID id) {
+    public void deleteUser(UUID id) throws SQLException {
         String sql = "DELETE FROM users WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            stmt.setObject(1, id);
-            stmt.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Помилка при видаленні користувача", e);
+            ps.setObject(1, id);
+            ps.executeUpdate();
         }
+    }
+
+    public List<User> getUsersByRoleAndDepartment(User.UserRole role, UUID departmentId) throws SQLException {
+        String sql = "SELECT u.id, u.email, u.first_name, u.last_name, u.patronymic, u.dob, u.role, u.phone_number, u.created_at " +
+                "FROM users u " +
+                "JOIN user_departments ud ON u.id = ud.user_id " +
+                "WHERE u.role = ?::user_role AND ud.department_id = ? " +
+                "ORDER BY u.last_name ASC, u.first_name ASC";
+
+        List<User> list = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, role.name());
+            ps.setObject(2, departmentId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRowToUser(rs));
+                }
+            }
+        }
+        return list;
     }
 
     private User mapRowToUser(ResultSet rs) throws SQLException {
@@ -161,7 +170,7 @@ public class UserDAO {
 
         String roleStr = rs.getString("role");
         if (roleStr != null) {
-            user.setRole(User.UserRole.valueOf(roleStr.toUpperCase().trim()));
+            user.setRole(UserRole.valueOf(roleStr.toUpperCase().trim()));
         }
 
         user.setPhone_number(rs.getString("phone_number"));
