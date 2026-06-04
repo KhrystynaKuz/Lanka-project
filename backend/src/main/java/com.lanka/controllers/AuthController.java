@@ -34,6 +34,8 @@ public class AuthController {
 
             ctx.status(200).json(userOpt.get());
 
+        } catch (SQLException e) {
+            ctx.status(500).json(Map.of("error", "Database connection error"));
         } catch (RuntimeException e) {
             ctx.status(401).json(Map.of("error", "Auth error: " + e.getMessage()));
         }
