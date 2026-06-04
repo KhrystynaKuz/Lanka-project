@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import './Header.css';
+import './Manager.css';
 
 export default function Header({onLogOut}) {
     // Стейт для перемикання вкладок (як у твоїй шапці)

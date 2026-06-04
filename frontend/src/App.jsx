@@ -1,7 +1,8 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import Login from './auth/Login';
+import Register from './auth/Register';
 import Home from './home_page/Home';
-import Header from './header/Header';
+import Header from './manager/Manager.jsx';
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -14,15 +15,11 @@ function App() {
 
         if (userRole === 'HEAD') {
             setCurrentPage('head_dashboard');
+        } else if (userRole === 'VOLUNTEER') {
+            setCurrentPage('volunteer_dashboard');
         } else {
-            setCurrentPage('home');
+            setCurrentPage('customer_dashboard');
         }
-    };
-
-    const handleLogout = () => {
-        setIsLoggedIn(false);
-        setRole(null);
-        setCurrentPage('home');
     };
 
     return (
@@ -31,19 +28,32 @@ function App() {
                 <Login
                     onLoginSuccess={handleLoginSuccess}
                     onBackToHome={() => setCurrentPage('home')}
+                    onNavigateToRegister={() => setCurrentPage('register')}
+                />
+            )}
+
+            {currentPage === 'register' && (
+                <Register
+                    onRegisterSuccess={() => setCurrentPage('login')}
+                    onBackToLogin={() => setCurrentPage('login')}
+                    onBackToHome={() => setCurrentPage('home')}
                 />
             )}
 
             {currentPage === 'home' && (
-                <Home
-                    isLoggedIn={isLoggedIn}
-                    onLogOut={handleLogout}
-                    onNavigateToLogin={() => setCurrentPage('login')}
-                />
+                <Home onNavigateToLogin={() => setCurrentPage('login')} />
             )}
 
             {currentPage === 'head_dashboard' && (
-                <Header onLogOut={handleLogout}/>
+                <Header onLogOut={() => setCurrentPage('home')} />
+            )}
+
+            {currentPage === 'volunteer_dashboard' && (
+                <div>VOLUNTEER PAGE</div>
+            )}
+
+            {currentPage === 'customer_dashboard' && (
+                <div>CUSTOMER PAGE</div>
             )}
         </>
     );

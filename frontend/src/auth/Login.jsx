@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './Login.css';
 
-export default function Login({ onLoginSuccess, onBackToHome }) {
+export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegister }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -122,7 +122,14 @@ export default function Login({ onLoginSuccess, onBackToHome }) {
                 </form>
 
                 <p className="register-redirect">
-                    Немає акаунту? <a href="#register">Зареєструватися</a>
+                    Немає акаунту?{" "}
+                    <span
+                        onClick={onNavigateToRegister}
+                        className="auth-link"
+                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                        Зареєструватися
+                    </span>
                 </p>
             </div>
         </div>

@@ -1,0 +1,202 @@
+/* КАРТКА РЕЄСТРАЦІЇ */
+.register-card {
+    max-width: 520px; /* Початкова ширина для першого кроку (вибір ролі) */
+    width: 95%;
+    padding: 35px;
+    box-sizing: border-box;
+    transition: max-width 0.3s ease, padding 0.3s ease; /* Плавний перехід при зміні кроку */
+}
+
+/* Автоматично збільшуємо ширину картки, коли з'являється форма введення даних */
+.register-card:has(.register-form-compact) {
+    max-width: 680px; /* Збільшена ширина для зручного введення даних */
+}
+
+.register-header-compact {
+    margin-bottom: 24px;
+}
+
+/* ФОРМА ТА СІТКА */
+.register-form-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* Збільшили відстань між рядками */
+}
+
+.form-grid-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px; /* Збільшили відстань між колонками */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.single-input-row {
+    width: 100%;
+}
+
+/* ПОЛЯ ВВОДУ (ЗБІЛЬШЕНІ) */
+.register-form-compact .input-group {
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.register-form-compact .input-group label {
+    font-size: 14px; /* Трохи більший шрифт для підписів */
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.register-form-compact .input-group input {
+    padding: 12px 16px; /* Збільшили внутрішні відступи в інпутах */
+    font-size: 15px; /* Трохи більший текст всередині */
+    border-radius: 12px; /* Більш округлі кути */
+    border: 1px solid #cbd5e1;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* ВИБІР РОЛІ (ВЕРТИКАЛЬНИЙ СПИСОК КАРТОК) */
+.role-selection-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.role-card {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(37, 99, 235, 0.15);
+    border-radius: 16px;
+    padding: 20px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.25s ease-in-out;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.02);
+}
+
+.role-card:hover {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: #1e40af;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.08);
+}
+
+.role-icon-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.1);
+    color: #1e40af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.role-icon-box svg {
+    width: 24px;
+    height: 24px;
+}
+
+.role-card h3 {
+    margin: 0 0 6px 0;
+    font-size: 18px;
+    color: #1e3a8a;
+    font-weight: 700;
+}
+
+.role-card p {
+    margin: 0;
+    font-size: 13.5px;
+    color: #4b5563;
+    line-height: 1.4;
+}
+
+/* КАСТОМНА КНОПКА ЗАВАНТАЖЕННЯ ФАЙЛУ (ЗБІЛЬШЕНА) */
+.file-upload-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.file-hidden-input {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.file-custom-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px dashed #cbd5e1;
+    padding: 12px 16px; /* Вирівняли під нові розміри інпутів */
+    border-radius: 12px;
+    font-size: 15px;
+    color: #4b5563;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-sizing: border-box;
+    height: 46px; /* Вирівняли висоту з текстовими інпутами */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-custom-label svg {
+    width: 18px;
+    height: 18px;
+    color: #2563eb;
+    flex-shrink: 0;
+}
+
+/* КНОПКА ЗАРЕЄСТРУВАТИСЯ */
+.register-submit-btn {
+    margin-top: 10px;
+    padding: 14px; /* Зробили кнопку масивнішою */
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: 12px;
+}
+
+.register-redirect-compact {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 15px;
+    color: #4b5563;
+}
+
+.auth-link {
+    color: #2563eb;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+}
+
+.required-star { color: #ef4444; }
+.optional-label { font-size: 12px; color: #9ca3af; }
+
+/* Адаптивність під мобільні екрани (на телефонах все стане в один стовпчик) */
+@media (max-width: 640px) {
+    .form-grid-row {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+    .register-card {
+        padding: 20px;
+    }
+}
