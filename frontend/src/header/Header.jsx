@@ -14,7 +14,7 @@ export default function Header({onLogOut}) {
                     <div className="admin-logo">ЛАНКА</div>
                     <nav className="admin-nav-menu">
                         <button className={`admin-nav-btn ${activeTab === 'verification' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('verification')}>Верифікація
+                                onClick={() => setActiveTab('verification')}>Керування
                         </button>
                         <button className={`admin-nav-btn ${activeTab === 'requests' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('requests')}>Заявки
