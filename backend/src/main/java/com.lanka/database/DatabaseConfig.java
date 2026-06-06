@@ -12,7 +12,9 @@ public class DatabaseConfig {
     private static final String DB_PASSWORD;
 
     static {
-        Dotenv dotenv = Dotenv.load();
+        Dotenv dotenv = Dotenv.configure()
+                .directory("./backend")
+                .load();
         DB_URL = dotenv.get("DB_URL");
         DB_USER = dotenv.get("DB_USER");
         DB_PASSWORD = dotenv.get("DB_PASSWORD");
