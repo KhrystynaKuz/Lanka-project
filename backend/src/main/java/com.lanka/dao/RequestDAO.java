@@ -95,21 +95,22 @@ public class RequestDAO {
         return list;
     }
 
-    public Request getRequestById(UUID id) throws SQLException {
+    public List<Request> getRequestsByCustomerId(UUID customerId) throws SQLException {
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at " +
-                "FROM requests WHERE id = ?";
+                "FROM requests WHERE customer_id = ? ORDER BY created_at DESC";
+        List<Request> list = new ArrayList<>();
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = com.lanka.database.DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setObject(1, id);
+            ps.setObject(1, customerId);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapRowToRequest(rs);
+                while (rs.next()) {
+                    list.add(mapRowToRequest(rs));
                 }
             }
         }
-        return null;
+        return list;
     }
 
     public List<Request> searchByTitle(String titlePart) throws SQLException {

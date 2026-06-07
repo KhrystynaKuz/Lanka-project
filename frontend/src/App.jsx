@@ -20,7 +20,7 @@ function App() {
         return localStorage.getItem('userRole') || null;
     });
 
-    const handleLoginSuccess = (userRole) => {
+    const handleLoginSuccess = (userRole, userId) => {
         setIsLoggedIn(true);
         setRole(userRole);
 
@@ -33,12 +33,14 @@ function App() {
 
         setCurrentPage(targetPage);
 
-
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userRole', userRole);
         localStorage.setItem('currentPage', targetPage);
-    };
 
+        if (userId) {
+            localStorage.setItem('userId', userId);
+        }
+    };
 
     const handleLogOut = () => {
         setIsLoggedIn(false);
@@ -48,6 +50,7 @@ function App() {
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('userRole');
         localStorage.removeItem('currentPage');
+        localStorage.removeItem('userId');
     };
 
 

@@ -73,7 +73,7 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
             const userData = await dbResponse.json();
 
             if (userData && userData.role) {
-                onLoginSuccess(userData.role.toUpperCase().trim());
+                onLoginSuccess(userData.role.toUpperCase().trim(), userId);
             } else {
                 setError('Роль користувача не знайдена в таблиці.');
             }
@@ -115,7 +115,6 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
         }
     };
 
-    // 3. ЗБЕРЕЖЕННЯ НОВОГО ПАРОЛЯ В БАЗУ Supabase
     const handleSaveNewPassword = async (e) => {
         e.preventDefault();
         setError('');
@@ -128,7 +127,6 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
                 headers: {
                     'Content-Type': 'application/json',
                     'apikey': SUPABASE_KEY,
-                    // Передаємо секретний токен авторизації, який ми витягнули з посилання
                     'Authorization': `Bearer ${accessToken}`
                 },
                 body: JSON.stringify({ password: newPassword })
@@ -140,7 +138,6 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
                 throw new Error(data.msg || data.error_description || 'Не вдалося оновити пароль.');
             }
 
-            // Якщо все успішно
             setResetMessage('Пароль успішно змінено! Тепер ви можете увійти з новим паролем.');
             setIsNewPasswordMode(false); // Повертаємо на звичайний екран входу
             setIsResetMode(false);
@@ -160,7 +157,6 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
 
             <div className="login-card">
 
-                {/* РЕЖИМ А: КОРИСТУВАЧ ПРИЙШОВ З ЛИСТА І ВВОДИТЬ НОВИЙ ПАРОЛЬ */}
                 {isNewPasswordMode ? (
                     <>
                         <h2 className="login-title">Новий пароль</h2>
@@ -193,7 +189,6 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
                     </>
                 ) : isResetMode ? (
 
-                    /* РЕЖИМ Б: ЗАПИТ НА ВІДНОВЛЕННЯ (ВВЕДЕННЯ EMAIL) */
                     <>
                         <h2 className="login-title">Відновлення пароля</h2>
                         <p className="login-subtitle">Введіть пошту вашого акаунту для отримання посилання</p>
@@ -241,7 +236,6 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
                     </>
                 ) : (
 
-                    /* РЕЖИМ В: ЗВИЧАЙНИЙ ВХІД В СИСТЕМУ */
                     <>
                         <h2 className="login-title">Вхід до системи</h2>
                         <p className="login-subtitle">Будь ласка, введіть свої дані для доступу</p>
