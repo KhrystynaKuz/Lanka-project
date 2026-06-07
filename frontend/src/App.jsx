@@ -79,7 +79,7 @@ function App() {
             )}
 
             {currentPage === 'head_dashboard' && (
-                <Header onLogOut={handleLogOut} />
+                <Header onLogOut={handleLogOut} onBackToHome={() => navigateTo('home')} />
             )}
 
             {currentPage === 'volunteer_dashboard' && (
@@ -87,7 +87,7 @@ function App() {
             )}
 
             {currentPage === 'customer_dashboard' && (
-                <Customer onLogOut={handleLogOut} />
+                <Customer onLogOut={handleLogOut}onBackToHome={() => navigateTo('home')} />
             )}
         </>
     );
