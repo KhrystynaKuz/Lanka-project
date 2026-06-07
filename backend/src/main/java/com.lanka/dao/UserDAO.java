@@ -3,6 +3,7 @@ package com.lanka.dao;
 import com.lanka.database.DatabaseConfig;
 import com.lanka.models.User;
 import com.lanka.models.User.UserRole;
+import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.sql.Date;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Repository
 public class UserDAO {
 
     public void addUser(User user) throws SQLException {
@@ -42,7 +44,7 @@ public class UserDAO {
     }
 
     public Optional<User> findById(UUID id) throws SQLException {
-        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role, phone_number, created_at FROM users WHERE id = ?";
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at FROM users WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -59,7 +61,7 @@ public class UserDAO {
     }
 
     public User getUserByEmail(String email) throws SQLException {
-        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role, phone_number, created_at FROM users WHERE email = ?";
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at FROM users WHERE email = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -76,7 +78,7 @@ public class UserDAO {
     }
 
     public List<User> getUnverifiedUsers() throws SQLException {
-        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role, phone_number, created_at " +
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at " +
                 "FROM users WHERE is_verified = false AND document_url IS NOT NULL ORDER BY created_at ASC";
         List<User> list = new ArrayList<>();
 
@@ -132,7 +134,7 @@ public class UserDAO {
     }
 
     public List<User> getUsersByRoleAndDepartment(User.UserRole role, UUID departmentId) throws SQLException {
-        String sql = "SELECT u.id, u.email, u.first_name, u.last_name, u.patronymic, u.dob, u.role, u.phone_number, u.created_at " +
+        String sql = "SELECT u.id, u.email, u.first_name, u.last_name, u.patronymic, u.dob, u.role::text, u.phone_number, u.created_at " +
                 "FROM users u " +
                 "JOIN user_departments ud ON u.id = ud.user_id " +
                 "WHERE u.role = ?::user_role AND ud.department_id = ? " +

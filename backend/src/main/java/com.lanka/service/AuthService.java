@@ -4,27 +4,29 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
-import io.github.cdimascio.dotenv.Dotenv;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+@Service
 public class AuthService {
 
-    private static final String JWT_SECRET;
+    private static String jwtSecret;
 
-    static {
-        Dotenv dotenv = Dotenv.load();
-        JWT_SECRET = dotenv.get("JWT_SECRET");
+    public AuthService(@Value("${jwt.secret:${JWT_SECRET:default_key_fallback_lanka}}") String secret) {
+        jwtSecret = secret;
     }
 
     public static UUID verifyTokenAndGetUserId(String token) {
         try {
-            Algorithm algorithm = Algorithm.HMAC256(JWT_SECRET);
+            if (jwtSecret == null) {
+                throw new IllegalStateException("JWT_SECRET не ініціалізовано конфігурацією програми");
+            }
 
+            Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
             JWTVerifier verifier = JWT.require(algorithm).build();
-
             DecodedJWT jwt = verifier.verify(token);
-
             String userIdString = jwt.getSubject();
 
             return UUID.fromString(userIdString);

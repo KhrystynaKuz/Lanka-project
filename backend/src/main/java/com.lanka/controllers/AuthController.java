@@ -3,22 +3,38 @@ package com.lanka.controllers;
 import com.lanka.dao.UserDAO;
 import com.lanka.models.User;
 import com.lanka.service.AuthService;
-import io.javalin.http.Context;
-import java.sql.SQLException;
-import java.util.UUID;
-import java.util.Optional;
-import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/auth")
+@CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000"})
 public class AuthController {
 
-    private final UserDAO userDAO = new UserDAO();
+    private final UserDAO userDAO;
 
-    public void login(Context ctx) {
-        String authHeader = ctx.header("Authorization");
+    @Autowired
+    public AuthController(UserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
+
+    public AuthController() {
+        this.userDAO = new UserDAO();
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            ctx.status(401).json(Map.of("error", "Missing or invalid token"));
-            return;
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Missing or invalid token"));
         }
 
         String token = authHeader.substring(7);
@@ -28,16 +44,18 @@ public class AuthController {
             Optional<User> userOpt = userDAO.findById(userId);
 
             if (userOpt.isEmpty()) {
-                ctx.status(404).json(Map.of("error", "User not found"));
-                return;
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "User not found"));
             }
 
-            ctx.status(200).json(userOpt.get());
+            return ResponseEntity.ok(userOpt.get());
 
         } catch (SQLException e) {
-            ctx.status(500).json(Map.of("error", "Database connection error"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Database connection error"));
         } catch (RuntimeException e) {
-            ctx.status(401).json(Map.of("error", "Auth error: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Auth error: " + e.getMessage()));
         }
     }
 }
