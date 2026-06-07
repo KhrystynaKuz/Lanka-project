@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import Login from './auth/Login';
-import Register from './auth/Register';
 import Home from './home_page/Home';
+import Register from './auth/Register';
 import Header from './manager/Manager.jsx';
 import Customer from './customer/Customer.jsx';
 import Volunteer from "./volunteer/Volunteer.jsx";
+import Coordinator from './coordinator/Coordinator.jsx';
 
 function App() {
 
@@ -24,11 +25,16 @@ function App() {
         setIsLoggedIn(true);
         setRole(userRole);
 
-        let targetPage = 'customer_dashboard';
-        if (userRole === 'HEAD') {
-            targetPage = 'head_dashboard';
+        let targetPage = 'home';
+
+        if (userRole === 'CUSTOMER') {
+            targetPage = 'customer_dashboard';
         } else if (userRole === 'VOLUNTEER') {
             targetPage = 'volunteer_dashboard';
+        } else if (userRole === 'COORDINATOR') {
+            targetPage = 'coordinator_dashboard';
+        } else if (userRole === 'HEAD') {
+            targetPage = 'head_dashboard';
         }
 
         setCurrentPage(targetPage);
@@ -78,19 +84,23 @@ function App() {
             )}
 
             {currentPage === 'home' && (
-                <Home onNavigateToLogin={() => navigateTo('login')} />
+                <Home onNavigateToLogin={() => navigateTo('login')}/>
             )}
 
             {currentPage === 'head_dashboard' && (
-                <Header onLogOut={handleLogOut} onBackToHome={() => navigateTo('home')} />
+                <Header onLogOut={handleLogOut} onBackToHome={() => navigateTo('home')}/>
             )}
 
             {currentPage === 'volunteer_dashboard' && (
-                <Volunteer onLogout={handleLogOut} onBackToHome={() => navigateTo('home')} />
+                <Volunteer onLogout={handleLogOut} onBackToHome={() => navigateTo('home')}/>
             )}
 
             {currentPage === 'customer_dashboard' && (
-                <Customer onLogOut={handleLogOut}onBackToHome={() => navigateTo('home')} />
+                <Customer onLogOut={handleLogOut} onBackToHome={() => navigateTo('home')}/>
+            )}
+
+            {currentPage === 'coordinator_dashboard' && (
+                <Coordinator onLogout={handleLogOut} onBackToHome={() => navigateTo('home')}/>
             )}
         </>
     );
