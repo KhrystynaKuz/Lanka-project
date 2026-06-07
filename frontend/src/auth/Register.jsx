@@ -3,7 +3,7 @@ import './Register.css';
 
 export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHome }) {
     const [step, setStep] = useState(1); // 1: вибір ролі, 2: заповнення форми
-    const [role, setRole] = useState(''); // 'VOLUNTEER' або 'CLIENT'
+    const [role, setRole] = useState(''); // 'VOLUNTEER' або 'CUSTOMER'
 
     // Поля форми
     const [firstName, setFirstName] = useState('');
@@ -23,7 +23,7 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
     const SUPABASE_KEY = 'sb_publishable_avyWvNv3SrmJZGmaMszNrw_AGJptVhK';
 
     const handleSelectRole = (selectedRole) => {
-        // Переводимо у верхній регістр (VOLUNTEER / CLIENT), бо в базі використовується тип user_role (на кшталт HEAD)
+        // Переводимо у верхній регістр (VOLUNTEER / CUSTOMER)
         setRole(selectedRole.toUpperCase());
         setStep(2);
     };
@@ -67,7 +67,6 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
             }
 
             // КРОК 2: Запис усіх анкетних даних у твою таблицю 'users'
-            // Назви ключів повністю адаптовані під твої скріншоти з бази даних!
             const dbResponse = await fetch(`${SUPABASE_BASE_URL}/rest/v1/users`, {
                 method: 'POST',
                 headers: {
@@ -84,7 +83,7 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                     patronymic: patronymic || null, // varchar (необов'язково)
                     dob: dob || null,             // date (необов'язково)
                     phone_number: phoneNumber,     // varchar
-                    role: role                    // Передає 'VOLUNTEER' або 'CLIENT' відповідно до типу user_role
+                    role: role                    // Передає 'VOLUNTEER' або 'CUSTOMER'
                 })
             });
 
@@ -216,7 +215,7 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
 
                         <div className="form-grid-row">
                             <div className="input-group">
-                                <label htmlFor="phoneNumber">Номер телефону <span className="required-star">*</span></label>
+                                <label htmlFor="phoneNumber">Номер telefonu <span className="required-star">*</span></label>
                                 <input
                                     type="tel"
                                     id="phoneNumber"
@@ -239,7 +238,7 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                             </div>
                         </div>
 
-                        <div className={role === 'VOLUNTEER' ? "form-grid-row" : "single-input-row"}>
+                        <div className={role === 'CUSTOMER' ? "form-grid-row" : "single-input-row"}>
                             <div className="input-group">
                                 <label htmlFor="password">Пароль <span className="required-star">*</span></label>
                                 <input
@@ -253,7 +252,7 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                                 />
                             </div>
 
-                            {role === 'VOLUNTEER' && (
+                            {role === 'CUSTOMER' && (
                                 <div className="input-group">
                                     <label htmlFor="document">Документ для реєстрації <span className="required-star">*</span></label>
                                     <div className="file-upload-wrapper">

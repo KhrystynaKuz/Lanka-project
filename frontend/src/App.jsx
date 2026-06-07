@@ -3,6 +3,8 @@ import Login from './auth/Login';
 import Register from './auth/Register';
 import Home from './home_page/Home';
 import Header from './manager/Manager.jsx';
+import Customer from './customer/Customer.jsx';
+import Volunteer from "./volunteer/Volunteer.jsx";
 
 function App() {
 
@@ -81,17 +83,11 @@ function App() {
             )}
 
             {currentPage === 'volunteer_dashboard' && (
-                <div>
-                    <h2>VOLUNTEER PAGE</h2>
-                    <button onClick={handleLogOut} style={{margin: '20px', padding: '10px'}}>Вийти</button>
-                </div>
+                <Volunteer onLogout={handleLogOut} onBackToHome={() => navigateTo('home')} />
             )}
 
             {currentPage === 'customer_dashboard' && (
-                <div>
-                    <h2>CUSTOMER PAGE</h2>
-                    <button onClick={handleLogOut} style={{margin: '20px', padding: '10px'}}>Вийти</button>
-                </div>
+                <Customer onLogOut={handleLogOut} />
             )}
         </>
     );
