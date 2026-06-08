@@ -30,8 +30,6 @@ public class RequestController {
         }
     }
 
-    // 2. ЕНДПОІНТ ДЛЯ СТАТИСТИКИ (Додано, щоб фронтенд не падав)
-
     // 3. Пошук по назві
     @GetMapping("/search")
     public ResponseEntity<List<Request>> search(@RequestParam String title) {
@@ -52,14 +50,11 @@ public class RequestController {
         }
     }
 
+    // 5. Зміна статусу (ЗАТВЕРДИТИ / ВІДХИЛИТИ)
     @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(
             @PathVariable String id,
             @RequestBody Map<String, String> body) {
-
-        System.out.println("=== ОТРИМАНО PATCH ЗАПИТ ===");
-        System.out.println("ID з фронтенду: " + id);
-        System.out.println("Статус з фронтенду: " + body.get("status"));
 
         try {
             String statusStr = body.get("status");
@@ -71,7 +66,6 @@ public class RequestController {
 
             requestDAO.updateStatus(id, status.name());
 
-            System.out.println("Успішно оновлено в БД!");
             return ResponseEntity.ok(Map.of(
                     "message", "updated",
                     "id", id,
@@ -79,13 +73,9 @@ public class RequestController {
             ));
 
         } catch (IllegalArgumentException e) {
-            System.err.println("Помилка валідації статусу: " + e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid status value"));
         } catch (Exception e) {
-            // ЦЕЙ БЛОК НАДРУКУЄ СПРАВЖНЮ ПОМИЛКУ В КОНСОЛЬ INTELLIJ IDEA!
-            System.err.println("КРИТИЧНА ПОМИЛКА ПРИ ОНОВЛЕННІ В БД:");
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

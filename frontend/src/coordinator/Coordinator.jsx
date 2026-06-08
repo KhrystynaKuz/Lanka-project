@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Coordinator.css';
 
 export default function Coordinator({ onLogout, onBackToHome }) {
@@ -10,13 +10,35 @@ export default function Coordinator({ onLogout, onBackToHome }) {
         { id: 1, title: '', desc: '', assignee: '', deadline: '' }
     ]);
 
-    const [warehouseItems, setWarehouseItems] = useState([
-        { id: 1, name: 'Бинти медичні', quantity: 150 },
-        { id: 2, name: 'Антисептики (л)', quantity: 40 },
-        { id: 3, name: 'Інсулін (флакони)', quantity: 25 }
-    ]);
+    const [warehouseItems, setWarehouseItems] = useState([]);
     const [editingItem, setEditingItem] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        if (activeTab === 'warehouse') {
+            fetch('/api/warehouse')
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        setWarehouseItems(data);
+                    }
+                })
+                .catch(err => console.error("Помилка отримання складу:", err));
+        }
+    }, [activeTab]);
+
+    const syncWithServer = (updatedList) => {
+        fetch('/api/warehouse/save-all', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedList)
+        })
+            .then(res => {
+                if (!res.ok) throw new Error();
+                console.log("Склад успішно синхронізовано з сервером!");
+            })
+            .catch(err => console.error("Помилка синхронізації з сервером:", err));
+    };
 
     const chatChannels = [
         { id: 123, title: "ЗАЯВКА №123 (Медицина)", preview: "Марія П.: Коли очікувати доставку?", time: "14:40", active: true },
@@ -37,10 +59,27 @@ export default function Coordinator({ onLogout, onBackToHome }) {
     };
 
     const handleAddWarehouseItem = () => {
-        const newId = warehouseItems.length > 0 ? Math.max(...warehouseItems.map(i => i.id)) + 1 : 1;
-        const newItem = { id: newId, name: 'Новий ресурс', quantity: 0 };
-        setWarehouseItems([...warehouseItems, newItem]);
+        const newItem = {
+            id: crypto.randomUUID(),
+            item_name: 'Новий ресурс',
+            quantity: 0,
+            unit_of_measure: null,
+            last_updated_by: null,
+            updated_at: new Date().toISOString()
+        };
+        const updatedList = [...warehouseItems, newItem];
+        setWarehouseItems(updatedList);
         setEditingItem(newItem);
+        syncWithServer(updatedList);
+    };
+
+    const handleDeleteWarehouseItem = (id) => {
+        if (window.confirm('Ви впевнені, що хочете видалити цей продукт зі складу?')) {
+            const updatedList = warehouseItems.filter(item => item.id !== id);
+            setWarehouseItems(updatedList);
+            setEditingItem(null);
+            syncWithServer(updatedList);
+        }
     };
 
     return (
@@ -259,11 +298,11 @@ export default function Coordinator({ onLogout, onBackToHome }) {
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {warehouseItems
-                                    .filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                                {warehouseItems && warehouseItems
+                                    .filter(item => item.item_name && item.item_name.toLowerCase().includes(searchQuery.toLowerCase()))
                                     .map(item => (
                                         <tr key={item.id} onClick={() => setEditingItem(item)} className="coord-table-row-clickable">
-                                            <td>{item.name}</td>
+                                            <td>{item.item_name}</td>
                                             <td>{item.quantity}</td>
                                         </tr>
                                     ))}
@@ -276,12 +315,12 @@ export default function Coordinator({ onLogout, onBackToHome }) {
 
                         {editingItem && (
                             <div className="coord-editing-panel fade-in">
-                                <h4>Редагування ресурсу: ID {editingItem.id}</h4>
+                                <h4>Редагування ресурсу: {editingItem.item_name}</h4>
                                 <div className="coord-editing-inputs">
                                     <input
                                         type="text"
-                                        value={editingItem.name}
-                                        onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
+                                        value={editingItem.item_name}
+                                        onChange={(e) => setEditingItem({...editingItem, item_name: e.target.value})}
                                     />
                                     <input
                                         type="number"
@@ -291,17 +330,23 @@ export default function Coordinator({ onLogout, onBackToHome }) {
                                 </div>
                                 <div className="coord-editing-actions">
                                     <button className="coord-btn-save-item" onClick={() => {
-                                        setWarehouseItems(warehouseItems.map(i => i.id === editingItem.id ? editingItem : i));
+                                        const updatedList = warehouseItems.map(i => i.id === editingItem.id ? editingItem : i);
+                                        setWarehouseItems(updatedList);
                                         setEditingItem(null);
+                                        syncWithServer(updatedList);
                                     }}>Зберегти зміни</button>
                                     <button className="coord-btn-cancel-item" onClick={() => setEditingItem(null)}>Скасувати</button>
+
+                                    <button
+                                        className="coord-btn-delete-item"
+                                        onClick={() => handleDeleteWarehouseItem(editingItem.id)}
+                                        style={{ backgroundColor: '#ff4d4d', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', marginLeft: '10px' }}
+                                    >
+                                        Видалити
+                                    </button>
                                 </div>
                             </div>
                         )}
-
-                        <div className="coord-action-right-warehouse">
-                            <button className="coord-btn-book" onClick={() => alert('Ресурси успішно заброньовано під активні заявки!')}>ЗАБРОНЮВАТИ</button>
-                        </div>
                     </div>
                 )}
             </main>
