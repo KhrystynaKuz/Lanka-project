@@ -2,6 +2,7 @@ package com.lanka.dao;
 
 import com.lanka.database.DatabaseConfig;
 import com.lanka.models.Inventory;
+import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.time.OffsetDateTime;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public class InventoryDAO {
 
     public void addInventory(Inventory item) throws SQLException {

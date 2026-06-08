@@ -3,140 +3,157 @@ import React, { useState, useEffect } from 'react';
 export default function InventoryTab() {
     const [warehouseItems, setWarehouseItems] = useState([]);
     const [editingItem, setEditingItem] = useState(null);
+    const [isNew, setIsNew] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetch('/api/warehouse')
             .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) {
-                    setWarehouseItems(data);
-                }
-            })
-            .catch(err => console.error("Помилка отримання складу:", err));
+            .then(data => { setWarehouseItems(data); setLoading(false); });
     }, []);
 
-    const syncWithServer = (updatedList) => {
-        fetch('/api/warehouse/save-all', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedList)
-        })
-            .then(res => {
-                if (!res.ok) throw new Error();
-                console.log("Склад успішно синхронізовано з сервером!");
-            })
-            .catch(err => console.error("Помилка синхронізації з сервером:", err));
-    };
+    const saveItem = async () => {
+        if (!editingItem.item_name || editingItem.item_name.trim() === '') {
+            alert("Будь ласка, введіть назву ресурсу.");
+            return;
+        }
+        if (editingItem.quantity === undefined || editingItem.quantity === null || editingItem.quantity < 0) {
+            alert("Будь ласка, введіть коректну кількість.");
+            return;
+        }
+        if (!editingItem.unit_of_measure || editingItem.unit_of_measure.trim() === '') {
+            alert("Будь ласка, введіть одиниці виміру.");
+            return;
+        }
 
-    const handleAddWarehouseItem = () => {
-        const newItem = {
-            id: crypto.randomUUID(),
-            item_name: 'Новий ресурс',
-            quantity: 0,
-            unit_of_measure: null,
-            last_updated_by: null,
-            updated_at: new Date().toISOString()
-        };
+        const url = isNew ? '/api/warehouse' : `/api/warehouse/${editingItem.id}`;
+        try {
+            const response = await fetch(url, {
+                method: isNew ? 'POST' : 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editingItem)
+            });
 
-        const updatedList = [...warehouseItems, newItem];
-        setWarehouseItems(updatedList);
-        setEditingItem(newItem);
-        syncWithServer(updatedList);
-    };
-
-    const handleDeleteWarehouseItem = (id) => {
-        if (window.confirm('Ви впевнені, що хочете видалити цей продукт зі складу?')) {
-            const updatedList = warehouseItems.filter(item => item.id !== id);
-            setWarehouseItems(updatedList);
-            setEditingItem(null);
-            syncWithServer(updatedList);
+            if (response.ok) {
+                setWarehouseItems(isNew ? [...warehouseItems, editingItem] : warehouseItems.map(i => i.id === editingItem.id ? editingItem : i));
+                setEditingItem(null);
+            } else {
+                alert("Помилка при збереженні на сервері.");
+            }
+        } catch (err) {
+            console.error("Помилка:", err);
         }
     };
 
     return (
         <div className="admin-tab-content fade-in">
-            <h2 className="tab-title">Облік складу логістики</h2>
+            <h2 className="tab-title" style={{ marginBottom: '25px' }}>Облік складу логістики</h2>
 
-            <div className="coord-search-bar-row" style={{ marginBottom: '15px', display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '30px' }}>
                 <input
                     type="text"
                     className="coord-search-input"
-                    placeholder="ПОШУК..."
+                    placeholder="ПОШУК ТОВАРУ..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{ flexGrow: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(30, 58, 138, 0.2)' }}
+                    style={{ width: '350px' }}
                 />
-                <button className="coord-btn-search-action" style={{ padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>ЗНАЙТИ</button>
             </div>
 
-            <div className="coord-table-control-row" style={{ marginBottom: '15px' }}>
-                <button className="coord-btn-add-item" onClick={handleAddWarehouseItem} style={{ padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>+ ДОДАТИ</button>
+            <div style={{ marginBottom: '20px' }}>
+                <button className="coord-btn-add-item" onClick={() => {
+                    setIsNew(true);
+                    setEditingItem({ id: crypto.randomUUID(), item_name: '', quantity: 0, unit_of_measure: '' });
+                }}>
+                    + ДОДАТИ ТОВАР
+                </button>
             </div>
 
             <div className="coord-table-wrapper">
-                <table className="coord-warehouse-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table className="coord-warehouse-table">
                     <thead>
-                    <tr style={{ textAlign: 'left', borderBottom: '2px solid rgba(30, 58, 138, 0.1)' }}>
-                        <th style={{ padding: '10px' }}>НАЗВА</th>
-                        <th style={{ padding: '10px' }}>К-ТЬ В НАЯВНОСТІ</th>
+                    <tr>
+                        <th>НАЗВА</th>
+                        <th>К-ТЬ В НАЯВНОСТІ</th>
                     </tr>
                     </thead>
                     <tbody>
-                    {warehouseItems && warehouseItems
-                        .filter(item => item.item_name && item.item_name.toLowerCase().includes(searchQuery.toLowerCase()))
+                    {warehouseItems
+                        .filter(item => item.item_name.toLowerCase().startsWith(searchQuery.toLowerCase()))
                         .map(item => (
-                            <tr
-                                key={item.id}
-                                onClick={() => setEditingItem(item)}
-                                className="coord-table-row-clickable"
-                                style={{ cursor: 'pointer', borderBottom: '1px solid rgba(30, 58, 138, 0.05)' }}
-                            >
-                                <td style={{ padding: '10px' }}>{item.item_name}</td>
-                                <td style={{ padding: '10px' }}>{item.quantity}</td>
+                            <tr key={item.id} onClick={() => { setIsNew(false); setEditingItem(item); }} className="coord-table-row-clickable">
+                                <td>{item.item_name}</td>
+                                <td>{item.quantity} {item.unit_of_measure}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-                <div className="coord-table-hint" style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px' }}>
-                    💡 при натисканні на рядок відкривається форма редагування
-                </div>
             </div>
 
+            {/* Модальне вікно */}
             {editingItem && (
-                <div className="coord-editing-panel fade-in" style={{ marginTop: '20px', padding: '15px', background: 'rgba(255, 255, 255, 0.5)', borderRadius: '12px', border: '1px solid rgba(30, 58, 138, 0.1)' }}>
-                    <h4>Редагування ресурсу: {editingItem.item_name}</h4>
-                    <div className="coord-editing-inputs" style={{ display: 'flex', gap: '10px', margin: '10px 0' }}>
-                        <input
-                            type="text"
-                            value={editingItem.item_name}
-                            onChange={(e) => setEditingItem({...editingItem, item_name: e.target.value})}
-                            style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(30, 58, 138, 0.2)' }}
-                        />
-                        <input
-                            type="number"
-                            value={editingItem.quantity}
-                            onChange={(e) => setEditingItem({...editingItem, quantity: parseInt(e.target.value) || 0})}
-                            style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(30, 58, 138, 0.2)' }}
-                        />
-                    </div>
-                    <div className="coord-editing-actions" style={{ display: 'flex', gap: '10px' }}>
-                        <button className="coord-btn-save-item" onClick={() => {
-                            const updatedList = warehouseItems.map(i => i.id === editingItem.id ? editingItem : i);
-                            setWarehouseItems(updatedList);
-                            setEditingItem(null);
-                            syncWithServer(updatedList);
-                        }} style={{ padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>Зберегти зміни</button>
+                <div className="modal-overlay">
+                    <div className="coord-editing-panel glass-panel" style={{ width: '400px', padding: '25px', color: '#1e3a8a' }}>
 
-                        <button className="coord-btn-cancel-item" onClick={() => setEditingItem(null)} style={{ padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>Скасувати</button>
+                        <h3 style={{ marginBottom: '20px', color: '#1e3a8a', textAlign: 'center' }}>
+                            {isNew ? 'ДОДАВАННЯ ТОВАРУ' : 'РЕДАГУВАННЯ ТОВАРУ'}
+                        </h3>
 
-                        <button
-                            className="coord-btn-delete-item"
-                            onClick={() => handleDeleteWarehouseItem(editingItem.id)}
-                            style={{ backgroundColor: '#ff4d4d', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                            Видалити
-                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            <input
+                                className="coord-search-input"
+                                style={{ color: '#1e3a8a', border: '1px solid #1e3a8a' }}
+                                value={editingItem.item_name}
+                                onChange={e => setEditingItem({...editingItem, item_name: e.target.value})}
+                                placeholder="Назва ресурсу"
+                                required
+                            />
+                            <input
+                                type="number"
+                                className="coord-search-input"
+                                style={{ color: '#1e3a8a', border: '1px solid #1e3a8a' }}
+                                value={editingItem.quantity}
+                                onChange={e => {
+                                    const val = parseInt(e.target.value);
+                                    setEditingItem({...editingItem, quantity: val < 0 ? 0 : val || 0});
+                                }}
+                                placeholder="Кількість"
+                                min="0"
+                                required
+                            />
+                            <input
+                                className="coord-search-input"
+                                style={{ color: '#1e3a8a', border: '1px solid #1e3a8a' }}
+                                value={editingItem.unit_of_measure}
+                                onChange={e => setEditingItem({...editingItem, unit_of_measure: e.target.value})}
+                                placeholder="Од. виміру (напр. шт)"
+                                required
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '25px' }}>
+                            <button className="coord-btn-save-item" onClick={saveItem}>
+                                {isNew ? 'ДОДАТИ' : 'ЗБЕРЕГТИ'}
+                            </button>
+
+                            {!isNew && (
+                                <button
+                                    onClick={async () => {
+                                        if(window.confirm('Видалити цей товар зі складу?')) {
+                                            await fetch(`/api/warehouse/${editingItem.id}`, { method: 'DELETE' });
+                                            setWarehouseItems(warehouseItems.filter(i => i.id !== editingItem.id));
+                                            setEditingItem(null);
+                                        }
+                                    }}
+                                    style={{ backgroundColor: '#ff4d4d', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}
+                                >
+                                    ВИДАЛИТИ
+                                </button>
+                            )}
+
+                            <button className="coord-btn-cancel-item" onClick={() => setEditingItem(null)}>СКАСУВАТИ</button>
+                        </div>
                     </div>
                 </div>
             )}

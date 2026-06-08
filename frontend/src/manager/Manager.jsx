@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import VerificationTab from './VerificationTab';
+import ManagementTab from './ManagementTab';
 import RequestsTab from './RequestsTab';
 import ChatsTab from './ChatsTab';
 import ReportsTab from './ReportsTab';
@@ -46,7 +46,7 @@ export default function Header({ onLogOut }) {
 
             {/* ОСНОВНИЙ КОНТЕНТ */}
             <main className="admin-glass-content">
-                {activeTab === 'verification' && <VerificationTab />}
+                {activeTab === 'verification' && <ManagementTab />}
                 {activeTab === 'requests' && <RequestsTab />}
                 {activeTab === 'chats' && <ChatsTab />}
                 {activeTab === 'reports' && <ReportsTab />}

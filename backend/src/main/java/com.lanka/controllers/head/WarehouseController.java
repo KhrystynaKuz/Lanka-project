@@ -1,39 +1,44 @@
 package com.lanka.controllers.head;
 
+import com.lanka.dao.InventoryDAO;
 import com.lanka.models.Inventory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/warehouse")
-@CrossOrigin(origins = "http://localhost:5173")
 public class WarehouseController {
 
-    private static List<Inventory> warehouseItems = new ArrayList<>();
+    private final InventoryDAO inventoryDAO;
 
-    static {
-        warehouseItems.add(new Inventory(UUID.randomUUID(), "Бинти медичні", 150, "шт", null, OffsetDateTime.now()));
-        warehouseItems.add(new Inventory(UUID.randomUUID(), "Антисептики (л)", 40, "л", null, OffsetDateTime.now()));
-        warehouseItems.add(new Inventory(UUID.randomUUID(), "Інсулін (флакони)", 25, "фл", null, OffsetDateTime.now()));
+    public WarehouseController(InventoryDAO inventoryDAO) {
+        this.inventoryDAO = inventoryDAO;
     }
 
     @GetMapping
-    public ResponseEntity<List<Inventory>> getWarehouse() {
-        return ResponseEntity.ok(warehouseItems);
+    public ResponseEntity<List<Inventory>> getWarehouse() throws SQLException {
+        return ResponseEntity.ok(inventoryDAO.getAllInventory());
     }
 
-    @PostMapping("/save-all")
-    public ResponseEntity<?> saveAllWarehouse(@RequestBody List<Inventory> updatedItems) {
-        try {
-            warehouseItems = updatedItems;
-            return ResponseEntity.ok("Склад успішно синхронізовано з БД!");
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Помилка збереження складу: " + e.getMessage());
-        }
+    @PostMapping
+    public ResponseEntity<?> add(@RequestBody Inventory item) throws SQLException {
+        inventoryDAO.addInventory(item);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody Inventory item) throws SQLException {
+        item.setId(id);
+        inventoryDAO.updateInventory(item);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable UUID id) throws SQLException {
+        inventoryDAO.deleteInventory(id);
+        return ResponseEntity.ok().build();
     }
 }

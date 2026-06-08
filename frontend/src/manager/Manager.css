@@ -1091,3 +1091,47 @@
     from { opacity: 0; transform: translateY(2px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.coord-editing-panel {
+    background: rgba(255, 255, 255, 0.15); /* Ефект скла */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 25px;
+    color: white;
+}
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 400px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    color: white;
+}
+
+.coord-btn-add-item {
+    background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}

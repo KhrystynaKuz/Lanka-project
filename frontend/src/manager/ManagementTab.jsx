@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function VerificationTab() {
+export default function ManagementTab() {
     return (
         <div className="admin-tab-content fade-in">
             <div className="tab-header-block">
