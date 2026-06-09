@@ -73,9 +73,13 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
             const userData = await dbResponse.json();
 
             if (userData && userData.role) {
+                await fetch('/api/auth/login-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userId })
+                });
+
                 onLoginSuccess(userData.role.toUpperCase().trim(), userId);
-            } else {
-                setError('Роль користувача не знайдена в таблиці.');
             }
 
         } catch (err) {
@@ -139,7 +143,7 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
             }
 
             setResetMessage('Пароль успішно змінено! Тепер ви можете увійти з новим паролем.');
-            setIsNewPasswordMode(false); // Повертаємо на звичайний екран входу
+            setIsNewPasswordMode(false);
             setIsResetMode(false);
             setNewPassword('');
         } catch (err) {

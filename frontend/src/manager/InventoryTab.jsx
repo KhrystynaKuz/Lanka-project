@@ -8,7 +8,7 @@ export default function InventoryTab() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/api/warehouse')
+        fetch('/api/head/warehouse')
             .then(res => res.json())
             .then(data => { setWarehouseItems(data); setLoading(false); });
     }, []);
@@ -27,7 +27,7 @@ export default function InventoryTab() {
             return;
         }
 
-        const url = isNew ? '/api/warehouse' : `/api/warehouse/${editingItem.id}`;
+        const url = isNew ? '/api/head/warehouse' : `/api/head/warehouse/${editingItem.id}`;
         try {
             const response = await fetch(url, {
                 method: isNew ? 'POST' : 'PUT',
@@ -141,7 +141,7 @@ export default function InventoryTab() {
                                 <button
                                     onClick={async () => {
                                         if(window.confirm('Видалити цей товар зі складу?')) {
-                                            await fetch(`/api/warehouse/${editingItem.id}`, { method: 'DELETE' });
+                                            await fetch(`/api/head/warehouse/${editingItem.id}`, { method: 'DELETE' });
                                             setWarehouseItems(warehouseItems.filter(i => i.id !== editingItem.id));
                                             setEditingItem(null);
                                         }

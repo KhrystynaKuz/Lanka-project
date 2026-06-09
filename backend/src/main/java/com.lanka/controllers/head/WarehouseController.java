@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/warehouse")
+@RequestMapping("/api/head/warehouse")
 public class WarehouseController {
 
     private final InventoryDAO inventoryDAO;

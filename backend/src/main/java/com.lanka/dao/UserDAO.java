@@ -157,6 +157,20 @@ public class UserDAO {
         return list;
     }
 
+    public List<User> getAllActiveUsers() throws SQLException {
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at " +
+                "FROM users WHERE is_verified = true ORDER BY last_name ASC";
+        List<User> list = new ArrayList<>();
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapRowToUser(rs));
+            }
+        }
+        return list;
+    }
+
     private User mapRowToUser(ResultSet rs) throws SQLException {
         User user = new User();
         user.setId(rs.getObject("id", UUID.class));

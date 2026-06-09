@@ -3,6 +3,7 @@ package com.lanka.controllers;
 import com.lanka.dao.UserDAO;
 import com.lanka.models.User;
 import com.lanka.service.AuthService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +57,19 @@ public class AuthController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Auth error: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/set-session")
+    public void setSession(@RequestBody String userId, HttpSession session) {
+        session.setAttribute("userId", UUID.fromString(userId.replace("\"", "")));
+    }
+
+    @PostMapping("/login-session")
+    public void loginSession(@RequestBody Map<String, String> payload, HttpSession session) {
+        String userId = payload.get("userId");
+        if (userId != null) {
+            session.setAttribute("userId", UUID.fromString(userId));
         }
     }
 }

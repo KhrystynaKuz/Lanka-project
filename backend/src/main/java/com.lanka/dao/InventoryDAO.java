@@ -137,7 +137,8 @@ public class InventoryDAO {
 
     public List<Inventory> getInventoryByNameStart(String namePattern) throws SQLException {
         String sql = "SELECT id, item_name, quantity, unit_of_measure, last_updated_by, updated_at " +
-                "FROM inventory WHERE item_name ILIKE ? ORDER BY item_name ASC";
+                "FROM inventory WHERE LOWER(item_name) LIKE LOWER(?) ORDER BY item_name ASC";
+
         List<Inventory> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();

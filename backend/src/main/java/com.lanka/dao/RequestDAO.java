@@ -95,6 +95,23 @@ public class RequestDAO {
         return list;
     }
 
+    public Request getRequestById(UUID id) throws SQLException {
+        String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at " +
+                "FROM requests WHERE id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setObject(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRowToRequest(rs);
+                }
+            }
+        }
+        return null;
+    }
+
     public List<Request> getRequestsByCustomerId(UUID customerId) throws SQLException {
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at " +
                 "FROM requests WHERE customer_id = ? ORDER BY created_at DESC";
@@ -188,7 +205,7 @@ public class RequestDAO {
 
             ps.setString(1, statusEnumName);
             ps.setObject(2, OffsetDateTime.now());
-            ps.setObject(3, UUID.fromString(requestId)); // Парсимо String в UUID
+            ps.setObject(3, UUID.fromString(requestId));
 
             ps.executeUpdate();
         }

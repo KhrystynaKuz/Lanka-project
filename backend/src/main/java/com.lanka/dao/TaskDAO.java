@@ -3,6 +3,7 @@ package com.lanka.dao;
 import com.lanka.database.DatabaseConfig;
 import com.lanka.models.Task;
 import com.lanka.models.Task.TaskStatus;
+import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.time.OffsetDateTime;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public class TaskDAO {
 
     public void addTask(Task task) throws SQLException {
@@ -126,6 +128,23 @@ public class TaskDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setObject(1, volunteerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRowToTask(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+    public List<Task> getTasksByCoordinatorId(UUID coordinatorId) throws SQLException {
+        String sql = "SELECT id, request_id, department_id, assigned_volunteer_id, coordinator_id, title, description, status, created_at, completed_at " +
+                "FROM tasks WHERE coordinator_id = ? ORDER BY created_at DESC";
+        List<Task> list = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, coordinatorId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(mapRowToTask(rs));
