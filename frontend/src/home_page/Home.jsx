@@ -217,7 +217,7 @@ export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
                 </div>
                 <div className="footer-section">
                     <h3>Контакти:</h3>
-                    <p>Email: info@lanka.org<br />Telegram: @lanka_volunteer</p>
+                    <p>Email: info@lanka.org<br />Instagram: @lanka_volunteer<br />WhatsApp: @lanka_volunteer</p>
                 </div>
             </footer>
         </div>
