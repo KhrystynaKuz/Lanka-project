@@ -10,6 +10,11 @@ export default function RequestsTab() {
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Стейт для кастомного модального вікна видалення
+    const [deleteModal, setDeleteModal] = useState({ isOpen: false, requestId: null });
+    // Стейт для збереження стану чекбокса "Більше не показувати"
+    const [dontShowAgain, setDontShowAgain] = useState(false);
+
     const loadCoreData = () => {
         fetch('/api/requests/stats')
             .then(res => {
@@ -67,12 +72,66 @@ export default function RequestsTab() {
 
                 setPendingRequests(prev => prev.filter(req => req.id !== id));
                 setNewCount(prev => Math.max(0, prev - 1));
-                setRequests(prev => [updatedRequest, ...prev]);
+                setRequests(prev => {
+                    const filtered = prev.filter(req => req.id !== id);
+                    return [updatedRequest, ...filtered];
+                });
             })
             .catch(err => {
                 console.error("Помилка при оновленні статусу:", err);
                 alert("Помилка оновлення статусу заявки.");
             });
+    };
+
+    // Оновлена функція видалення, яка працює напряму з БД
+    const executeDeleteFetch = (id) => {
+        fetch(`/api/requests/${id}`, {
+            method: 'DELETE'
+        })
+            .then(res => {
+                if (!res.ok) throw new Error("Помилка при видаленні з сервера");
+                return res.json();
+            })
+            .then(() => {
+                setRequests(prev => prev.filter(req => req.id !== id));
+            })
+            .catch(err => {
+                console.error("Помилка при видаленні заявки:", err);
+                alert("Не вдалося видалити заявку.");
+            });
+    };
+
+    // Відкриття модалки з перевіркою sessionStorage
+    const openDeleteModal = (id) => {
+        // Перевіряємо, чи є в поточній сесії прапорець пропуску модалки
+        const skipWarning = sessionStorage.getItem('skipDeleteWarning') === 'true';
+
+        if (skipWarning) {
+            // Якщо користувач просив не показувати — видаляємо одразу без вікна
+            executeDeleteFetch(id);
+        } else {
+            // Інакше відкриваємо кастомну модалку
+            setDeleteModal({ isOpen: true, requestId: id });
+        }
+    };
+
+    const closeDeleteModal = () => {
+        setDeleteModal({ isOpen: false, requestId: null });
+        setDontShowAgain(false); // Скидаємо чекбокс для наступного разу, якщо модалку просто закрили
+    };
+
+    // Підтвердження видалення зсередини модалки
+    const confirmDeleteRequest = () => {
+        const id = deleteModal.requestId;
+        if (!id) return;
+
+        // Якщо користувач поставив галочку "Більше не попереджати"
+        if (dontShowAgain) {
+            sessionStorage.setItem('skipDeleteWarning', 'true');
+        }
+
+        executeDeleteFetch(id);
+        closeDeleteModal();
     };
 
     const handleSearch = () => {
@@ -108,22 +167,10 @@ export default function RequestsTab() {
 
             <div className="tab-header-block" style={{ marginTop: '20px' }}>
                 <div
-                    className={`badge-counter ${showPendingDropdown ? 'active-counter' : ''}`}
+                    className={`badge-counter badge-counter-clickable ${showPendingDropdown ? 'active-counter' : ''}`}
                     onClick={() => setShowPendingDropdown(!showPendingDropdown)}
-                    style={{
-                        cursor: 'pointer',
-                        display: 'inline-block',
-                        userSelect: 'none',
-                        color: '#1e3a8a',
-                        backgroundColor: 'rgba(255, 255, 255, 0.6)',
-                        padding: '10px 18px',
-                        borderRadius: '12px',
-                        fontWeight: '700',
-                        border: '1px solid rgba(255, 255, 255, 0.7)',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)'
-                    }}
                 >
-                    Нові заявки: <span className="counter-number" style={{ color: '#2563eb', fontWeight: '800' }}>{newCount}</span> {showPendingDropdown ? '▼' : '▲'}
+                    Нові заявки: <span className="counter-number counter-number-styled">{newCount}</span> {showPendingDropdown ? '▼' : '▲'}
                 </div>
             </div>
 
@@ -152,7 +199,7 @@ export default function RequestsTab() {
                                         <div className="request-body-fields" style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(30, 58, 138, 0.1)' }}>
                                             <p style={{ color: '#374151' }}><strong>Назва:</strong> {request.title}</p>
                                             <p style={{ color: '#374151' }}><strong>Опис:</strong> {request.description || "Опис відсутній"}</p>
-                                            <p style={{ color: '#374151' }}><strong>Статус:</strong> <span className="status-badge pending" style={{ background: 'rgba(230, 126, 34, 0.15)', color: '#e67e22', padding: '4px 10px', borderRadius: '6px', fontWeight: '600' }}>{request.status}</span></p>
+                                            <p style={{ color: '#374151' }}><strong>Статус:</strong> <span className="status-badge pending request-pending-badge">{request.status}</span></p>
                                             {request.priority && <p style={{ color: '#374151' }}><strong>Пріоритет:</strong> {request.priority}</p>}
 
                                             <div className="request-action-footer" style={{ marginTop: '20px', display: 'flex', gap: '15px' }}>
@@ -208,12 +255,13 @@ export default function RequestsTab() {
             <div className="glass-main-request-panel">
                 {(() => {
                     const filteredRequests = requests.filter(req => {
+                        if (req.status === 'PENDING') return false;
                         if (statusFilter !== 'ALL' && req.status !== statusFilter) return false;
                         return true;
                     });
 
                     if (filteredRequests.length === 0) {
-                        return <p style={{ textAlign: 'center', color: '#1e3a8a', padding: '20px' }}>Заявок із таким статусом не знайдено.</p>;
+                        return <p style={{ textAlign: 'center', color: '#1e3a8a', padding: '20px' }}>Оброблених заявок не знайдено.</p>;
                     }
 
                     return filteredRequests.map((request) => {
@@ -236,6 +284,15 @@ export default function RequestsTab() {
                                         <p style={{ color: '#374151' }}><strong>Опис:</strong> {request.description || "Опис відсутній"}</p>
                                         <p style={{ color: '#374151' }}><strong>Статус:</strong> <span className={`status-badge ${request.status ? request.status.toLowerCase() : ''}`} style={{ fontWeight: '600' }}>{request.status}</span></p>
                                         {request.priority && <p style={{ color: '#374151' }}><strong>Пріоритет:</strong> {request.priority}</p>}
+
+                                        <div className="request-action-footer" style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                                            <button
+                                                className="btn-delete-from-history"
+                                                onClick={(e) => { e.stopPropagation(); openDeleteModal(request.id); }}
+                                            >
+                                                🗑 Видалити з історії
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -243,6 +300,39 @@ export default function RequestsTab() {
                     });
                 })()}
             </div>
+
+            {/* КАСТОМНЕ МОДАЛЬНЕ ВІКНО З ГАЛОЧКОЮ "БІЛЬШЕ НЕ ПОПЕРЕДЖАТИ" */}
+            {deleteModal.isOpen && (
+                <div className="delete-modal-overlay">
+                    <div className="delete-modal-card">
+                        <div className="delete-modal-icon">⚠️</div>
+                        <h3 className="delete-modal-title">Остаточне видалення</h3>
+                        <p className="delete-modal-text">
+                            Ви впевнені, що хочете видалити цю заявку? Цю дію не можна скасувати.
+                        </p>
+
+                        {/* ДОДАНА ГАЛОЧКА ДЛЯ СЕСІЙНОГО ХРАНИЛИЩА */}
+                        <label className="modal-checkbox-container">
+                            <input
+                                type="checkbox"
+                                className="modal-checkbox-input"
+                                checked={dontShowAgain}
+                                onChange={(e) => setDontShowAgain(e.target.checked)}
+                            />
+                            <span className="modal-checkbox-label">Більше не попереджати в цій сесії</span>
+                        </label>
+
+                        <div className="delete-modal-actions">
+                            <button className="btn-modal-cancel" onClick={closeDeleteModal}>
+                                Скасувати
+                            </button>
+                            <button className="btn-modal-confirm" onClick={confirmDeleteRequest}>
+                                Так, видалити
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

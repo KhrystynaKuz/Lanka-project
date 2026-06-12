@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/requests")
@@ -18,6 +19,17 @@ public class RequestController {
 
     public RequestController(RequestDAO requestDAO) {
         this.requestDAO = requestDAO;
+    }
+
+    // ДОДАТКОВО: Ендпоінт для отримання лічильника (виправляє 404)
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getStats() {
+        try {
+            int pendingCount = requestDAO.getPendingCount();
+            return ResponseEntity.ok(Map.of("newCount", pendingCount));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // 1. Отримати всі заявки (для історії)
@@ -63,7 +75,6 @@ public class RequestController {
             }
 
             RequestStatus status = RequestStatus.valueOf(statusStr.toUpperCase());
-
             requestDAO.updateStatus(id, status.name());
 
             return ResponseEntity.ok(Map.of(
@@ -76,6 +87,20 @@ public class RequestController {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid status value"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // 6. Видалення заявки
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteRequest(@PathVariable String id) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            requestDAO.deleteRequest(uuid);
+            return ResponseEntity.ok(Map.of("message", "Заявка успішно видалена", "id", id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Невірний формат ID"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 }
