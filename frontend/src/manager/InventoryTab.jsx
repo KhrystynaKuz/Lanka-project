@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// Додаємо showNotification у деструктуризацію пропсів
 export default function InventoryTab({ showNotification }) {
     const [warehouseItems, setWarehouseItems] = useState([]);
     const [editingItem, setEditingItem] = useState(null);
@@ -16,17 +15,14 @@ export default function InventoryTab({ showNotification }) {
 
     const saveItem = async () => {
         if (!editingItem.item_name || editingItem.item_name.trim() === '') {
-            // ЗАМІНА ALERT НА TOAST
             showNotification("⚠️ Будь ласка, введіть назву ресурсу.", "warning");
             return;
         }
         if (editingItem.quantity === undefined || editingItem.quantity === null || editingItem.quantity < 0) {
-            // ЗАМІНА ALERT НА TOAST
             showNotification("⚠️ Будь ласка, введіть коректну кількість.", "warning");
             return;
         }
         if (!editingItem.unit_of_measure || editingItem.unit_of_measure.trim() === '') {
-            // ЗАМІНА ALERT НА TOAST
             showNotification("⚠️ Будь ласка, введіть одиниці виміру.", "warning");
             return;
         }
@@ -40,30 +36,18 @@ export default function InventoryTab({ showNotification }) {
             });
 
             if (response.ok) {
-                // Використовуємо дані з відповіді, якщо потрібно оновити ID
-                const savedItem = await response.json();
-                if (isNew) {
-                    setWarehouseItems([...warehouseItems, savedItem]);
-                    // ЗАМІНА ALERT НА TOAST
-                    showNotification("📦 Новий ресурс успішно додано!", "success");
-                } else {
-                    setWarehouseItems(warehouseItems.map(i => i.id === savedItem.id ? savedItem : i));
-                    // ЗАМІНА ALERT НА TOAST
-                    showNotification("💾 Зміни успішно збережено!", "success");
-                }
+                setWarehouseItems(isNew ? [...warehouseItems, editingItem] : warehouseItems.map(i => i.id === editingItem.id ? editingItem : i));
+                showNotification(isNew ? "📦 Новий ресурс успішно додано!" : "💾 Зміни успішно збережено!", "success");
                 setEditingItem(null);
             } else {
-                // ЗАМІНА ALERT НА TOAST
                 showNotification("🚨 Помилка при збереженні на сервері.", "error");
             }
         } catch (err) {
             console.error("Помилка:", err);
-            // ЗАМІНА ALERT НА TOAST
             showNotification("🚨 Критична помилка під час збереження.", "error");
         }
     };
 
-    // ВІДНОВЛЕНО ПОЧАТКОВІ ІНЛАЙН-СТИЛІ, ЯКІ ЗАБЕЗПЕЧУЮТЬ ВЕРСТКУ З image_2.png
     return (
         <div className="admin-tab-content fade-in">
             <h2 className="tab-title" style={{ marginBottom: '25px' }}>Облік складу логістики</h2>
@@ -159,17 +143,10 @@ export default function InventoryTab({ showNotification }) {
                                 <button
                                     onClick={async () => {
                                         if(window.confirm('Видалити цей товар зі складу?')) {
-                                            try {
-                                                await fetch(`/api/head/warehouse/${editingItem.id}`, { method: 'DELETE' });
-                                                setWarehouseItems(warehouseItems.filter(i => i.id !== editingItem.id));
-                                                // ЗАМІНА ALERT НА TOAST
-                                                showNotification("🗑️ Товар успішно видалено зі складу", "success");
-                                                setEditingItem(null);
-                                            } catch (err) {
-                                                console.error("Помилка:", err);
-                                                // ЗАМІНА ALERT НА TOAST
-                                                showNotification("🚨 Не вдалося видалити товар з сервера", "error");
-                                            }
+                                            await fetch(`/api/head/warehouse/${editingItem.id}`, { method: 'DELETE' });
+                                            setWarehouseItems(warehouseItems.filter(i => i.id !== editingItem.id));
+                                            showNotification("🗑️ Товар успішно видалено зі складу", "success");
+                                            setEditingItem(null);
                                         }
                                     }}
                                     style={{ backgroundColor: '#ff4d4d', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}
