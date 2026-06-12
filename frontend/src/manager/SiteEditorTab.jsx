@@ -1,6 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
+// Компонент тосту
+const Toast = ({ message, type, onClose }) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onClose();
+        }, 4000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <div className={`toast-item toast-${type}`}>
+            <span>{message}</span>
+            <button className="toast-close-btn" onClick={onClose}>✕</button>
+        </div>
+    );
+};
+
+// Головний компонент
 export default function SiteEditorTab() {
 
     const [homeTitle, setHomeTitle] = useState('');
@@ -17,6 +35,18 @@ export default function SiteEditorTab() {
     const [reportDocs, setReportDocs] = useState([]);
     const [isReportsUploading, setIsReportsUploading] = useState(false);
 
+    // Стейт для тостів
+    const [toasts, setToasts] = useState([]);
+
+    const addToast = (message, type = 'info') => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+    };
+
+    const removeToast = (id) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+    };
+
     useEffect(() => {
         const fetchAllData = async () => {
             try {
@@ -27,12 +57,12 @@ export default function SiteEditorTab() {
                     setHomeDescription(data.home_description || '');
                     setHomeImage(data.home_image || '');
                 }
-            } catch (e) { console.error("Settings error", e); }
+            } catch (e) { console.error("Settings error", e); addToast("🚨 Помилка завантаження налаштувань", "error"); }
 
             try {
                 const res = await fetch('http://localhost:8080/api/site-editor/fundraisers');
                 if (res.ok) setFundraisers(await res.json());
-            } catch (e) { console.error("Fundraisers error", e); }
+            } catch (e) { console.error("Fundraisers error", e); addToast("🚨 Помилка завантаження зборів", "error"); }
 
             try {
                 const res = await fetch('http://localhost:8080/api/site-editor/reports');
@@ -41,7 +71,7 @@ export default function SiteEditorTab() {
                     setReportPhotos(data.filter(r => r.type === 'photo'));
                     setReportDocs(data.filter(r => r.type === 'doc'));
                 }
-            } catch (e) { console.error("Reports error", e); }
+            } catch (e) { console.error("Reports error", e); addToast("🚨 Помилка завантаження звітів", "error"); }
         };
 
         fetchAllData();
@@ -68,10 +98,10 @@ export default function SiteEditorTab() {
                 .getPublicUrl(fileName);
 
             setHomeImage(publicUrl);
-            alert("Фото банера успішно завантажено! Натисни 'ОНОВИТИ' нижче для збереження.");
+            addToast("🖼️ Фото банера завантажено! Натисніть 'ОНОВИТИ' для збереження", "success");
         } catch (error) {
             console.error('Помилка завантаження банера:', error);
-            alert('Не вдалося завантажити фото: ' + error.message);
+            addToast(`🚨 Не вдалося завантажити фото: ${error.message}`, "error");
         } finally {
             setIsUploading(false);
         }
@@ -91,12 +121,13 @@ export default function SiteEditorTab() {
             });
 
             if (response.ok) {
-                alert("Контент головної сторінки успішно оновлено в БД!");
+                addToast("✨ Головний блок успішно оновлено!", "success");
             } else {
-                alert("Помилка сервера при оновленні.");
+                addToast("🚨 Помилка збереження налаштувань.", "error");
             }
         } catch (error) {
             console.error("Помилка мережі:", error);
+            addToast("🚨 Помилка з'єднання з сервером.", "error");
         } finally {
             setIsLoading(false);
         }
@@ -114,6 +145,7 @@ export default function SiteEditorTab() {
             _frontId: Date.now()
         };
         setFundraisers(prev => [...prev, newFundraiser]);
+        addToast("📎 Додано новий збір. Заповніть поля та збережіть", "info");
     };
 
     const handleQrUpload = async (event, index) => {
@@ -136,10 +168,10 @@ export default function SiteEditorTab() {
                 .getPublicUrl(fileName);
 
             setFundraisers(prev => prev.map((f, i) => i === index ? { ...f, qr_code_url: publicUrl } : f));
-            alert("QR-код успішно завантажено в хмару! Не забудь натиснути 'ОНОВИТИ СПИСОК ЗБОРІВ'.");
+            addToast("🖼️ QR-код завантажено! Не забудьте зберегти список зборів", "success");
         } catch (error) {
             console.error('Помилка завантаження QR:', error);
-            alert('Не вдалося завантажити QR-код: ' + error.message);
+            addToast(`🚨 Не вдалося завантажити QR-код: ${error.message}`, "error");
         } finally {
             setIsFundraisersUploading(false);
         }
@@ -155,17 +187,18 @@ export default function SiteEditorTab() {
             });
 
             if (response.ok) {
-                alert("Список активних зборів успішно збережено в базі даних!");
+                addToast("💰 Актуальні збори успішно синхронізовано та збережено!", "success");
                 const freshResponse = await fetch('http://localhost:8080/api/site-editor/fundraisers');
                 if (freshResponse.ok) {
                     const freshData = await freshResponse.json();
                     setFundraisers(freshData);
                 }
             } else {
-                alert("Помилка сервера при збереженні зборів.");
+                addToast("🚨 Помилка при збереженні зборів.", "error");
             }
         } catch (error) {
             console.error("Помилка мережі:", error);
+            addToast("🚨 Помилка з'єднання з сервером.", "error");
         } finally {
             setIsFundraisersLoading(false);
         }
@@ -194,12 +227,14 @@ export default function SiteEditorTab() {
 
             if (type === 'photo') {
                 setReportPhotos(prev => [...prev, newEntry]);
+                addToast(`📎 Файл "${file.name}" додано до черги відправки`, "info");
             } else {
                 setReportDocs(prev => [...prev, newEntry]);
+                addToast(`📎 Файл "${file.name}" додано до черги відправки`, "info");
             }
 
         } catch (error) {
-            alert('Помилка: ' + error.message);
+            addToast(`🚨 Помилка завантаження: ${error.message}`, "error");
         } finally {
             setIsReportsUploading(false);
         }
@@ -221,14 +256,14 @@ export default function SiteEditorTab() {
             });
 
             if (res.ok) {
-                alert("Звіти успішно збережено!");
+                addToast("📊 Звітність успішно завантажена на сайт!", "success");
             } else {
                 const errorText = await res.text();
-                alert("Помилка збереження: " + errorText);
+                addToast(`🚨 Сталася помилка при завантаженні звітів: ${errorText}`, "error");
             }
         } catch (e) {
             console.error("Network error:", e);
-            alert("Помилка мережі. Перевірте сервер.");
+            addToast("🚨 Не вдалося зв'язатися з сервером.", "error");
         } finally {
             setIsReportsUploading(false);
         }
@@ -236,6 +271,18 @@ export default function SiteEditorTab() {
 
     return (
         <div className="admin-tab-content fade-in site-editor-layout">
+            {/* Контейнер для тостів */}
+            <div className="toast-notifications-container">
+                {toasts.map(toast => (
+                    <Toast
+                        key={toast.id}
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => removeToast(toast.id)}
+                    />
+                ))}
+            </div>
+
             <h2 className="editor-title">Редактор сайту</h2>
 
             {/* БЛОК 1 : ГОЛОВНА СТОРІНКА */}
@@ -279,7 +326,7 @@ export default function SiteEditorTab() {
 
                 {homeImage && (
                     <div style={{ marginTop: '15px', textAlign: 'left' }}>
-                        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '5px' }}>Поточне фото сайту:</div>
+                        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '5px' }}>Поточне photo сайту:</div>
                         <img
                             src={homeImage}
                             alt="Прев'ю банера"
@@ -371,18 +418,28 @@ export default function SiteEditorTab() {
 
                 <div className="images-sub-group">
                     <label>ФОТО:</label>
-                    {reportPhotos.map((item, i) => (
-                        <div key={i} className="item-tag">{item.name} <button onClick={() => setReportPhotos(prev => prev.filter((_, idx) => idx !== i))}>✕</button></div>
-                    ))}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                        {reportPhotos.map((item, i) => (
+                            <div key={i} style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '6px', fontSize: '12px' }}>
+                                {item.name}
+                                <button onClick={() => setReportPhotos(prev => prev.filter((_, idx) => idx !== i))} style={{ marginLeft: '8px', background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>✕</button>
+                            </div>
+                        ))}
+                    </div>
                     <input type="file" id="photo-report" onChange={(e) => handleUploadReport(e, 'photo')} style={{display: 'none'}} />
                     <label htmlFor="photo-report" className="btn-add-element">+ ДОДАТИ ФОТО</label>
                 </div>
 
-                <div className="documents-sub-group">
+                <div className="documents-sub-group" style={{ marginTop: '20px' }}>
                     <label>ДОКУМЕНТИ:</label>
-                    {reportDocs.map((item, i) => (
-                        <div key={i} className="item-tag">{item.name} <button onClick={() => setReportDocs(prev => prev.filter((_, idx) => idx !== i))}>✕</button></div>
-                    ))}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                        {reportDocs.map((item, i) => (
+                            <div key={i} style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '6px', fontSize: '12px' }}>
+                                {item.name}
+                                <button onClick={() => setReportDocs(prev => prev.filter((_, idx) => idx !== i))} style={{ marginLeft: '8px', background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>✕</button>
+                            </div>
+                        ))}
+                    </div>
                     <input type="file" id="doc-report" onChange={(e) => handleUploadReport(e, 'doc')} style={{display: 'none'}} />
                     <label htmlFor="doc-report" className="btn-add-element">+ ДОДАТИ ДОКУМЕНТ</label>
                 </div>

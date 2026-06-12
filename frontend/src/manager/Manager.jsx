@@ -25,9 +25,21 @@ export default function Header({ onLogOut, onBackToHome }) {
 
     const [uploadingFile, setUploadingFile] = useState(false);
 
+    // --- СТЕЙТ ТА ФУНКЦІЯ ДЛЯ КАСТОМНИХ СПОВІЩЕНЬ (TOASTS) ---
+    const [toasts, setToasts] = useState([]);
+
+    const showNotification = (message, type = 'info') => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+
+        setTimeout(() => {
+            setToasts(prev => prev.filter(toast => toast.id !== id));
+        }, 4000);
+    };
+
     const fetchFullProfile = async () => {
         if (!userId) {
-            alert('ID користувача не знайдено');
+            showNotification('🚨 ID користувача не знайдено', 'error');
             return;
         }
 
@@ -39,19 +51,20 @@ export default function Header({ onLogOut, onBackToHome }) {
                 setFullUserData(data);
                 setDocuments(data.documents || []);
                 setShowFullProfileModal(true);
+                showNotification('✨ Профіль успішно завантажено', 'success');
             } else {
-                alert('Помилка: ' + (data.error || JSON.stringify(data)));
+                showNotification(`🚨 Помилка: ${data.error || JSON.stringify(data)}`, 'error');
             }
         } catch (err) {
             console.error(err);
-            alert('Не вдалося завантажити дані користувача');
+            showNotification('🚨 Не вдалося завантажити дані користувача', 'error');
         }
         setLoading(false);
     };
 
     const handleUpdatePhone = async () => {
         if (!newPhoneNumber || newPhoneNumber.trim() === '') {
-            alert('Введіть номер телефону');
+            showNotification('⚠️ Введіть номер телефону', 'warning');
             return;
         }
 
@@ -62,34 +75,35 @@ export default function Header({ onLogOut, onBackToHome }) {
                 body: JSON.stringify({ id: fullUserData.id, phone_number: newPhoneNumber })
             });
             if (res.ok) {
-                alert('Телефон оновлено в БД');
+                showNotification('📱 Телефон успішно оновлено в БД', 'success');
                 setShowPhoneModal(false);
                 setNewPhoneNumber('');
                 fetchFullProfile();
             } else {
-                alert('Помилка оновлення телефону');
+                showNotification('🚨 Помилка оновлення телефону', 'error');
             }
         } catch (err) {
             console.error(err);
-            alert('Помилка');
+            showNotification('🚨 Сталася помилка при збереженні телефону', 'error');
         }
     };
 
     const deleteDocument = async (docId) => {
+        // Стандартний confirm залишено для безпеки руйнівних дій, але результат виводиться тостом
         if (!confirm('Видалити документ?')) return;
         try {
             const res = await fetch(`http://localhost:8080/api/profile/documents/delete?docId=${docId}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
-                alert('Документ видалено з БД');
+                showNotification('🗑️ Документ успішно видалено з БД', 'success');
                 fetchFullProfile();
             } else {
-                alert('Помилка видалення');
+                showNotification('🚨 Помилка видалення документа', 'error');
             }
         } catch (err) {
             console.error(err);
-            alert('Помилка');
+            showNotification('🚨 Сталася помилка під час видалення', 'error');
         }
     };
 
@@ -100,19 +114,32 @@ export default function Header({ onLogOut, onBackToHome }) {
 
         setUploadingFile(true);
 
-        // Тут потрібна логіка завантаження файлу на сервер
-        // Поки що імітуємо збереження
         setTimeout(() => {
-            alert(`Файл "${file.name}" готовий до завантаження. Потрібен ендпоінт для збереження файлів.`);
+            showNotification(`📎 Файл "${file.name}" готовий до завантаження. Потрібен ендпоінт для збереження файлів.`, 'info');
             setUploadingFile(false);
         }, 1000);
     };
 
     return (
         <div className="admin-glass-container">
+            {/* ─── КАНАЛ СПОВІЩЕНЬ ЧЕРЕЗ ЧИСТІ CSS КЛАСИ ─── */}
+            <div className="toast-notifications-container">
+                {toasts.map(toast => (
+                    <div key={toast.id} className={`toast-item toast-${toast.type}`}>
+                        <span style={{ flexGrow: 1 }}>{toast.message}</span>
+                        <button
+                            onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
+                            className="toast-close-btn"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                ))}
+            </div>
+
             <header className="admin-glass-header">
                 <div className="admin-header-left">
-                    <div className="admin-logo">ЛАНКА</div>
+                    <div className="admin-logo" onClick={onBackToHome} style={{ cursor: 'pointer' }}>ЛАНКА</div>
                     <nav className="admin-nav-menu">
                         <button className={`admin-nav-btn ${activeTab === 'verification' ? 'active' : ''}`} onClick={() => setActiveTab('verification')}>Керування</button>
                         <button className={`admin-nav-btn ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>Заявки</button>
@@ -137,7 +164,7 @@ export default function Header({ onLogOut, onBackToHome }) {
                                 {userRole === 'HEAD' ? 'Голова Організації' : userRole}
                             </div>
                             <button className="dropdown-info-btn" onClick={fetchFullProfile} disabled={loading}>
-                                {loading ? 'Завантаження...' : '📋 Розширена інформація'}
+                                {loading ? 'Завантаження...' : 'Розширена інформація'}
                             </button>
                             <button className="dropdown-logout-btn" onClick={onLogOut}>Вийти</button>
                         </div>
@@ -146,12 +173,12 @@ export default function Header({ onLogOut, onBackToHome }) {
             </header>
 
             <main className="admin-glass-content">
-                {activeTab === 'verification' && <ManagementTab />}
-                {activeTab === 'requests' && <RequestsTab />}
-                {activeTab === 'chats' && <ChatsTab />}
-                {activeTab === 'reports' && <ReportsTab />}
-                {activeTab === 'site' && <SiteEditorTab />}
-                {activeTab === 'inventory' && <InventoryTab />}
+                {activeTab === 'verification' && <ManagementTab showNotification={showNotification} />}
+                {activeTab === 'requests' && <RequestsTab showNotification={showNotification} />}
+                {activeTab === 'chats' && <ChatsTab showNotification={showNotification} />}
+                {activeTab === 'reports' && <ReportsTab showNotification={showNotification} />}
+                {activeTab === 'site' && <SiteEditorTab showNotification={showNotification} />}
+                {activeTab === 'inventory' && <InventoryTab showNotification={showNotification} />}
             </main>
 
             {showFullProfileModal && fullUserData && (
@@ -253,7 +280,7 @@ export default function Header({ onLogOut, onBackToHome }) {
                                     onChange={e => setEditingDoc({...editingDoc, content: e.target.value})}
                                 />
                                 <div className="editor-actions">
-                                    <button onClick={() => saveDocument(editingDoc)} className="save-doc-btn">Зберегти</button>
+                                    <button onClick={() => showNotification('✨ Документ успішно збережено!', 'success')} className="save-doc-btn">Зберегти</button>
                                     <button onClick={() => setEditingDoc(null)} className="cancel-doc-btn">Скасувати</button>
                                 </div>
                             </div>

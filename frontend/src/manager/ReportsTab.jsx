@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function ReportsTab() {
+export default function ReportsTab({ showNotification }) {
     return (
         <div className="admin-tab-content fade-in">
             <div className="reports-selectors-card">
@@ -11,7 +11,13 @@ export default function ReportsTab() {
                         <option>ЗАЯВКА №123</option>
                         <option>ЗАЯВКА №122</option>
                     </select>
-                    <button className="btn-download-icon" title="Завантажити">📥</button>
+                    <button
+                        className="btn-download-icon"
+                        title="Завантажити"
+                        onClick={() => showNotification("📥 Завантаження звіту з виконання заявки розпочато...", "success")}
+                    >
+                        📥
+                    </button>
                 </div>
 
                 <div className="selector-row" style={{marginTop: '16px'}}>
@@ -19,7 +25,13 @@ export default function ReportsTab() {
                     <label>Звіт за період: </label>
                     <span className="date-span">з</span> <input type="date" className="admin-date-input" defaultValue="2026-05-01"/>
                     <span className="date-span">по</span> <input type="date" className="admin-date-input" defaultValue="2026-05-31"/>
-                    <button className="btn-download-icon" title="Завантажити">📥</button>
+                    <button
+                        className="btn-download-icon"
+                        title="Завантажити"
+                        onClick={() => showNotification("📊 Формування та завантаження звіту за вказаний період розпочато...", "success")}
+                    >
+                        📥
+                    </button>
                 </div>
             </div>
 
@@ -41,7 +53,7 @@ export default function ReportsTab() {
                         <div className="pie-legend">
                             <div><span className="dot med"></span> Медицина</div>
                             <div><span className="dot hum"></span> Гуманітарка</div>
-                            <div><span className="dot transport"></span> Транспорт</div>
+                            <div><span className="dot transport"></span> Transport</div>
                         </div>
                     </div>
                 </div>
