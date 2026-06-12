@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
+import { supabase } from '../supabaseClient';
 
 export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegister }) {
     const [email, setEmail] = useState('');
@@ -55,6 +56,13 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
             const authData = await authResponse.json();
             const userId = authData.user.id;
 
+            await supabase.auth.setSession({
+                access_token: authData.access_token,
+                refresh_token: authData.refresh_token
+            });
+            console.log('Session set, now:', await supabase.auth.getSession());
+
+            // Now fetch user role from your 'users' table
             const dbResponse = await fetch(`${SUPABASE_BASE_URL}/rest/v1/users?id=eq.${userId}&select=role`, {
                 method: 'GET',
                 headers: {
@@ -81,7 +89,6 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
 
                 onLoginSuccess(userData.role.toUpperCase().trim(), userId);
             }
-
         } catch (err) {
             setError('Помилка мережі: Не вдалося з\'єднатися з хмарою Supabase.');
         } finally {
