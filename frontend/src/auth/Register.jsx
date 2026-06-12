@@ -1,29 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Register.css';
 
 export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHome }) {
-    const [step, setStep] = useState(1); // 1: вибір ролі, 2: заповнення форми
-    const [role, setRole] = useState(''); // 'VOLUNTEER' або 'CUSTOMER'
+    const [step, setStep] = useState(1);
+    const [role, setRole] = useState('');
 
     // Поля форми
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-    const [patronymic, setPatronymic] = useState(''); // Відповідає назві в БД
+    const [patronymic, setPatronymic] = useState('');
     const [email, setEmail] = useState('');
-    const [dob, setDob] = useState(''); // Відповідає назві в БД (date of birth)
-    const [phoneNumber, setPhoneNumber] = useState(''); // Відповідає назві в БД
+    const [dob, setDob] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [document, setDocument] = useState(null);
     const [password, setPassword] = useState('');
+    const [departmentId, setDepartmentId] = useState('');
 
+    const [departments, setDepartments] = useState([]);
+    const [loadingDepartments, setLoadingDepartments] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Дані для підключення до твого Supabase (взяті з твого Login.jsx)
     const SUPABASE_BASE_URL = 'https://dxgywtqqzpyrueostjdy.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_avyWvNv3SrmJZGmaMszNrw_AGJptVhK';
+    const API_BASE_URL = 'http://localhost:8080';
+
+    const fetchDepartments = async () => {
+        setLoadingDepartments(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/departments`);
+            if (!response.ok) {
+                throw new Error('Не вдалося завантажити список відділів');
+            }
+            const data = await response.json();
+            setDepartments(data);
+        } catch (err) {
+            console.error('Помилка завантаження відділів:', err);
+            setError('Не вдалося завантажити список відділів. Спробуйте пізніше.');
+        } finally {
+            setLoadingDepartments(false);
+        }
+    };
+
+    useEffect(() => {
+        if (role === 'VOLUNTEER') {
+            fetchDepartments();
+        }
+    }, [role]);
 
     const handleSelectRole = (selectedRole) => {
-        // Переводимо у верхній регістр (VOLUNTEER / CUSTOMER)
         setRole(selectedRole.toUpperCase());
         setStep(2);
     };
@@ -40,7 +65,6 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
         setLoading(true);
 
         try {
-            // КРОК 1: Реєстрація користувача в системі автентифікації Supabase Auth
             const authResponse = await fetch(`${SUPABASE_BASE_URL}/auth/v1/signup`, {
                 method: 'POST',
                 headers: {
@@ -59,14 +83,27 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                 throw new Error(authData.message || 'Помилка створення акаунту в системі автентифікації.');
             }
 
-            // Отримуємо унікальний UUID користувача, який згенерував Supabase Auth
             const userId = authData.id || (authData.user && authData.user.id);
 
             if (!userId) {
                 throw new Error('Не вдалося отримати ідентифікатор користувача.');
             }
 
-            // КРОК 2: Запис усіх анкетних даних у твою таблицю 'users'
+            const userData = {
+                id: userId,
+                email: email,
+                first_name: firstName,
+                last_name: lastName,
+                patronymic: patronymic || null,
+                dob: dob || null,
+                phone_number: phoneNumber,
+                role: role
+            };
+
+            if (role === 'VOLUNTEER' && departmentId) {
+                userData.department_id = departmentId;
+            }
+
             const dbResponse = await fetch(`${SUPABASE_BASE_URL}/rest/v1/users`, {
                 method: 'POST',
                 headers: {
@@ -75,16 +112,7 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                     'Authorization': `Bearer ${SUPABASE_KEY}`,
                     'Prefer': 'return=minimal'
                 },
-                body: JSON.stringify({
-                    id: userId,                   // Прив'язка до Auth UUID
-                    email: email,                 // varchar
-                    first_name: firstName,         // varchar
-                    last_name: lastName,           // varchar
-                    patronymic: patronymic || null, // varchar (необов'язково)
-                    dob: dob || null,             // date (необов'язково)
-                    phone_number: phoneNumber,     // varchar
-                    role: role                    // Передає 'VOLUNTEER' або 'CUSTOMER'
-                })
+                body: JSON.stringify(userData)
             });
 
             if (!dbResponse.ok) {
@@ -92,7 +120,6 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                 throw new Error(dbError.message || 'Акаунт створено, але виникла помилка збереження анкетних даних у таблиці users.');
             }
 
-            // Якщо все пройшло успішно
             setLoading(false);
             if (onRegisterSuccess) {
                 onRegisterSuccess();
@@ -106,7 +133,6 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
 
     return (
         <div className="login-container">
-            {/* Кнопка ліворуч нагорі */}
             {step === 1 ? (
                 <button className="back-home-btn" onClick={onBackToHome}>
                     ← На головну
@@ -127,7 +153,6 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
 
                 {error && <div className="login-error-message" style={{ color: '#ef4444', marginBottom: '15px', textAlign: 'center', fontWeight: '500' }}>{error}</div>}
 
-                {/* КРОК 1: ВИБІР РОЛІ */}
                 {step === 1 && (
                     <div className="role-selection-wrapper">
                         <div className="role-card" onClick={() => handleSelectRole('volunteer')}>
@@ -155,7 +180,6 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                     </div>
                 )}
 
-                {/* КРОК 2: ЗАПОВНЕННЯ ФОРМИ */}
                 {step === 2 && (
                     <form onSubmit={handleSubmit} className="login-form register-form-compact">
                         <div className="form-grid-row">
@@ -215,7 +239,7 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
 
                         <div className="form-grid-row">
                             <div className="input-group">
-                                <label htmlFor="phoneNumber">Номер telefonu <span className="required-star">*</span></label>
+                                <label htmlFor="phoneNumber">Номер телефона <span className="required-star">*</span></label>
                                 <input
                                     type="tel"
                                     id="phoneNumber"
@@ -238,21 +262,65 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                             </div>
                         </div>
 
-                        <div className={role === 'CUSTOMER' ? "form-grid-row" : "single-input-row"}>
-                            <div className="input-group">
-                                <label htmlFor="password">Пароль <span className="required-star">*</span></label>
-                                <input
-                                    type="password"
-                                    id="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
+                        {/* Для волонтерів: пароль зліва, відділ справа */}
+                        {role === 'VOLUNTEER' && (
+                            <div className="form-grid-row">
+                                <div className="input-group">
+                                    <label htmlFor="password">Пароль <span className="required-star">*</span></label>
+                                    <input
+                                        type="password"
+                                        id="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        required
+                                        disabled={loading}
+                                    />
+                                </div>
 
-                            {role === 'CUSTOMER' && (
+                                <div className="input-group">
+                                    <label htmlFor="department">Відділ <span className="required-star">*</span></label>
+                                    {loadingDepartments ? (
+                                        <div className="loading-departments">
+                                            <span>Завантаження...</span>
+                                        </div>
+                                    ) : (
+                                        <select
+                                            id="department"
+                                            value={departmentId}
+                                            onChange={(e) => setDepartmentId(e.target.value)}
+                                            required
+                                            disabled={loading}
+                                            className="department-select"
+                                        >
+                                            <option value="" disabled>Оберіть відділ</option>
+                                            {departments.map((dept) => (
+                                                <option key={dept.id} value={dept.id}>
+                                                    {dept.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Для замовників: пароль ліворуч, документ праворуч */}
+                        {role === 'CUSTOMER' && (
+                            <div className="form-grid-row">
+                                <div className="input-group">
+                                    <label htmlFor="password">Пароль <span className="required-star">*</span></label>
+                                    <input
+                                        type="password"
+                                        id="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        required
+                                        disabled={loading}
+                                    />
+                                </div>
+
                                 <div className="input-group">
                                     <label htmlFor="document">Документ для реєстрації <span className="required-star">*</span></label>
                                     <div className="file-upload-wrapper">
@@ -273,8 +341,8 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                                         </label>
                                     </div>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
                         <button type="submit" className="login-btn register-submit-btn" disabled={loading}>
                             {loading ? 'Реєстрація...' : 'Зареєструватися'}

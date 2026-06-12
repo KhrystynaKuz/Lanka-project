@@ -7,16 +7,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 @RestController
 @RequestMapping("/api/profile")
-@CrossOrigin(origins = "http://localhost:5173",
+@CrossOrigin(
+        origins = "http://localhost:5173",
         allowCredentials = "true",
         allowedHeaders = "*",
-        methods = {RequestMethod.GET, RequestMethod.POST,
-                RequestMethod.PUT, RequestMethod.DELETE,
-                RequestMethod.OPTIONS})
+        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS}
+)
 public class ProfileController {
 
     private final UserDAO userDAO;
@@ -48,7 +51,7 @@ public class ProfileController {
             response.put("email", user.getEmail());
             response.put("role", user.getRole() != null ? user.getRole().name() : "HEAD");
             response.put("phone_number", user.getPhone_number());
-            response.put("dob", user.getDob());
+            response.put("dob", user.getDob() != null ? user.getDob().toString() : null);
             response.put("created_at", user.getCreated_at());
 
             // Отримуємо документи
@@ -110,31 +113,75 @@ public class ProfileController {
         }
     }
 
-    @PutMapping("/update-phone")
-    public ResponseEntity<?> updatePhone(@RequestBody Map<String, String> payload) {
+    @PutMapping("/update-details")
+    public ResponseEntity<?> updateProfileDetails(@RequestBody Map<String, String> payload) {
         try {
+            System.out.println("Отримано запит на оновлення: " + payload);
+
             String userIdStr = payload.get("id");
             String newPhone = payload.get("phone_number");
+            String newPatronymic = payload.get("patronymic");
+            String newDobStr = payload.get("dob");
 
-            if (userIdStr == null || newPhone == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Неповні дані"));
+            if (userIdStr == null || userIdStr.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "ID користувача обов'язковий"));
             }
 
-            UUID userId = UUID.fromString(userIdStr);
-            Optional<User> userOpt = userDAO.findById(userId);
+            UUID userId;
+            try {
+                userId = UUID.fromString(userIdStr);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Некоректний формат ID"));
+            }
 
+            Optional<User> userOpt = userDAO.findById(userId);
             if (userOpt.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Користувача не знайдено"));
             }
 
             User user = userOpt.get();
-            user.setPhone_number(newPhone);
-            userDAO.updateUser(user);
 
-            return ResponseEntity.ok(Map.of("message", "Телефон оновлено в БД"));
+            // Оновлюємо поля
+            if (newPhone != null && !newPhone.trim().isEmpty()) {
+                user.setPhone_number(newPhone);
+            } else {
+                user.setPhone_number(null);
+            }
+
+            if (newPatronymic != null && !newPatronymic.trim().isEmpty()) {
+                user.setPatronymic(newPatronymic);
+            } else {
+                user.setPatronymic(null);
+            }
+
+            // Обробка дати
+            if (newDobStr != null && !newDobStr.trim().isEmpty()) {
+                try {
+                    java.time.LocalDate dob = java.time.LocalDate.parse(newDobStr);
+                    user.setDob(dob);
+                } catch (java.time.format.DateTimeParseException e) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Некоректний формат дати. Використовуйте YYYY-MM-DD"));
+                }
+            } else {
+                user.setDob(null);
+            }
+
+            // Зберігаємо оновлення
+            boolean updated = userDAO.updateUser(user);
+
+            if (updated) {
+                System.out.println("Користувача успішно оновлено: " + userId);
+                return ResponseEntity.ok(Map.of(
+                        "message", "Профіль успішно оновлено в БД",
+                        "success", true
+                ));
+            } else {
+                return ResponseEntity.internalServerError().body(Map.of("error", "Не вдалося оновити користувача"));
+            }
+
         } catch (SQLException e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body(Map.of("error", "Помилка: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of("error", "Помилка БД: " + e.getMessage()));
         }
     }
 }

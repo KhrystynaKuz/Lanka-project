@@ -20,8 +20,13 @@ export default function Header({ onLogOut, onBackToHome }) {
     const [editingDoc, setEditingDoc] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    const [showPhoneModal, setShowPhoneModal] = useState(false);
-    const [newPhoneNumber, setNewPhoneNumber] = useState('');
+    // Об'єднаний стейт для редагування додаткових полів профілю
+    const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+    const [editForm, setEditForm] = useState({
+        phone_number: '',
+        patronymic: '',
+        dob: ''
+    });
 
     const [uploadingFile, setUploadingFile] = useState(false);
 
@@ -62,34 +67,46 @@ export default function Header({ onLogOut, onBackToHome }) {
         setLoading(false);
     };
 
-    const handleUpdatePhone = async () => {
-        if (!newPhoneNumber || newPhoneNumber.trim() === '') {
-            showNotification('⚠️ Введіть номер телефону', 'warning');
-            return;
-        }
+    // Відкриття модалки редагування із передзаповненими поточними даними
+    const openEditProfileModal = () => {
+        setEditForm({
+            phone_number: fullUserData?.phone_number || '',
+            patronymic: fullUserData?.patronymic || '',
+            dob: fullUserData?.dob || ''
+        });
+        setShowEditProfileModal(true);
+    };
 
+    // Функція відправки оновлених даних на бекенд
+    const handleUpdateProfile = async () => {
         try {
-            const res = await fetch('http://localhost:8080/api/profile/update-phone', {
+            const res = await fetch('http://localhost:8080/api/profile/update-details', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: fullUserData.id, phone_number: newPhoneNumber })
+                body: JSON.stringify({
+                    id: fullUserData.id,
+                    phone_number: editForm.phone_number,
+                    patronymic: editForm.patronymic,
+                    dob: editForm.dob
+                })
             });
+
+            const data = await res.json();
+
             if (res.ok) {
-                showNotification('📱 Телефон успішно оновлено в БД', 'success');
-                setShowPhoneModal(false);
-                setNewPhoneNumber('');
-                fetchFullProfile();
+                showNotification('📝 Профіль успішно оновлено в БД', 'success');
+                setShowEditProfileModal(false);
+                fetchFullProfile(); // Перезавантажуємо інформацію для відображення змін
             } else {
-                showNotification('🚨 Помилка оновлення телефону', 'error');
+                showNotification(`🚨 Помилка: ${data.error || 'Не вдалося зберегти дані'}`, 'error');
             }
         } catch (err) {
             console.error(err);
-            showNotification('🚨 Сталася помилка при збереженні телефону', 'error');
+            showNotification('🚨 Сталася помилка при збереженні даних профілю', 'error');
         }
     };
 
     const deleteDocument = async (docId) => {
-        // Стандартний confirm залишено для безпеки руйнівних дій, але результат виводиться тостом
         if (!confirm('Видалити документ?')) return;
         try {
             const res = await fetch(`http://localhost:8080/api/profile/documents/delete?docId=${docId}`, {
@@ -107,7 +124,6 @@ export default function Header({ onLogOut, onBackToHome }) {
         }
     };
 
-    // Завантаження файлу (фото/документ)
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -193,7 +209,7 @@ export default function Header({ onLogOut, onBackToHome }) {
                             <div className="info-row">
                                 <span className="info-label">👤 ПІБ:</span>
                                 <span className="info-value">
-                                    {fullUserData.lastName} {fullUserData.firstName} {fullUserData.patronymic || ''}
+                                    {fullUserData.lastName} {fullUserData.firstName} {fullUserData.patronymic || '—'}
                                 </span>
                             </div>
 
@@ -205,7 +221,6 @@ export default function Header({ onLogOut, onBackToHome }) {
                             <div className="info-row">
                                 <span className="info-label">📞 Телефон:</span>
                                 <span className="info-value">{fullUserData.phone_number || 'Не вказано'}</span>
-                                <button className="edit-phone-btn" onClick={() => setShowPhoneModal(true)}>📞 Змінити</button>
                             </div>
 
                             <div className="info-row">
@@ -223,6 +238,10 @@ export default function Header({ onLogOut, onBackToHome }) {
                                 <span className="info-value">
                                     {fullUserData.created_at ? new Date(fullUserData.created_at).toLocaleDateString() : 'Не вказано'}
                                 </span>
+                            </div>
+
+                            <div style={{ marginTop: '20px', textAlign: 'right' }}>
+                                <button className="edit-phone-btn" onClick={openEditProfileModal}>✏️ Редагувать дані</button>
                             </div>
                         </div>
 
@@ -293,25 +312,53 @@ export default function Header({ onLogOut, onBackToHome }) {
                 </div>
             )}
 
-            {showPhoneModal && (
-                <div className="modal-overlay" onClick={() => setShowPhoneModal(false)}>
+            {/* ОНОВЛЕНЕ МОДАЛЬНЕ ВІКНО ДЛЯ РЕДАГУВАННЯ ВСІХ ДОДАТКОВИХ ПОЛІВ ЧЕРЕЗ ОБ'ЄКТНИЙ СТЕЙТ */}
+            {showEditProfileModal && (
+                <div className="modal-overlay" onClick={() => setShowEditProfileModal(false)}>
                     <div className="modal-content small-modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>Зміна номера телефону</h3>
-                            <button className="modal-close" onClick={() => setShowPhoneModal(false)}>✖</button>
+                            <h3>Редагування профілю</h3>
+                            <button className="modal-close" onClick={() => setShowEditProfileModal(false)}>✖</button>
                         </div>
-                        <div className="phone-form">
-                            <label>Новий номер телефону:</label>
-                            <input
-                                type="tel"
-                                placeholder="+380 XX XXX XXXX"
-                                value={newPhoneNumber}
-                                onChange={e => setNewPhoneNumber(e.target.value)}
-                                className="phone-input"
-                            />
-                            <div className="phone-form-actions">
-                                <button onClick={handleUpdatePhone} className="save-phone-btn">Зберегти</button>
-                                <button onClick={() => setShowPhoneModal(false)} className="cancel-phone-btn">Скасувати</button>
+                        <div className="phone-form" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>По-батькові:</label>
+                                <input
+                                    type="text"
+                                    placeholder="Введіть по-батькові"
+                                    value={editForm.patronymic}
+                                    onChange={e => setEditForm({...editForm, patronymic: e.target.value})}
+                                    className="phone-input"
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>Номер телефону:</label>
+                                <input
+                                    type="tel"
+                                    placeholder="+380 XX XXX XXXX"
+                                    value={editForm.phone_number}
+                                    onChange={e => setEditForm({...editForm, phone_number: e.target.value})}
+                                    className="phone-input"
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>Дата народження:</label>
+                                <input
+                                    type="date"
+                                    value={editForm.dob}
+                                    onChange={e => setEditForm({...editForm, dob: e.target.value})}
+                                    className="phone-input"
+                                    style={{ width: '100%', boxSizing: 'border-box' }}
+                                />
+                            </div>
+
+                            <div className="phone-form-actions" style={{ marginTop: '10px' }}>
+                                <button onClick={handleUpdateProfile} className="save-phone-btn">Зберегти</button>
+                                <button onClick={() => setShowEditProfileModal(false)} className="cancel-phone-btn">Скасувати</button>
                             </div>
                         </div>
                     </div>

@@ -1,32 +1,29 @@
-/* КАРТКА РЕЄСТРАЦІЇ */
 .register-card {
-    max-width: 520px; /* Початкова ширина для першого кроку (вибір ролі) */
+    max-width: 520px;
     width: 95%;
     padding: 35px;
     box-sizing: border-box;
-    transition: max-width 0.3s ease, padding 0.3s ease; /* Плавний перехід при зміні кроку */
+    transition: max-width 0.3s ease, padding 0.3s ease;
 }
 
-/* Автоматично збільшуємо ширину картки, коли з'являється форма введення даних */
 .register-card:has(.register-form-compact) {
-    max-width: 680px; /* Збільшена ширина для зручного введення даних */
+    max-width: 680px;
 }
 
 .register-header-compact {
     margin-bottom: 24px;
 }
 
-/* ФОРМА ТА СІТКА */
 .register-form-compact {
     display: flex;
     flex-direction: column;
-    gap: 16px; /* Збільшили відстань між рядками */
+    gap: 16px;
 }
 
 .form-grid-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px; /* Збільшили відстань між колонками */
+    gap: 20px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -35,7 +32,6 @@
     width: 100%;
 }
 
-/* ПОЛЯ ВВОДУ (ЗБІЛЬШЕНІ) */
 .register-form-compact .input-group {
     margin-bottom: 0;
     display: flex;
@@ -44,21 +40,73 @@
 }
 
 .register-form-compact .input-group label {
-    font-size: 14px; /* Трохи більший шрифт для підписів */
+    font-size: 14px;
     font-weight: 600;
     color: #374151;
     margin-bottom: 6px;
 }
 
-.register-form-compact .input-group input {
-    padding: 12px 16px; /* Збільшили внутрішні відступи в інпутах */
-    font-size: 15px; /* Трохи більший текст всередині */
-    border-radius: 12px; /* Більш округлі кути */
+.register-form-compact .input-group input,
+.department-select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #1f2937;
+    border-radius: 12px;
     border: 1px solid #cbd5e1;
     background: rgba(255, 255, 255, 0.8);
+    box-sizing: border-box;
+    transition: all 0.2s ease-in-out;
 }
 
-/* ВИБІР РОЛІ (ВЕРТИКАЛЬНИЙ СПИСОК КАРТОК) */
+.department-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234b5563' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 16px;
+    padding-right: 40px;
+    cursor: pointer;
+}
+
+.register-form-compact .input-group input:focus,
+.department-select:focus {
+    outline: none;
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.register-form-compact .input-group input::placeholder,
+.department-select:invalid,
+.department-select option[value=""] {
+    color: #9ca3af;
+}
+
+.department-select option {
+    color: #1f2937;
+    background-color: #ffffff;
+    padding: 12px;
+}
+
+.loading-departments {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 46px;
+    padding: 0 16px;
+    font-size: 14px;
+    color: #6b7280;
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    box-sizing: border-box;
+    font-style: italic;
+}
+
 .role-selection-wrapper {
     display: flex;
     flex-direction: column;
@@ -118,7 +166,6 @@
     line-height: 1.4;
 }
 
-/* КАСТОМНА КНОПКА ЗАВАНТАЖЕННЯ ФАЙЛУ (ЗБІЛЬШЕНА) */
 .file-upload-wrapper {
     position: relative;
     width: 100%;
@@ -140,7 +187,7 @@
     gap: 8px;
     background: rgba(255, 255, 255, 0.7);
     border: 1px dashed #cbd5e1;
-    padding: 12px 16px; /* Вирівняли під нові розміри інпутів */
+    padding: 12px 16px;
     border-radius: 12px;
     font-size: 15px;
     color: #4b5563;
@@ -148,7 +195,7 @@
     cursor: pointer;
     transition: all 0.2s;
     box-sizing: border-box;
-    height: 46px; /* Вирівняли висоту з текстовими інпутами */
+    height: 46px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -161,10 +208,9 @@
     flex-shrink: 0;
 }
 
-/* КНОПКА ЗАРЕЄСТРУВАТИСЯ */
 .register-submit-btn {
     margin-top: 10px;
-    padding: 14px; /* Зробили кнопку масивнішою */
+    padding: 14px;
     font-size: 17px;
     font-weight: 700;
     border-radius: 12px;
@@ -187,10 +233,15 @@
     text-decoration: underline;
 }
 
-.required-star { color: #ef4444; }
-.optional-label { font-size: 12px; color: #9ca3af; }
+.required-star {
+    color: #ef4444;
+}
 
-/* Адаптивність під мобільні екрани (на телефонах все стане в один стовпчик) */
+.optional-label {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
 @media (max-width: 640px) {
     .form-grid-row {
         grid-template-columns: 1fr;

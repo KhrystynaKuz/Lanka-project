@@ -106,8 +106,9 @@ public class UserDAO {
         }
     }
 
-    public void updateUser(User user) throws SQLException {
-        String sql = "UPDATE users SET first_name = ?, last_name = ?, patronymic = ?, phone_number = ? WHERE id = ?";
+    // ВИПРАВЛЕНИЙ МЕТОД - тепер оновлює всі поля включаючи dob
+    public boolean updateUser(User user) throws SQLException {
+        String sql = "UPDATE users SET first_name = ?, last_name = ?, patronymic = ?, phone_number = ?, dob = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -116,9 +117,41 @@ public class UserDAO {
             ps.setString(2, user.getLast_name());
             ps.setString(3, user.getPatronymic());
             ps.setString(4, user.getPhone_number());
-            ps.setObject(5, user.getId());
 
-            ps.executeUpdate();
+            // Додаємо оновлення дати народження
+            if (user.getDob() != null) {
+                ps.setDate(5, Date.valueOf(user.getDob()));
+            } else {
+                ps.setNull(5, Types.DATE);
+            }
+
+            ps.setObject(6, user.getId());
+
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+        }
+    }
+
+    // Додатковий метод для оновлення тільки специфічних полів (якщо потрібно)
+    public boolean updateUserDetails(UUID userId, String phoneNumber, String patronymic, java.time.LocalDate dob) throws SQLException {
+        String sql = "UPDATE users SET phone_number = ?, patronymic = ?, dob = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, phoneNumber);
+            ps.setString(2, patronymic);
+
+            if (dob != null) {
+                ps.setDate(3, Date.valueOf(dob));
+            } else {
+                ps.setNull(3, Types.DATE);
+            }
+
+            ps.setObject(4, userId);
+
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
         }
     }
 
