@@ -5,6 +5,7 @@ export default function ArchiveTab() {
     const [expandedTaskId, setExpandedTaskId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [taskReports, setTaskReports] = useState({});
 
     const userId = localStorage.getItem('userId');
 
@@ -33,7 +34,20 @@ export default function ArchiveTab() {
             });
     }, [userId]);
 
+    const fetchReports = async (taskId) => {
+        try {
+            const res = await fetch(`http://localhost:8080/api/archive/task/${taskId}/reports`);
+            const data = await res.json();
+            setTaskReports(prev => ({ ...prev, [taskId]: data }));
+        } catch (err) {
+            console.error("Помилка отримання звітів:", err);
+        }
+    };
+
     const toggleExpand = (taskId) => {
+        if (expandedTaskId !== taskId) {
+            fetchReports(taskId);
+        }
         setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
     };
 
@@ -49,31 +63,74 @@ export default function ArchiveTab() {
 
             {archivedTasks.length === 0 ? (
                 <div className="volunteer-empty-state">
-                    <p>Ви ще не виконали жодного завдання. Ваші успіхи з'являться тут пізніше! 🌟</p>
+                    <p>Ви ще не виконали жодного завдання. Ваші успіхи з'являться тут пізніше!</p>
                 </div>
             ) : (
                 <div className="volunteer-list-container">
                     {archivedTasks.map(task => (
-                        <div className={`volunteer-archive-card ${expandedTaskId === task.id ? 'expanded' : ''}`} key={task.id}>
-                            <div className="volunteer-archive-info">
-                                <div className="volunteer-archive-title">{task.title}</div>
-                                <div className="volunteer-archive-desc">
-                                    {task.description ? task.description.substring(0, 60) + '...' : 'Опис відсутній'}
+                        <div className="volunteer-archive-card" key={task.id}>
+
+                            <div className="volunteer-archive-header">
+
+                                <div className="volunteer-archive-info">
+                                    <div className="volunteer-archive-title">
+                                        {task.title}
+                                    </div>
+
+                                    <div className="volunteer-archive-desc">
+                                        <strong>Опис:</strong>{' '}
+                                        {task.description
+                                            ? task.description.substring(0, 60) + '...'
+                                            : 'Опис відсутній'}
+                                    </div>
                                 </div>
+
+                                <button
+                                    className="volunteer-detail-btn"
+                                    onClick={() => toggleExpand(task.id)}
+                                >
+                                    {expandedTaskId === task.id
+                                        ? 'Згорнути ▲'
+                                        : 'Детальніше ▾'}
+                                </button>
+
                             </div>
 
-                            <button className="volunteer-detail-btn" onClick={() => toggleExpand(task.id)}>
-                                {expandedTaskId === task.id ? 'Згорнути ▲' : 'Детальніше ▾'}
-                            </button>
-
                             {expandedTaskId === task.id && (
-                                <div className="volunteer-expanded-details fade-in">
-                                    <hr style={{ opacity: 0.2, margin: '15px 0' }} />
-                                    <p><strong>Повний опис:</strong> {task.description}</p>
-                                    <p><strong>Дата завершення:</strong> {task.completed_at ? new Date(task.completed_at).toLocaleDateString() : '—'}</p>
-                                    <p><strong>ID Заявки:</strong> {task.request_id}</p>
+                                <div className="volunteer-expanded-details">
+
+                                    <p>
+                                        <strong>Дата завершення:</strong>{' '}
+                                        {task.completed_at
+                                            ? new Date(task.completed_at).toLocaleDateString()
+                                            : '—'}
+                                    </p>
+
+                                    <p><strong>Завантажені файли:</strong></p>
+
+                                    {taskReports[task.id] && taskReports[task.id].length > 0 ? (
+                                        <ul>
+                                            {taskReports[task.id].map(report =>
+                                                report.attached_files_urls.map((url, i) => (
+                                                    <li key={i}>
+                                                        <a
+                                                            href={url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
+                                                            📄 Файл {i + 1}
+                                                        </a>
+                                                    </li>
+                                                ))
+                                            )}
+                                        </ul>
+                                    ) : (
+                                        <p>Файлів немає</p>
+                                    )}
+
                                 </div>
                             )}
+
                         </div>
                     ))}
                 </div>

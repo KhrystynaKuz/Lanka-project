@@ -2,6 +2,7 @@ package com.lanka.dao;
 
 import com.lanka.database.DatabaseConfig;
 import com.lanka.models.Report;
+import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.time.OffsetDateTime;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public class ReportDAO {
 
     public void addReport(Report report) throws SQLException {
@@ -136,9 +138,15 @@ public class ReportDAO {
         report.setAuthor_id(rs.getObject("author_id", UUID.class));
         report.setContent(rs.getString("content"));
 
-        Array sqlArray = rs.getArray("attached_files_urls");
+        java.sql.Array sqlArray = rs.getArray("attached_files_urls");
         if (sqlArray != null) {
-            report.setAttached_files_urls((String[]) sqlArray.getArray());
+            try {
+                report.setAttached_files_urls((String[]) sqlArray.getArray());
+            } finally {
+                sqlArray.free();
+            }
+        } else {
+            report.setAttached_files_urls(new String[0]);
         }
 
         report.setCreated_at(rs.getObject("created_at", OffsetDateTime.class));

@@ -47,7 +47,8 @@ public class TaskDAO {
     }
 
     public void updateTask(Task task) throws SQLException {
-        String sql = "UPDATE tasks SET request_id = ?, department_id = ?, assigned_volunteer_id = ?, coordinator_id = ?, title = ?, description = ?, status = ?, completed_at = ? " +
+        String sql = "UPDATE tasks SET request_id = ?, department_id = ?, assigned_volunteer_id = ?, " +
+                "coordinator_id = ?, title = ?, description = ?, status = ?::task_status, completed_at = ? " +
                 "WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -59,6 +60,7 @@ public class TaskDAO {
             ps.setObject(4, task.getCoordinator_id());
             ps.setString(5, task.getTitle());
             ps.setString(6, task.getDescription());
+
             ps.setString(7, task.getStatus().name());
 
             if (task.getStatus() == TaskStatus.COMPLETED && task.getCompleted_at() == null) {
@@ -74,7 +76,6 @@ public class TaskDAO {
             ps.executeUpdate();
         }
     }
-
     public void deleteTask(UUID id) throws SQLException {
         String sql = "DELETE FROM tasks WHERE id = ?";
 

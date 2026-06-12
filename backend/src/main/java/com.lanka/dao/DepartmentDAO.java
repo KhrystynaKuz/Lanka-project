@@ -2,12 +2,14 @@ package com.lanka.dao;
 
 import com.lanka.database.DatabaseConfig;
 import com.lanka.models.Department;
+import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public class DepartmentDAO {
 
     public void addDepartment(Department department) throws SQLException {
