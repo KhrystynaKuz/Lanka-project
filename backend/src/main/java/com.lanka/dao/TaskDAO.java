@@ -155,8 +155,9 @@ public class TaskDAO {
     }
 
     public List<Task> getTasksByVolunteerAndStatus(UUID volunteerId, TaskStatus status) throws SQLException {
-        String sql = "SELECT id, request_id, department_id, assigned_volunteer_id, coordinator_id, title, description, status, created_at, completed_at " +
-                "FROM tasks WHERE assigned_volunteer_id = ? AND status = ? ORDER BY created_at DESC";
+        String sql = "SELECT id, request_id, department_id, assigned_volunteer_id, coordinator_id, title, description, status::task_status, created_at, completed_at " +
+                "FROM tasks WHERE assigned_volunteer_id = ? AND status = ?::task_status ORDER BY created_at DESC";
+
         List<Task> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
