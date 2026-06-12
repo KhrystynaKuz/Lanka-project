@@ -2,7 +2,9 @@ package com.lanka.controllers.head;
 
 import com.lanka.dao.SettingsDAO;
 import com.lanka.dao.FundraiserDAO;
+import com.lanka.dao.SiteReportDAO;
 import com.lanka.models.Fundraiser;
+import com.lanka.models.SiteReport;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,15 +19,15 @@ public class SiteEditorController {
 
     private final SettingsDAO settingsDAO;
     private final FundraiserDAO fundraiserDAO;
+    private final SiteReportDAO siteReportDAO;
 
     public SiteEditorController() {
         this.settingsDAO = new SettingsDAO();
         this.fundraiserDAO = new FundraiserDAO();
+        this.siteReportDAO = new SiteReportDAO();
     }
 
     // БЛОК 1: НАЛАШТУВАННЯ ГОЛОВНОЇ СТОРІНКИ
-
-    // GET: http://localhost:8080/api/site-editor/settings
     @GetMapping("/settings")
     public ResponseEntity<?> getSettings() {
         try {
@@ -33,61 +35,65 @@ public class SiteEditorController {
             return ResponseEntity.ok(settings);
         } catch (SQLException e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body("Помилка завантаження контенту сайту: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Помилка: " + e.getMessage());
         }
     }
 
-    // PUT: http://localhost:8080/api/site-editor/update-home
     @PutMapping("/update-home")
     public ResponseEntity<?> updateHomeBlock(@RequestBody Map<String, String> payload) {
         try {
-            String title = payload.get("title");
-            String description = payload.get("description");
-            String image = payload.get("image");
-
-            if (title != null) settingsDAO.updateSetting("home_title", title);
-            if (description != null) settingsDAO.updateSetting("home_description", description);
-            if (image != null) settingsDAO.updateSetting("home_image", image);
-
+            if (payload.get("title") != null) settingsDAO.updateSetting("home_title", payload.get("title"));
+            if (payload.get("description") != null) settingsDAO.updateSetting("home_description", payload.get("description"));
+            if (payload.get("image") != null) settingsDAO.updateSetting("home_image", payload.get("image"));
             return ResponseEntity.ok("Головну сторінку успішно оновлено!");
         } catch (SQLException e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body("Помилка збереження в базу даних: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Помилка збереження: " + e.getMessage());
         }
     }
 
     // БЛОК 2: СТОРІНКА АКТИВНИХ ЗБОРІВ
-
-    // GET: http://localhost:8080/api/site-editor/fundraisers
     @GetMapping("/fundraisers")
     public ResponseEntity<?> getAllFundraisers() {
         try {
-            List<Fundraiser> fundraisers = fundraiserDAO.getAllFundraisers();
-            return ResponseEntity.ok(fundraisers);
+            return ResponseEntity.ok(fundraiserDAO.getAllFundraisers());
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body("Помилка отримання списку зборів: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Помилка: " + e.getMessage());
         }
     }
 
-    // POST: http://localhost:8080/api/site-editor/fundraisers/save-all
     @PostMapping("/fundraisers/save-all")
     public ResponseEntity<?> saveAllFundraisers(@RequestBody List<Fundraiser> fundraisers) {
         try {
-            boolean success = fundraiserDAO.saveAll(fundraisers);
+            return fundraiserDAO.saveAll(fundraisers) ? ResponseEntity.ok("Збережено!") : ResponseEntity.internalServerError().body("Помилка БД");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Помилка: " + e.getMessage());
+        }
+    }
+
+    // БЛОК 3: СТОРІНКА ЗВІТІВ
+    @GetMapping("/reports")
+    public ResponseEntity<?> getReports() {
+        try {
+            List<SiteReport> reports = siteReportDAO.getAllReports();
+            return ResponseEntity.ok(reports);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Помилка завантаження звітів: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/reports/save-all")
+    public ResponseEntity<?> saveAllReports(@RequestBody List<SiteReport> reports) {
+        try {
+            boolean success = siteReportDAO.saveAllReports(reports);
             if (success) {
-                return ResponseEntity.ok("Список активних зборів успішно синхронізовано з БД!");
+                return ResponseEntity.ok("Список звітів успішно оновлено!");
             } else {
-                return ResponseEntity.internalServerError()
-                        .body("Не вдалося зберегти список зборів. Перевірте логи сервера.");
+                return ResponseEntity.internalServerError().body("Не вдалося зберегти звіти.");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body("Помилка сервера при збереженні зборів: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Помилка сервера: " + e.getMessage());
         }
     }
 }

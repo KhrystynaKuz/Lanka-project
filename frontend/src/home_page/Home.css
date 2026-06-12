@@ -442,3 +442,13 @@ html, body {
         font-size: 32px;
     }
 }
+
+.reports-sub-section .section-subtitle {
+    color: #1e3a8a !important;
+    font-size: 1.4rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-left: 3px solid #1e3a8a;
+    padding-left: 10px;
+    margin-bottom: 20px;
+}

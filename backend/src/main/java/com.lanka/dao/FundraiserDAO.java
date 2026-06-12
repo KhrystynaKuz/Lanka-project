@@ -36,7 +36,6 @@ public class FundraiserDAO {
         return fundraisers;
     }
 
-    // 2. ЗБЕРЕГТИ/ОНОВИТИ ВЕСЬ СПИСОК ОДНИМ МАХОМ (ОЧИЩЕННЯ + ПАКЕТНИЙ INSERT)
     public boolean saveAll(List<Fundraiser> fundraisers) {
         String deleteSql = "DELETE FROM fundraisers";
         String insertSql = "INSERT INTO fundraisers (id, title, description, link, qr_code_url, is_hidden, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)";

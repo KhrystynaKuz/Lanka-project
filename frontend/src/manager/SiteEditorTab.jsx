@@ -13,42 +13,41 @@ export default function SiteEditorTab() {
     const [isFundraisersLoading, setIsFundraisersLoading] = useState(false);
     const [isFundraisersUploading, setIsFundraisersUploading] = useState(false);
 
+    const [reportPhotos, setReportPhotos] = useState([]);
+    const [reportDocs, setReportDocs] = useState([]);
+    const [isReportsUploading, setIsReportsUploading] = useState(false);
+
     useEffect(() => {
-        const fetchSettings = async () => {
+        const fetchAllData = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/site-editor/settings');
-                if (response.ok) {
-                    const data = await response.json();
+                const res = await fetch('http://localhost:8080/api/site-editor/settings');
+                if (res.ok) {
+                    const data = await res.json();
                     setHomeTitle(data.home_title || 'ЛАНКА');
                     setHomeDescription(data.home_description || '');
                     setHomeImage(data.home_image || '');
                 }
-            } catch (error) {
-                console.error("Помилка завантаження контенту:", error);
-            }
-        };
+            } catch (e) { console.error("Settings error", e); }
 
-        const fetchFundraisers = async () => {
-            setIsFundraisersLoading(true);
             try {
-                const response = await fetch('http://localhost:8080/api/site-editor/fundraisers');
-                if (response.ok) {
-                    const data = await response.json();
-                    setFundraisers(data);
+                const res = await fetch('http://localhost:8080/api/site-editor/fundraisers');
+                if (res.ok) setFundraisers(await res.json());
+            } catch (e) { console.error("Fundraisers error", e); }
+
+            try {
+                const res = await fetch('http://localhost:8080/api/site-editor/reports');
+                if (res.ok) {
+                    const data = await res.json();
+                    setReportPhotos(data.filter(r => r.type === 'photo'));
+                    setReportDocs(data.filter(r => r.type === 'doc'));
                 }
-            } catch (error) {
-                console.error("Помилка завантаження зборів:", error);
-            } finally {
-                setIsFundraisersLoading(false);
-            }
+            } catch (e) { console.error("Reports error", e); }
         };
 
-        fetchSettings();
-        fetchFundraisers();
+        fetchAllData();
     }, []);
 
-
-    // ЛОГІКА БЛОКУ 1 (ГОЛОВНА СТОРІНКА)
+    // ЛОГІКА БЛОКУ 1 (ПРО НАС)
     const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -103,7 +102,7 @@ export default function SiteEditorTab() {
         }
     };
 
-    // ЛОГІКА БЛОКУ 2 (СТОРІНКА ЗБОРІВ)
+    // ЛОГІКА БЛОКУ 2 (ЗБОРИ)
     const handleAddNewFundraiser = () => {
         const newFundraiser = {
             id: null,
@@ -169,6 +168,69 @@ export default function SiteEditorTab() {
             console.error("Помилка мережі:", error);
         } finally {
             setIsFundraisersLoading(false);
+        }
+    };
+
+    // ЛОГІКА БЛОКУ 3 (ЗВІТИ)
+    const handleUploadReport = async (event, type) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        setIsReportsUploading(true);
+        try {
+            const fileName = `${type}_${Date.now()}_${file.name}`;
+
+            const { error } = await supabase.storage
+                .from('site-reports')
+                .upload(fileName, file);
+
+            if (error) throw error;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('site-reports')
+                .getPublicUrl(fileName);
+
+            const newEntry = { name: file.name, url: publicUrl, type: type };
+
+            if (type === 'photo') {
+                setReportPhotos(prev => [...prev, newEntry]);
+            } else {
+                setReportDocs(prev => [...prev, newEntry]);
+            }
+
+        } catch (error) {
+            alert('Помилка: ' + error.message);
+        } finally {
+            setIsReportsUploading(false);
+        }
+    };
+
+    const handleSaveReports = async () => {
+        setIsReportsUploading(true);
+
+        const dataToSave = [
+            ...reportPhotos.map(p => ({ ...p, type: 'photo' })),
+            ...reportDocs.map(d => ({ ...d, type: 'doc' }))
+        ];
+
+        try {
+            const res = await fetch('http://localhost:8080/api/site-editor/reports/save-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToSave)
+            });
+
+            if (res.ok) {
+                alert("Звіти успішно збережено!");
+            } else {
+                const errorText = await res.text();
+                alert("Помилка збереження: " + errorText);
+            }
+        } catch (e) {
+            console.error("Network error:", e);
+            alert("Помилка мережі. Перевірте сервер.");
+        } finally {
+            setIsReportsUploading(false);
         }
     };
 
@@ -306,16 +368,29 @@ export default function SiteEditorTab() {
             {/* БЛОК 3 : СТОРІНКА ЗВІТІВ */}
             <div className="editor-glass-block">
                 <span className="block-badge">Блок 3 : СТОРІНКА ЗВІТІВ</span>
+
                 <div className="images-sub-group">
-                    <label>ЗАВАНТАЖЕНІ ФОТО:</label>
-                    <div className="loaded-photos-list">
-                        <span className="photo-item-tag">фото1.jpg ✕</span>
-                    </div>
-                    <button className="btn-add-element">+ ДОДАТИ ФОТО</button>
+                    <label>ФОТО:</label>
+                    {reportPhotos.map((item, i) => (
+                        <div key={i} className="item-tag">{item.name} <button onClick={() => setReportPhotos(prev => prev.filter((_, idx) => idx !== i))}>✕</button></div>
+                    ))}
+                    <input type="file" id="photo-report" onChange={(e) => handleUploadReport(e, 'photo')} style={{display: 'none'}} />
+                    <label htmlFor="photo-report" className="btn-add-element">+ ДОДАТИ ФОТО</label>
                 </div>
-                <div className="documents-sub-group" style={{ marginTop: '15px' }}>
-                    <label>ОФІЦІЙНІ ДОКУМЕНТИ ТА ЗВІТИ :</label>
-                    <button className="btn-add-element">+ ДОДАТИ ДОКУМЕНТ</button>
+
+                <div className="documents-sub-group">
+                    <label>ДОКУМЕНТИ:</label>
+                    {reportDocs.map((item, i) => (
+                        <div key={i} className="item-tag">{item.name} <button onClick={() => setReportDocs(prev => prev.filter((_, idx) => idx !== i))}>✕</button></div>
+                    ))}
+                    <input type="file" id="doc-report" onChange={(e) => handleUploadReport(e, 'doc')} style={{display: 'none'}} />
+                    <label htmlFor="doc-report" className="btn-add-element">+ ДОДАТИ ДОКУМЕНТ</label>
+                </div>
+
+                <div className="block-footer-save">
+                    <button className="btn-update-block" onClick={handleSaveReports} disabled={isReportsUploading}>
+                        {isReportsUploading ? 'ЗБЕРЕЖЕННЯ...' : 'ОНОВИТИ'}
+                    </button>
                 </div>
             </div>
         </div>

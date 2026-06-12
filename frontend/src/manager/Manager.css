@@ -1992,3 +1992,25 @@
     font-size: 13px;
     font-weight: 500;
 }
+
+.images-sub-group, .documents-sub-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-add-element {
+    align-self: flex-start;
+    margin-top: 5px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.block-footer-save {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}

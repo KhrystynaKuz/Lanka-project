@@ -3,10 +3,11 @@ import './Home.css';
 
 export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
     const [showDropdown, setShowDropdown] = useState(false);
+    const [reports, setReports] = useState([]);
 
     const [siteContent, setSiteContent] = useState({
         home_title: 'ЛАНКА',
-        home_description: "Ми — волонтерська організація, що створює міцні зв'язки між тими, хто потребує допомоги...",
+        home_description: "Ми — волонтерська організація, що створює міцні зв'язки між тими, хто потребує допомоги.",
         home_image: ''
     });
 
@@ -42,8 +43,21 @@ export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
             }
         };
 
+        const fetchReports = async () => {
+            try {
+                const response = await fetch('http://localhost:8080/api/site-editor/reports');
+                if (response.ok) {
+                    const data = await response.json();
+                    setReports(data);
+                }
+            } catch (error) {
+                console.error("Помилка завантаження звітів:", error);
+            }
+        }
+
         fetchSettings();
         fetchActiveFundraisers();
+        fetchReports();
     }, []);
 
     const [completedTasks] = useState([
@@ -180,32 +194,51 @@ export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
 
                 <hr className="section-divider" />
 
-                {/* СЕКЦІЯ 3: ВИКОНАНІ ЗАДАЧІ */}
+                {/* СЕКЦІЯ 3: ЗВІТИ ТА ФОТО */}
                 <section id="reports" className="completed-tasks-section">
                     <div className="content-intro">
-                        <h2 className="main-title">Наші виконані волонтерські задачі</h2>
-                        <p className="main-subtitle">Простір добрих справ, які вдалося втілити в життя завдяки вашій підтримці.</p>
+                        <h2 className="main-title">Звіти про виконану роботу</h2>
+                        <p className="main-subtitle">Простір добрих справ, які вдалося втілити завдяки вашій підтримці.</p>
                     </div>
 
-                    <div className="glass-tasks-feed">
-                        {completedTasks.map((task) => (
-                            <div key={task.id} className="glass-task-card">
-                                <div className="card-top">
-                                    <div className="card-tags">
-                                        {task.tags.map((tag, idx) => (
-                                            <span key={idx} className="glass-tag">{tag}</span>
-                                        ))}
-                                    </div>
-                                    <span className="card-date">{task.date}</span>
-                                </div>
-                                <h2 className="card-title">{task.title}</h2>
-                                <p className="card-text">{task.description}</p>
-                                <div className="card-bottom">
-                                    <span className="status-indicator">✓ Виконано</span>
-                                    <button className="glass-details-btn">Детальніше</button>
-                                </div>
-                            </div>
-                        ))}
+                    {/* БЛОК 1: ФОТО ЗВІТІВ */}
+                    <div className="reports-sub-section" style={{ marginTop: '30px' }}>
+                        <h3 className="section-subtitle" style={{ color: '#fff', marginBottom: '15px' }}>Фотозвіти</h3>
+                        <div className="glass-photo-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px' }}>
+                            {reports
+                                .filter(item => item.type === 'photo')
+                                .map((photo, index) => (
+                                    <img
+                                        key={index}
+                                        src={photo.url}
+                                        alt={photo.name}
+                                        style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px' }}
+                                    />
+                                ))
+                            }
+                        </div>
+                    </div>
+
+                    {/* БЛОК 2: ДОКУМЕНТИ */}
+                    <div className="reports-sub-section" style={{ marginTop: '40px' }}>
+                        <h3 className="section-subtitle" style={{ color: '#fff', marginBottom: '15px' }}>Офіційні документи</h3>
+                        <div className="glass-docs-list">
+                            {reports
+                                .filter(item => item.type === 'doc')
+                                .map((doc, index) => (
+                                    <a
+                                        key={index}
+                                        href={doc.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="glass-doc-link"
+                                        style={{ display: 'block', padding: '10px', background: 'rgba(255,255,255,0.05)', marginBottom: '8px', borderRadius: '6px', color: '#00d4ff', textDecoration: 'none' }}
+                                    >
+                                        📄 {doc.name}
+                                    </a>
+                                ))
+                            }
+                        </div>
                     </div>
                 </section>
             </main>
