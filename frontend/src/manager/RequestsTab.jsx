@@ -15,15 +15,11 @@ export default function RequestsTab() {
     // Стейт для збереження стану чекбокса "Більше не показувати"
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
-    const loadCoreData = () => {
-        fetch('/api/requests/stats')
-            .then(res => {
-                if (!res.ok) throw new Error();
-                return res.json();
-            })
-            .then(data => setNewCount(data.newCount))
-            .catch(err => console.error("Помилка завантаження лічильника:", err));
+    // --- СТЕЙТИ ДЛЯ ВІДДІЛІВ ---
+    const [departments, setDepartments] = useState([]); // Список усіх відділів із БД
+    const [selectedDepartmentsByRequest, setSelectedDepartmentsByRequest] = useState({}); // Обрані відділи для кожної заявки
 
+    const loadCoreData = () => {
         fetch('/api/requests')
             .then(res => {
                 if (!res.ok) throw new Error();
@@ -34,6 +30,23 @@ export default function RequestsTab() {
     };
 
     useEffect(() => {
+        fetch('/api/requests/stats')
+            .then(res => {
+                if (!res.ok) throw new Error();
+                return res.json();
+            })
+            .then(data => setNewCount(data.newCount))
+            .catch(err => console.error("Помилка завантаження лічильника:", err));
+
+        // Отримання списку відділів із БД
+        fetch('http://localhost:8080/api/departments')
+            .then(res => {
+                if (!res.ok) throw new Error();
+                return res.json();
+            })
+            .then(data => setDepartments(data))
+            .catch(err => console.error("Помилка завантаження відділів із БД:", err));
+
         loadCoreData();
     }, []);
 
@@ -55,10 +68,22 @@ export default function RequestsTab() {
     }, [showPendingDropdown, pendingRequests.length]);
 
     const handleStatusChange = (id, newStatus) => {
+        if (newStatus === 'APPROVED') {
+            const chosenDepts = selectedDepartmentsByRequest[id] || [];
+            if (chosenDepts.length === 0) {
+                alert('🚨 Нам треба спершу обрати відділ, а потім лише натиснути кнопку «затвердити і передати»!');
+                return;
+            }
+            console.log(`Передаємо заявку ${id} у відділи з ID:`, chosenDepts);
+        }
+
         fetch(`/api/requests/${id}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
+            body: JSON.stringify({
+                status: newStatus,
+                departmentIds: newStatus === 'APPROVED' ? (selectedDepartmentsByRequest[id] || []) : []
+            })
         })
             .then(res => {
                 if (!res.ok) throw new Error("Сервер відхилив запит");
@@ -76,6 +101,12 @@ export default function RequestsTab() {
                     const filtered = prev.filter(req => req.id !== id);
                     return [updatedRequest, ...filtered];
                 });
+
+                setSelectedDepartmentsByRequest(prev => {
+                    const updated = { ...prev };
+                    delete updated[id];
+                    return updated;
+                });
             })
             .catch(err => {
                 console.error("Помилка при оновленні статусу:", err);
@@ -83,7 +114,24 @@ export default function RequestsTab() {
             });
     };
 
-    // Оновлена функція видалення, яка працює напряму з БД
+    const handleCheckboxChange = (requestId, deptId) => {
+        setSelectedDepartmentsByRequest(prev => {
+            const currentSelected = prev[requestId] || [];
+            let updatedSelected;
+
+            if (currentSelected.includes(deptId)) {
+                updatedSelected = currentSelected.filter(id => id !== deptId);
+            } else {
+                updatedSelected = [...currentSelected, deptId];
+            }
+
+            return {
+                ...prev,
+                [requestId]: updatedSelected
+            };
+        });
+    };
+
     const executeDeleteFetch = (id) => {
         fetch(`/api/requests/${id}`, {
             method: 'DELETE'
@@ -101,31 +149,24 @@ export default function RequestsTab() {
             });
     };
 
-    // Відкриття модалки з перевіркою sessionStorage
     const openDeleteModal = (id) => {
-        // Перевіряємо, чи є в поточній сесії прапорець пропуску модалки
         const skipWarning = sessionStorage.getItem('skipDeleteWarning') === 'true';
-
         if (skipWarning) {
-            // Якщо користувач просив не показувати — видаляємо одразу без вікна
             executeDeleteFetch(id);
         } else {
-            // Інакше відкриваємо кастомну модалку
             setDeleteModal({ isOpen: true, requestId: id });
         }
     };
 
     const closeDeleteModal = () => {
         setDeleteModal({ isOpen: false, requestId: null });
-        setDontShowAgain(false); // Скидаємо чекбокс для наступного разу, якщо модалку просто закрили
+        setDontShowAgain(false);
     };
 
-    // Підтвердження видалення зсередини модалки
     const confirmDeleteRequest = () => {
         const id = deleteModal.requestId;
         if (!id) return;
 
-        // Якщо користувач поставив галочку "Більше не попереджати"
         if (dontShowAgain) {
             sessionStorage.setItem('skipDeleteWarning', 'true');
         }
@@ -183,6 +224,8 @@ export default function RequestsTab() {
                     ) : (
                         pendingRequests.map((request) => {
                             const isExpanded = !!expandedRequests[request.id];
+                            const chosenForThisRequest = selectedDepartmentsByRequest[request.id] || [];
+
                             return (
                                 <div className="request-full-card" key={request.id} style={{ marginBottom: '15px', borderLeft: '4px solid #e67e22' }}>
                                     <div className="request-header-line" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -202,7 +245,75 @@ export default function RequestsTab() {
                                             <p style={{ color: '#374151' }}><strong>Статус:</strong> <span className="status-badge pending request-pending-badge">{request.status}</span></p>
                                             {request.priority && <p style={{ color: '#374151' }}><strong>Пріоритет:</strong> {request.priority}</p>}
 
-                                            <div className="request-action-footer" style={{ marginTop: '20px', display: 'flex', gap: '15px' }}>
+                                            {/* --- ОНОВЛЕНИЙ БЛОК: ТЕПЕР ВІН ВИЩЕ ТА КОМПАКТНІШИЙ --- */}
+                                            <div className="department-selection-block" style={{
+                                                margin: '10px 0 15px 0',
+                                                padding: '10px 16px',
+                                                background: 'rgba(30, 58, 138, 0.05)',
+                                                borderRadius: '12px',
+                                                border: '1px solid rgba(30, 58, 138, 0.12)',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '8px'
+                                            }}>
+                                                <h4 style={{
+                                                    color: '#1e3a8a',
+                                                    margin: '0',
+                                                    fontSize: '14px',
+                                                    fontWeight: '700'
+                                                }}>
+                                                    🏢 Оберіть відділ(и) для передачі заявки:
+                                                </h4>
+                                                {departments.length === 0 ? (
+                                                    <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>Завантаження...</p>
+                                                ) : (
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        flexWrap: 'wrap',
+                                                        gap: '10px'
+                                                    }}>
+                                                        {departments.map((dept) => {
+                                                            const isChecked = chosenForThisRequest.includes(dept.id);
+                                                            return (
+                                                                <label
+                                                                    key={dept.id}
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '8px',
+                                                                        cursor: 'pointer',
+                                                                        color: isChecked ? '#1e40af' : '#4b5563',
+                                                                        background: isChecked ? 'rgba(30, 58, 138, 0.08)' : '#ffffff',
+                                                                        padding: '6px 14px',
+                                                                        borderRadius: '8px',
+                                                                        border: isChecked ? '1px solid #1e40af' : '1px solid rgba(0, 0, 0, 0.08)',
+                                                                        userSelect: 'none',
+                                                                        fontWeight: isChecked ? '600' : '500',
+                                                                        fontSize: '13px',
+                                                                        margin: '0',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                >
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        style={{
+                                                                            transform: 'scale(1.1)',
+                                                                            cursor: 'pointer',
+                                                                            accentColor: '#1e40af',
+                                                                            margin: '0'
+                                                                        }}
+                                                                        checked={isChecked}
+                                                                        onChange={() => handleCheckboxChange(request.id, dept.id)}
+                                                                    />
+                                                                    <span>{dept.name}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="request-action-footer" style={{ marginTop: '10px', display: 'flex', gap: '15px' }}>
                                                 <button
                                                     className="btn-reject-request"
                                                     style={{ background: 'rgba(231, 76, 60, 0.15)', color: '#e74c3c', border: '1px solid rgba(231, 76, 60, 0.3)', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
@@ -212,10 +323,19 @@ export default function RequestsTab() {
                                                 </button>
                                                 <button
                                                     className="btn-approve-request"
-                                                    style={{ background: '#1e40af', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
+                                                    style={{
+                                                        background: chosenForThisRequest.length > 0 ? '#1e40af' : '#9ca3af',
+                                                        color: '#fff',
+                                                        border: 'none',
+                                                        padding: '8px 16px',
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer',
+                                                        fontWeight: '600',
+                                                        transition: 'background 0.2s'
+                                                    }}
                                                     onClick={(e) => { e.stopPropagation(); handleStatusChange(request.id, 'APPROVED'); }}
                                                 >
-                                                    ✓ Затвердити
+                                                    ✓ Затвердити і передати
                                                 </button>
                                             </div>
                                         </div>
@@ -301,7 +421,6 @@ export default function RequestsTab() {
                 })()}
             </div>
 
-            {/* КАСТОМНЕ МОДАЛЬНЕ ВІКНО З ГАЛОЧКОЮ "БІЛЬШЕ НЕ ПОПЕРЕДЖАТИ" */}
             {deleteModal.isOpen && (
                 <div className="delete-modal-overlay">
                     <div className="delete-modal-card">
@@ -311,7 +430,6 @@ export default function RequestsTab() {
                             Ви впевнені, що хочете видалити цю заявку? Цю дію не можна скасувати.
                         </p>
 
-                        {/* ДОДАНА ГАЛОЧКА ДЛЯ СЕСІЙНОГО ХРАНИЛИЩА */}
                         <label className="modal-checkbox-container">
                             <input
                                 type="checkbox"
