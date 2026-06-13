@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Manager.css';
 
-export default function ManagementTab() {
+export default function ManagementTab({ showNotification }) {
 
     const [customerSearch, setCustomerSearch] = useState('');
     const [expandedUser, setExpandedUser] = useState(null);
@@ -29,6 +29,25 @@ export default function ManagementTab() {
     const [volunteersLoading, setVolunteersLoading] = useState(false);
     const [volSearchTerm, setVolSearchTerm] = useState("");
 
+    // Стейт для універсального кастомного вікна підтвердження з відокремленими класами
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        text: '',
+        icon: '⚠️',
+        onConfirm: null
+    });
+
+    const closeConfirmModal = () => {
+        setConfirmModal({
+            isOpen: false,
+            title: '',
+            text: '',
+            icon: '⚠️',
+            onConfirm: null
+        });
+    };
+
     useEffect(() => {
         const fetchDepartments = async () => {
             setLoading(true);
@@ -39,6 +58,7 @@ export default function ManagementTab() {
                 setDepartments(data);
             } catch (error) {
                 console.error("Помилка:", error);
+                showNotification("🚨 Помилка завантаження відділів", "error");
             } finally {
                 setLoading(false);
             }
@@ -61,6 +81,7 @@ export default function ManagementTab() {
                 setVolunteers(data);
             } catch (error) {
                 console.error("Помилка завантаження волонтерів:", error);
+                showNotification("🚨 Помилка завантаження волонтерів", "error");
             }
         };
 
@@ -79,6 +100,7 @@ export default function ManagementTab() {
                 setVolunteers(data);
             } catch (error) {
                 console.error("Помилка:", error);
+                showNotification("🚨 Помилка завантаження волонтерів відділу", "error");
             } finally {
                 setVolunteersLoading(false);
             }
@@ -97,7 +119,16 @@ export default function ManagementTab() {
     };
 
     const handleReject = () => {
+        setRejectReason('');
         setShowRejectModal(true);
+    };
+
+    const handleSendRejectReason = () => {
+        if (!rejectReason.trim()) return;
+
+        // Твоя логіка обробки відмови тут
+        setShowRejectModal(false);
+        showNotification("🛑 Відмову надіслано успішно", "info");
     };
 
     const handleAddDepartment = async () => {
@@ -123,24 +154,31 @@ export default function ManagementTab() {
                 setNewDeptName('');
                 setNewDeptDescription('');
                 setShowAddDeptModal(false);
+                showNotification("✅ Відділ успішно створено!", "success");
             } else {
                 const errorText = await response.text();
                 console.error("Помилка сервера:", errorText);
-                alert("Не вдалося створити відділ: " + errorText);
+                showNotification(`🚨 Не вдалося створити відділ: ${errorText}`, "error");
             }
         } catch (error) {
             console.error("Помилка мережі:", error);
-            alert("Помилка мережі. Перевірте з'єднання з сервером.");
+            showNotification("🚨 Помилка мережі. Перевірте з'єднання з сервером.", "error");
         }
     };
 
-    const handleDeleteDepartment = async () => {
-        const isConfirmed = window.confirm("Ви впевнені, що хочете видалити цей відділ?")
-        if (!isConfirmed) {
-            return;
-        }
+    const handleDeleteDepartmentClick = () => {
         if (!editingDept || !editingDept.id) return;
 
+        setConfirmModal({
+            isOpen: true,
+            title: 'Видалення відділу',
+            text: 'Ви впевнені, що хочете видалити цей відділ? Цю дію не можна буде скасувати.',
+            icon: '🗑️',
+            onConfirm: () => executeDeleteDepartment()
+        });
+    };
+
+    const executeDeleteDepartment = async () => {
         try {
             const response = await fetch(`http://localhost:8080/api/management/departments/${editingDept.id}`, {
                 method: 'DELETE',
@@ -150,11 +188,16 @@ export default function ManagementTab() {
                 setDepartments(departments.filter(d => d.id !== editingDept.id));
                 setIsEditModalOpen(false);
                 setEditingDept(null);
+                showNotification("🗑️ Відділ успішно видалено", "success");
             } else {
                 console.error("Помилка при видаленні на сервері");
+                showNotification("🚨 Помилка при видаленні відділу", "error");
             }
         } catch (error) {
             console.error("Помилка мережі:", error);
+            showNotification("🚨 Помилка мережі при видаленні", "error");
+        } finally {
+            closeConfirmModal();
         }
     };
 
@@ -171,18 +214,29 @@ export default function ManagementTab() {
             if (response.ok) {
                 setDepartments(departments.map(d => d.id === editingDept.id ? editingDept : d));
                 setIsEditModalOpen(false);
+                showNotification("💾 Зміни відділу збережено", "success");
+            } else {
+                showNotification("🚨 Помилка при збереженні відділу", "error");
             }
         } catch (error) {
             console.error("Помилка при збереженні:", error);
+            showNotification("🚨 Помилка мережі при збереженні", "error");
         }
     };
 
-    const handleSetCoordinator = async (deptId, userId) => {
+    const handleSetCoordinatorClick = (deptId, userId) => {
         if (!userId) return;
 
-        const confirmChange = window.confirm("Ви впевнені, що хочете призначити нового координатора?");
-        if (!confirmChange) return;
+        setConfirmModal({
+            isOpen: true,
+            title: 'Призначення координатора',
+            text: 'Ви впевнені, що хочете призначити нового координатора для цього відділу?',
+            icon: '👤',
+            onConfirm: () => executeSetCoordinator(deptId, userId)
+        });
+    };
 
+    const executeSetCoordinator = async (deptId, userId) => {
         try {
             const response = await fetch(`http://localhost:8080/api/management/departments/${deptId}/set-coordinator`, {
                 method: 'POST',
@@ -192,7 +246,7 @@ export default function ManagementTab() {
 
             if (response.ok) {
                 const data = await response.json();
-                alert(data.message);
+                showNotification(`✅ ${data.message}`, "success");
 
                 setEditingDept(prev => ({
                     ...prev,
@@ -200,9 +254,13 @@ export default function ManagementTab() {
                 }));
             } else {
                 console.error("Помилка на сервері");
+                showNotification("🚨 Помилка при призначенні координатора", "error");
             }
         } catch (error) {
             console.error("Помилка мережі:", error);
+            showNotification("🚨 Помилка мережі при призначенні координатора", "error");
+        } finally {
+            closeConfirmModal();
         }
     };
 
@@ -212,15 +270,14 @@ export default function ManagementTab() {
             const data = await response.json();
 
             const allVolunteers = data.filter(u => u.role === 'VOLUNTEER');
-
             const alreadyInDeptIds = volunteers.map(v => v.id);
-
             const availableToAdd = allVolunteers.filter(v => !alreadyInDeptIds.includes(v.id));
 
             setAllAvailableVolunteers(availableToAdd);
             setShowAddVolModal(true);
         } catch (error) {
             console.error("Помилка при завантаженні списку:", error);
+            showNotification("🚨 Помилка завантаження списку волонтерів", "error");
         }
     };
 
@@ -231,6 +288,7 @@ export default function ManagementTab() {
             setViewingVol(data);
         } catch (error) {
             console.error("Помилка завантаження деталей:", error);
+            showNotification("🚨 Помилка завантаження деталей волонтера", "error");
         }
     };
 
@@ -248,7 +306,6 @@ export default function ManagementTab() {
                 }
             }
             setEditingDept({ ...dept, coordinatorId: coordId });
-
             setIsEditModalOpen(true);
         } catch (e) {
             console.error("Помилка завантаження координатора:", e);
@@ -257,16 +314,17 @@ export default function ManagementTab() {
         }
     };
 
-    const openEditModal = (dept) => {
-        setEditingDept(dept);
-        setIsEditModalOpen(true);
+    const handleRemoveVolunteerClick = (userId) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Видалення волонтера',
+            text: 'Ви впевнені, що хочете видалити волонтера з цього відділу?',
+            icon: '⚠️',
+            onConfirm: () => executeRemoveVolunteer(userId)
+        });
     };
 
-    const removeVolunteer = async (userId) => {
-        if (!window.confirm("Ви впевнені, що хочете видалити волонтера з відділу?")) {
-            return;
-        }
-
+    const executeRemoveVolunteer = async (userId) => {
         try {
             const response = await fetch(`http://localhost:8080/api/management/departments/${selectedDept.id}/remove-volunteer?userId=${userId}`, {
                 method: 'DELETE'
@@ -274,18 +332,17 @@ export default function ManagementTab() {
 
             if (response.ok) {
                 setVolunteers(prev => prev.filter(v => v.id !== userId));
+                showNotification("👤 Волонтера видалено з відділу", "success");
             } else {
                 console.error("Сервер повернув помилку:", await response.text());
+                showNotification("🚨 Помилка при видаленні волонтера", "error");
             }
         } catch (error) {
             console.error("Мережева помилка:", error);
+            showNotification("🚨 Помилка мережі при видаленні волонтера", "error");
+        } finally {
+            closeConfirmModal();
         }
-    };
-
-    const fetchAllVolunteers = async () => {
-        const res = await fetch('http://localhost:8080/api/management/volunteers');
-        const data = await res.json();
-        setAllAvailableVolunteers(data.filter(u => u.role === 'VOLUNTEER'));
     };
 
     const filteredDepartments = departments.filter(dept =>
@@ -345,7 +402,6 @@ export default function ManagementTab() {
                                     <span style={{ fontSize: '12px', color: '#6b7280' }}>{user.info}</span>
                                 </div>
 
-                                {/* Випадаючий список документів */}
                                 <div onClick={() => toggleDocs(user.id)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
                                     <div style={{ border: '1px solid #1e3a8a', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', fontWeight: '600', color: '#1e3a8a' }}>
                                         {user.docs.length} Документи ⌄
@@ -358,7 +414,6 @@ export default function ManagementTab() {
                                 </div>
                             </div>
 
-                            {/* Розгорнуті документи */}
                             {expandedUser === user.id && (
                                 <div className="docs-dropdown fade-in" style={{ padding: '10px 40px', background: 'rgba(30, 58, 138, 0.05)', borderRadius: '0 0 10px 10px' }}>
                                     {user.docs.map((doc, index) => (
@@ -422,49 +477,68 @@ export default function ManagementTab() {
                         Додати відділ
                     </button>
 
-                    {/* Модальне вікно для додавання */}
+                    {/* Модальне вікно для додавання ВІДДІЛУ */}
                     {showAddDeptModal && (
-                        <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div className="modal-content" style={{ width: '450px', padding: '25px', background: '#fff', borderRadius: '12px' }}>
-                                <div className="modal-header" style={{ marginBottom: '20px' }}>
-                                    <h3 style={{ margin: 0 }}>Створити відділ</h3>
-                                    <button className="modal-close" onClick={() => setShowAddDeptModal(false)}>✖</button>
-                                </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                    <input
-                                        type="text"
-                                        className="main-search-input"
-                                        style={{ width: '100%', padding: '12px', boxSizing: 'border-box' }}
-                                        placeholder="Назва відділу..."
-                                        value={newDeptName}
-                                        onChange={(e) => setNewDeptName(e.target.value)}
-                                    />
-
-                                    <textarea
-                                        className="main-search-input"
-                                        style={{ width: '100%', height: '80px', padding: '12px', boxSizing: 'border-box', resize: 'none' }}
-                                        placeholder="Короткий опис..."
-                                        value={newDeptDescription}
-                                        onChange={(e) => setNewDeptDescription(e.target.value)}
-                                    />
-
-                                    <select className="main-search-input" style={{ width: '100%', padding: '12px' }}>
-                                        <option value="">Оберіть координатора...</option>
-                                    </select>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '25px' }}>
+                        <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(4px)' }}>
+                            <div className="modal-content" style={{ width: '480px', padding: 0, background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', border: 'none' }}>
+                                <div className="modal-header" style={{ background: '#3b82f6', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: 'none' }}>
+                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        📁 Створити відділ
+                                    </h3>
                                     <button
-                                        className="dropdown-logout-btn"
-                                        style={{ background: '#1e3a8a', padding: '10px 20px', cursor: 'pointer', border: 'none', color: '#fff', borderRadius: '6px' }}
+                                        className="modal-close"
+                                        onClick={() => setShowAddDeptModal(false)}
+                                        style={{ background: 'rgba(255,255,255,0.2)', width: '32px', height: '32px', borderRadius: '50%', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '14px', transition: 'background 0.2s' }}
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: '18px', padding: '24px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Назва відділу:</label>
+                                        <input
+                                            type="text"
+                                            className="main-search-input"
+                                            style={{ width: '100%', padding: '14px 16px', boxSizing: 'border-box', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px', fontSize: '15px', color: '#334155' }}
+                                            placeholder="Введіть назву..."
+                                            value={newDeptName}
+                                            onChange={(e) => setNewDeptName(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Короткий опис:</label>
+                                        <textarea
+                                            className="main-search-input"
+                                            style={{ width: '100%', height: '100px', padding: '14px 16px', boxSizing: 'border-box', resize: 'none', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px', fontSize: '15px', color: '#334155' }}
+                                            placeholder="Опишіть діяльність відділу..."
+                                            value={newDeptDescription}
+                                            onChange={(e) => setNewDeptDescription(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Координатор відділу:</label>
+                                        <select
+                                            className="main-search-input"
+                                            style={{ width: '100%', padding: '14px 16px', cursor: 'pointer', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px', fontSize: '15px', color: '#334155' }}
+                                            defaultValue=""
+                                        >
+                                            <option value="" disabled>Оберіть координатора...</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', padding: '0 24px 24px 24px' }}>
+                                    <button
+                                        style={{ background: '#3b82f6', padding: '12px 32px', cursor: 'pointer', border: 'none', color: '#fff', borderRadius: '14px', fontSize: '15px', fontWeight: '600', boxShadow: '0 4px 12px rgba(59,130,246,0.3)' }}
                                         onClick={handleAddDepartment}
                                     >
                                         Зберегти
                                     </button>
                                     <button
-                                        className="dropdown-logout-btn"
-                                        style={{ background: '#6b7280', padding: '10px 20px', cursor: 'pointer', border: 'none', color: '#fff', borderRadius: '6px' }}
+                                        style={{ background: '#eff6ff', padding: '12px 32px', cursor: 'pointer', border: '1px solid #bfdbfe', color: '#1e40af', borderRadius: '14px', fontSize: '15px', fontWeight: '600' }}
                                         onClick={() => setShowAddDeptModal(false)}
                                     >
                                         Скасувати
@@ -474,34 +548,69 @@ export default function ManagementTab() {
                         </div>
                     )}
 
+                    {/* Модальне вікно для редагування ВІДДІЛУ */}
                     {isEditModalOpen && editingDept && (
-                        <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div className="modal-content" style={{ width: '450px', padding: '25px', background: '#fff', borderRadius: '12px' }}>
-                                <h3>Редагування відділу</h3>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
-                                    <input type="text" className="main-search-input" value={editingDept.name} onChange={(e) => setEditingDept({...editingDept, name: e.target.value})} placeholder="Назва відділу" />
-                                    <textarea className="main-search-input" value={editingDept.description} onChange={(e) => setEditingDept({...editingDept, description: e.target.value})} placeholder="Короткий опис" />
-
-                                    <label style={{ fontSize: '13px', color: '#4b5563', marginBottom: '-10px' }}>Призначити координатора:</label>
-                                    <select
-                                        className="main-search-input"
-                                        style={{ width: '100%', padding: '12px', cursor: 'pointer' }}
-                                        value={editingDept.coordinatorId || ""}
-                                        onChange={(e) => handleSetCoordinator(editingDept.id, e.target.value)}
-                                        disabled={volunteers.length === 0}
+                        <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(4px)' }}>
+                            <div className="modal-content" style={{ width: '480px', padding: 0, background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', border: 'none' }}>
+                                <div className="modal-header" style={{ background: '#3b82f6', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: 'none' }}>
+                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        ✏️ Редагування відділу
+                                    </h3>
+                                    <button
+                                        className="modal-close"
+                                        onClick={() => setIsEditModalOpen(false)}
+                                        style={{ background: 'rgba(255,255,255,0.2)', width: '32px', height: '32px', borderRadius: '50%', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '14px' }}
                                     >
-                                        <option value="">{volunteers.length === 0 ? "Немає волонтерів для призначення" : "Оберіть координатора..."}</option>
-                                        {volunteers.map(vol => (
-                                            <option key={vol.id} value={vol.id}>
-                                                {vol.last_name} {vol.first_name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        ✕
+                                    </button>
                                 </div>
-                                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '25px' }}>
-                                    <button onClick={handleDeleteDepartment} style={{ background: '#dc2626', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '6px' }}>Видалити</button>
-                                    <button onClick={() => setIsEditModalOpen(false)} style={{ background: '#6b7280', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '6px' }}>Скасувати</button>
-                                    <button onClick={handleSaveDepartment} style={{ background: '#1e3a8a', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '6px' }}>Зберегти</button>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', padding: '24px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Назва відділу:</label>
+                                        <input
+                                            type="text"
+                                            className="main-search-input"
+                                            style={{ width: '100%', padding: '14px 16px', boxSizing: 'border-box', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px', fontSize: '15px', color: '#334155' }}
+                                            value={editingDept.name}
+                                            onChange={(e) => setEditingDept({...editingDept, name: e.target.value})}
+                                            placeholder="Назва відділу"
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Короткий опис:</label>
+                                        <textarea
+                                            className="main-search-input"
+                                            style={{ width: '100%', height: '80px', padding: '14px 16px', boxSizing: 'border-box', resize: 'none', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px', fontSize: '15px', color: '#334155' }}
+                                            value={editingDept.description}
+                                            onChange={(e) => setEditingDept({...editingDept, description: e.target.value})}
+                                            placeholder="Короткий опис"
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Координатор відділу:</label>
+                                        <select
+                                            className="main-search-input"
+                                            style={{ width: '100%', padding: '14px 16px', cursor: 'pointer', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px', fontSize: '15px', color: '#334155' }}
+                                            value={editingDept.coordinatorId || ""}
+                                            onChange={(e) => handleSetCoordinatorClick(editingDept.id, e.target.value)}
+                                        >
+                                            <option value="">Оберіть координатора...</option>
+                                            {volunteers.map(vol => (
+                                                <option key={vol.id} value={vol.id}>
+                                                    {vol.last_name} {vol.first_name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', padding: '0 24px 24px 24px' }}>
+                                    <button onClick={handleSaveDepartment} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 12px rgba(59,130,246,0.3)' }}>Зберегти</button>
+                                    <button onClick={() => setIsEditModalOpen(false)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Скасувати</button>
+                                    <button onClick={handleDeleteDepartmentClick} style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '12px 20px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', marginLeft: 'auto' }}>Видалити</button>
                                 </div>
                             </div>
                         </div>
@@ -552,7 +661,7 @@ export default function ManagementTab() {
                                     <div key={vol.id} className="vol-list-item" onClick={() => handleOpenVolInfo(vol)}>
                                         <span>{vol.last_name} {vol.first_name}</span>
                                         {selectedDept && (
-                                            <button className="btn-delete-vol" onClick={(e) => { e.stopPropagation(); removeVolunteer(vol.id); }}>✕</button>
+                                            <button className="btn-delete-vol" onClick={(e) => { e.stopPropagation(); handleRemoveVolunteerClick(vol.id); }}>✕</button>
                                         )}
                                     </div>
                                 ))
@@ -570,62 +679,153 @@ export default function ManagementTab() {
                         </button>
                     )}
 
+                    {/* Модальне вікно: ПРОФІЛЬ ВОЛОНТЕРА */}
                     {viewingVol && (
-                        <div className="modal-overlay">
-                            <div className="modal-content">
-                                <h3>Профіль волонтера</h3>
-
-                                <div className="volunteer-info">
-                                    <p><strong>ПІБ:</strong> {viewingVol.user.last_name} {viewingVol.user.first_name} {viewingVol.user.patronymic}</p>
-                                    <p><strong>Email:</strong> {viewingVol.user.email}</p>
-                                    <p><strong>Телефон:</strong> {viewingVol.user.phone_number}</p>
-                                    <p><strong>Дата народження:</strong> {viewingVol.user.dob}</p>
-                                    <p><strong>Роль:</strong> {viewingVol.user.role}</p>
+                        <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(4px)' }}>
+                            <div className="modal-content" style={{ width: '520px', padding: 0, background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', border: 'none' }}>
+                                <div className="modal-header" style={{ background: '#3b82f6', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: 'none' }}>
+                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        📄 Розширена інформація
+                                    </h3>
+                                    <button
+                                        className="btn-close-modal"
+                                        onClick={() => setViewingVol(null)}
+                                        style={{ background: 'rgba(255,255,255,0.2)', width: '32px', height: '32px', borderRadius: '50%', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '14px' }}
+                                    >
+                                        ✕
+                                    </button>
                                 </div>
 
-                                <h4>Документи:</h4>
-                                <ul>
-                                    {viewingVol.documents.length > 0 ? (
-                                        viewingVol.documents.map(doc => (
-                                            <li key={doc.id}>
-                                                📄 {doc.type} —
-                                                <span style={{ color: doc.status === 'APPROVED' ? 'green' : 'orange' }}>
-                                 {doc.status}
-                            </span>
-                                            </li>
-                                        ))
-                                    ) : (
-                                        <li>Документи відсутні</li>
-                                    )}
-                                </ul>
+                                <div style={{ padding: '24px' }}>
+                                    <div style={{ background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '18px', padding: '8px 16px', display: 'flex', flexDirection: 'column' }}>
+                                        <div style={{ display: 'flex', padding: '12px 0', borderBottom: '1px solid #e2e8f0', alignItems: 'center', fontSize: '15px' }}>
+                                            <span style={{ minWidth: '140px', fontWeight: '700', color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '8px' }}>👤 ПІБ:</span>
+                                            <span style={{ color: '#334155', fontWeight: '500' }}>{viewingVol.user.last_name} {viewingVol.user.first_name} {viewingVol.user.patronymic}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', padding: '12px 0', borderBottom: '1px solid #e2e8f0', alignItems: 'center', fontSize: '15px' }}>
+                                            <span style={{ minWidth: '140px', fontWeight: '700', color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '8px' }}>✉️ Email:</span>
+                                            <span style={{ color: '#334155', fontWeight: '500' }}>{viewingVol.user.email}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', padding: '12px 0', borderBottom: '1px solid #e2e8f0', alignItems: 'center', fontSize: '15px' }}>
+                                            <span style={{ minWidth: '140px', fontWeight: '700', color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '8px' }}>📞 Телефон:</span>
+                                            <span style={{ color: '#334155', fontWeight: '500' }}>{viewingVol.user.phone_number}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', padding: '12px 0', borderBottom: '1px solid #e2e8f0', alignItems: 'center', fontSize: '15px' }}>
+                                            <span style={{ minWidth: '140px', fontWeight: '700', color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '8px' }}>🎂 Д.Н.:</span>
+                                            <span style={{ color: '#334155', fontWeight: '500' }}>{viewingVol.user.dob}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', padding: '12px 0', alignItems: 'center', fontSize: '15px' }}>
+                                            <span style={{ minWidth: '140px', fontWeight: '700', color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '8px' }}>⭐ Роль:</span>
+                                            <span style={{ background: '#3b82f6', color: '#fff', padding: '2px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '700' }}>{viewingVol.user.role}</span>
+                                        </div>
+                                    </div>
 
-                                <button className="btn-close-modal" onClick={() => setViewingVol(null)}>Закрити</button>
+                                    <h4 style={{ margin: '20px 0 10px 0', color: '#1e3a8a', fontSize: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        📂 Документи волонтера
+                                    </h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {viewingVol.documents.length > 0 ? (
+                                            viewingVol.documents.map(doc => (
+                                                <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '12px' }}>
+                                                    <span style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>📄 {doc.type}</span>
+                                                    <span style={{
+                                                        fontSize: '12px',
+                                                        fontWeight: '700',
+                                                        padding: '4px 10px',
+                                                        borderRadius: '8px',
+                                                        background: doc.status === 'APPROVED' ? '#dcfce7' : '#fef3c7',
+                                                        color: doc.status === 'APPROVED' ? '#15803d' : '#b45309'
+                                                    }}>
+                                                        {doc.status === 'APPROVED' ? 'Затверджено' : doc.status}
+                                                    </span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div style={{ padding: '12px', textAlign: 'center', color: '#64748b', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1', fontSize: '14px' }}>
+                                                Документи відсутні
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'center', padding: '0 24px 24px 24px' }}>
+                                    <button
+                                        className="btn-close-modal"
+                                        onClick={() => setViewingVol(null)}
+                                        style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '12px 40px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
+                                    >
+                                        Закрити
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* МОДАЛЬНЕ ВІКНО: ПРИЧИНА ВІДМОВИ */}
+            {/* КАСТОМІЗОВАНЕ МОДАЛЬНЕ ВІКНО: ПРИЧИНА ВІДМОВИ (В СТИЛІ ВІДДІЛІВ) */}
             {showRejectModal && (
-                <div className="modal-overlay" style={{ zIndex: 2000 }}>
-                    <div className="modal-content small-modal" style={{ width: '400px' }}>
-                        <div className="modal-header">
-                            <h3>Причина відмови</h3>
-                            <button className="modal-close" onClick={() => setShowRejectModal(false)}>✖</button>
+                <div className="custom-reject-overlay">
+                    <div className="custom-reject-card">
+                        <div className="custom-reject-header">
+                            <h3 className="custom-reject-title">
+                                🛑 Причина відмови
+                            </h3>
+                            <button
+                                className="custom-reject-close"
+                                onClick={() => setShowRejectModal(false)}
+                            >
+                                ✕
+                            </button>
                         </div>
-                        <div style={{ padding: '20px' }}>
-                            <textarea
-                                className="main-search-input"
-                                style={{ width: '100%', height: '100px', padding: '10px', boxSizing: 'border-box', resize: 'none', marginBottom: '15px' }}
-                                placeholder="Вкажіть, що саме не так із наданими документами..."
-                                value={rejectReason}
-                                onChange={(e) => setRejectReason(e.target.value)}
-                            />
-                            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                                <button className="dropdown-logout-btn" style={{ background: '#1e3a8a', width: 'auto', margin: 0, padding: '10px 20px' }} onClick={() => setShowRejectModal(false)}>Відправити</button>
-                                <button className="dropdown-logout-btn" style={{ background: '#6b7280', width: 'auto', margin: 0, padding: '10px 20px' }} onClick={() => setShowRejectModal(false)}>Скасувати</button>
+
+                        <div className="custom-reject-body">
+                            <div className="custom-reject-field-group">
+                                <label className="custom-reject-label">Вкажіть причину скасування:</label>
+                                <textarea
+                                    className="custom-reject-textarea"
+                                    placeholder="Вкажіть, що саме не так із наданими документами..."
+                                    value={rejectReason}
+                                    onChange={(e) => setRejectReason(e.target.value)}
+                                />
                             </div>
+                        </div>
+
+                        <div className="custom-reject-actions">
+                            <button
+                                className="btn-reject-submit"
+                                onClick={handleSendRejectReason}
+                            >
+                                Відправити
+                            </button>
+                            <button
+                                className="btn-reject-cancel"
+                                onClick={() => setShowRejectModal(false)}
+                            >
+                                Скасувати
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* УНІВЕРСАЛЬНЕ КАСТОМНЕ МОДАЛЬНЕ ВІКНО ПІДТВЕРДЖЕННЯ З ВІДОКРЕМЛЕНИМИ КЛАСАМИ */}
+            {confirmModal.isOpen && (
+                <div className="custom-confirm-overlay">
+                    <div className="custom-confirm-card">
+                        <div className="custom-confirm-icon">{confirmModal.icon}</div>
+                        <h3 className="custom-confirm-title">{confirmModal.title}</h3>
+                        <p className="custom-confirm-text">{confirmModal.text}</p>
+                        <div className="custom-confirm-actions">
+                            <button className="btn-confirm-cancel" onClick={closeConfirmModal}>
+                                Скасувати
+                            </button>
+                            <button
+                                className={`btn-confirm-execute ${confirmModal.title.toLowerCase().includes('видал') ? 'danger-action' : ''}`}
+                                onClick={confirmModal.onConfirm}
+                            >
+                                Так, виконати
+                            </button>
                         </div>
                     </div>
                 </div>

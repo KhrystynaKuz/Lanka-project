@@ -2125,3 +2125,284 @@
 .btn-delete-vol:hover {
     background: rgba(220, 38, 38, 0.1);
 }
+
+/* ==========================================================================
+   СТИЛІ ДЛЯ УНІВЕРСАЛЬНОГО КАСТОМНОГО ВІКНА ПІДТВЕРДЖЕННЯ (CONFIRM MODAL)
+   ========================================================================== */
+
+.custom-confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.3); /* Напівпрозорий темний фон */
+    backdrop-filter: blur(8px); /* Ефект розмиття заднього плану */
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999; /* Вікно завжди поверх усіх інших елементів */
+    animation: fadeInModal 0.25s ease-out;
+}
+
+.custom-confirm-card {
+    background: #ffffff;
+    width: 440px;
+    padding: 35px 30px;
+    border-radius: 28px;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+    text-align: center;
+    border: 1px solid rgba(241, 245, 249, 0.8);
+    position: relative;
+    animation: slideUpModal 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.custom-confirm-icon {
+    font-size: 42px;
+    margin-bottom: 18px;
+    display: inline-block;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
+}
+
+.custom-confirm-title {
+    margin: 0 0 12px 0;
+    color: #0f172a;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.custom-confirm-text {
+    margin: 0 0 28px 0;
+    color: #475569;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.custom-confirm-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.btn-confirm-cancel {
+    flex: 1;
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-confirm-cancel:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.btn-confirm-execute {
+    flex: 1;
+    background: #3b82f6; /* Гарний насичений синій колір за замовчуванням */
+    color: #ffffff;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    transition: all 0.2s ease;
+}
+
+.btn-confirm-execute:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+
+.btn-confirm-execute:active {
+    transform: translateY(0);
+}
+
+/* Окремий клас-модифікатор для небезпечних дій (наприклад, видалення), якщо захочеш кнопку червоною */
+.btn-confirm-execute.danger-action {
+    background: #dc2626;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+.btn-confirm-execute.danger-action:hover {
+    background: #b91c1c;
+    box-shadow: 0 6px 16px rgba(185, 28, 28, 0.35);
+}
+
+/* Анімації появи */
+@keyframes fadeInModal {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUpModal {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ==========================================================================
+   КАСТОМНЕ МОДАЛЬНЕ ВІКНО ВІДХИЛЕННЯ (У СТИЛІ ВІДДІЛІВ)
+   ========================================================================== */
+
+.custom-reject-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.custom-reject-card {
+    width: 480px;
+    padding: 0;
+    background: #ffffff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: none;
+    animation: fadeInModal 0.2s ease-out;
+}
+
+.custom-reject-header {
+    background: #3b82f6; /* Така ж синя шапка */
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: none;
+}
+
+.custom-reject-title {
+    margin: 0;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.custom-reject-close {
+    background: rgba(255, 255, 255, 0.2);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    fontSize: 14px;
+    transition: background 0.2s;
+}
+
+.custom-reject-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.custom-reject-body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 24px;
+}
+
+.custom-reject-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.custom-reject-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e3a8a;
+}
+
+.custom-reject-textarea {
+    width: 100%;
+    height: 100px;
+    padding: 14px 16px;
+    box-sizing: border-box;
+    resize: none;
+    background: #f0f7ff;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    font-size: 15px;
+    color: #334155;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.custom-reject-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.custom-reject-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding: 0 24px 24px 24px;
+}
+
+.btn-reject-submit {
+    background: #3b82f6;
+    padding: 12px 32px;
+    cursor: pointer;
+    border: none;
+    color: #ffffff;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    transition: background 0.2s;
+}
+
+.btn-reject-submit:hover {
+    background: #2563eb;
+}
+
+.btn-reject-cancel {
+    background: #eff6ff;
+    padding: 12px 32px;
+    cursor: pointer;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.btn-reject-cancel:hover {
+    background: #dbeafe;
+}
