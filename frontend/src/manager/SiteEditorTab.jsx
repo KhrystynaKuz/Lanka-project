@@ -209,6 +209,13 @@ export default function SiteEditorTab() {
         const file = event.target.files[0];
         if (!file) return;
 
+        const cyrillicPattern = /[а-яёієїґ]/i;
+
+        if (cyrillicPattern.test(file.name)) {
+            alert("Помилка: Назва файлу не може містити кириличні літери. Будь ласка, перейменуйте файл на латиницю.");
+            return;
+        }
+
         setIsReportsUploading(true);
         try {
             const fileName = `${type}_${Date.now()}_${file.name}`;
