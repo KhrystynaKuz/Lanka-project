@@ -452,3 +452,126 @@ html, body {
     padding-left: 10px;
     margin-bottom: 20px;
 }
+/* Контейнер для карток зборів */
+.glass-tasks-feed {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    width: 100%;
+    padding: 10px 0;
+}
+
+/* Картка збору — легка, напівпрозора біла плашка */
+.glass-task-card.fundraiser-card {
+    display: flex;
+    flex-direction: column;
+    /* Ніжний білий фон із легкою прозорістю, щоб було видно бульбашки на фоні */
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    /* Дуже тонка і м'яка синя рамка, що ледь помітна */
+    border: 1px solid rgba(29, 53, 87, 0.1);
+    border-radius: 20px; /* Округлені краї, як у твоєї картинки справа */
+    padding: 24px;
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    /* Тінь робимо супер м'якою і світлою */
+    box-shadow: 0 10px 30px rgba(29, 53, 87, 0.05);
+}
+
+/* Ефект наведення — картка м'яко піднімається */
+.glass-task-card.fundraiser-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(29, 53, 87, 0.2);
+    box-shadow: 0 15px 35px rgba(29, 53, 87, 0.1);
+}
+
+/* Тег "Терміновий збір" зверху */
+.card-top-tag {
+    margin-bottom: 12px;
+}
+
+.glass-task-card .status-indicator {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    /* Використовуємо насищений синій колір, як у логотипа ЛАНКА */
+    color: #1d3557;
+    font-weight: 700;
+    background: rgba(29, 53, 87, 0.08); /* Ніжна підкладка під статус */
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+/* Заголовок збору — глибокий синій, чудово читається */
+.glass-task-card .card-title {
+    font-size: 20px;
+    color: #1d3557; /* Точно в тон твоїх головних заголовків */
+    margin: 14px 0 10px 0;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+/* Опис збору — трохи світліший синьо-сірий для балансу */
+.glass-task-card .card-text {
+    font-size: 14px;
+    color: #4a5768;
+    line-height: 1.6;
+    margin: 0 0 20px 0;
+}
+
+/* Контейнер для QR-коду */
+.qr-code-container {
+    margin: 15px 0 20px 0;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 14px;
+    padding: 14px;
+    border: 1px solid rgba(29, 53, 87, 0.05);
+}
+
+.qr-hint {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+.qr-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 10px;
+    border: 1px solid rgba(29, 53, 87, 0.1);
+    padding: 4px;
+    background: #ffffff;
+}
+
+/* Нижня частина та кнопка */
+.card-bottom {
+    margin-top: auto;
+    width: 100%;
+}
+
+/* Кнопка "Посилання на банку" — копіює стиль кнопки "Увійти" */
+.glass-task-card .glass-details-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 0;
+    /* Той самий фірмовий синій колір */
+    background: #1d3557;
+    border: none;
+    border-radius: 10px; /* Квадратніша з легким округленням, як "Увійти" */
+    color: #ffffff;
+    text-decoration: none;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.glass-task-card .glass-details-btn:hover {
+    background: #112237; /* Трохи темніший при наведенні */
+}
+
+.glass-task-card .glass-details-btn:active {
+    transform: scale(0.98);
+}
