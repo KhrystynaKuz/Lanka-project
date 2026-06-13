@@ -423,7 +423,7 @@ export default function SiteEditorTab() {
             <div className="editor-glass-block">
                 <span className="block-badge">Блок 3 : СТОРІНКА ЗВІТІВ</span>
 
-                <div className="images-sub-group">
+                <div className="images-sub-group" style={{ marginTop: '15px' }}>
                     <label>ФОТО:</label>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
                         {reportPhotos.map((item, i) => (
@@ -433,8 +433,23 @@ export default function SiteEditorTab() {
                             </div>
                         ))}
                     </div>
+
                     <input type="file" id="photo-report" onChange={(e) => handleUploadReport(e, 'photo')} style={{display: 'none'}} />
-                    <label htmlFor="photo-report" className="btn-add-element">+ ДОДАТИ ФОТО</label>
+                    <label
+                        htmlFor="photo-report"
+                        className="btn-inline-upload"
+                        style={{
+                            cursor: 'pointer',
+                            display: 'inline-block',
+                            width: 'max-content', // Забороняє кнопці розтягуватися більше, ніж довжина тексту
+                            textTransform: 'uppercase',
+                            transition: 'opacity 0.2s ease'
+                        }}
+                        onMouseOver={(e) => e.target.style.opacity = '0.8'}
+                        onMouseOut={(e) => e.target.style.opacity = '1'}
+                    >
+                        + ДОДАТИ ФОТО
+                    </label>
                 </div>
 
                 <div className="documents-sub-group" style={{ marginTop: '20px' }}>
@@ -447,8 +462,23 @@ export default function SiteEditorTab() {
                             </div>
                         ))}
                     </div>
+
                     <input type="file" id="doc-report" onChange={(e) => handleUploadReport(e, 'doc')} style={{display: 'none'}} />
-                    <label htmlFor="doc-report" className="btn-add-element">+ ДОДАТИ ДОКУМЕНТ</label>
+                    <label
+                        htmlFor="doc-report"
+                        className="btn-inline-upload"
+                        style={{
+                            cursor: 'pointer',
+                            display: 'inline-block',
+                            width: 'max-content', // Забороняє кнопці розтягуватися більше, ніж довжина тексту
+                            textTransform: 'uppercase',
+                            transition: 'opacity 0.2s ease'
+                        }}
+                        onMouseOver={(e) => e.target.style.opacity = '0.8'}
+                        onMouseOut={(e) => e.target.style.opacity = '1'}
+                    >
+                        + ДОДАТИ ДОКУМЕНТ
+                    </label>
                 </div>
 
                 <div className="block-footer-save">
