@@ -570,38 +570,6 @@ export default function ManagementTab() {
                         </button>
                     )}
 
-                    {showAddDeptModal && (
-                        <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div className="modal-content" style={{ width: '450px', padding: '25px', background: '#fff', borderRadius: '12px' }}>
-                                <div className="modal-header" style={{ marginBottom: '20px' }}>
-                                    <h3 style={{ margin: 0 }}>Створити відділ</h3>
-                                    <button className="modal-close" onClick={() => setShowAddDeptModal(false)}>✖</button>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                    <input
-                                        type="text"
-                                        className="main-search-input"
-                                        style={{ width: '100%', padding: '12px', boxSizing: 'border-box' }}
-                                        placeholder="Назва відділу..."
-                                        value={newDeptName}
-                                        onChange={(e) => setNewDeptName(e.target.value)}
-                                    />
-                                    <textarea
-                                        className="main-search-input"
-                                        style={{ width: '100%', height: '80px', padding: '12px', boxSizing: 'border-box', resize: 'none' }}
-                                        placeholder="Короткий опис..."
-                                        value={newDeptDescription}
-                                        onChange={(e) => setNewDeptDescription(e.target.value)}
-                                    />
-                                </div>
-                                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '25px' }}>
-                                    <button className="dropdown-logout-btn" style={{ background: '#1e3a8a', padding: '10px 20px', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }} onClick={handleAddDepartment}>Зберегти</button>
-                                    <button className="dropdown-logout-btn" style={{ background: '#6b7280', padding: '10px 20px', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }} onClick={() => setShowAddDeptModal(false)}>Скасувати</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                     {viewingVol && (
                         <div className="modal-overlay">
                             <div className="modal-content">
