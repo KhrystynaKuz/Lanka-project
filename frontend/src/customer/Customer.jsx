@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import CreateRequestTab from './CreateRequestTab';
 import MyRequestsTab from './MyRequestsTab';
-import ChatsTab from './ChatsTab';
+import ChatsTab from '../components/chat/ChatsTab.jsx';
 import './Customer.css';
 
 export default function Customer({ onLogOut }) {

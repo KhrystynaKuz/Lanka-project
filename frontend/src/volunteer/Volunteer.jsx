@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Volunteer.css';
 import TasksTab from './TasksTab.jsx';
 import ArchiveTab from './ArchiveTab.jsx';
-import ChatsTab from './ChatsTab.jsx';
+import ChatsTab from '../components/chat/ChatsTab.jsx';
 import BadgesTab from './BadgesTab.jsx';
 
 export default function Volunteer({ onLogout, onBackToHome }) {

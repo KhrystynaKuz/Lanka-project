@@ -16,7 +16,6 @@ export default function ChatsTab() {
     const [showNewChat, setShowNewChat] = useState(false);
     const [newMessage, setNewMessage] = useState('');
 
-    // FIX: Add a fallback so the UI renders immediately before the hook refetches
     const selectedChat = chats.find(c => c.id === selectedChatId) ||
         (selectedChatId ? { id: selectedChatId, type: 'DIRECT', displayName: 'Завантаження...', name: 'Завантаження...' } : null);
 

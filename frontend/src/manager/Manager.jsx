@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ManagementTab from './ManagementTab';
 import RequestsTab from './RequestsTab';
-import ChatsTab from './ChatsTab';
+import ChatsTab from '../components/chat/ChatsTab.jsx';
 import ReportsTab from './ReportsTab';
 import SiteEditorTab from './SiteEditorTab';
 import InventoryTab from './InventoryTab';

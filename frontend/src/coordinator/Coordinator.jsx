@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './Coordinator.css';
 
 import DepartmentTasksTab from './DepartmentTasksTab';
-import ChatsTab from './ChatsTab';
+import ChatsTab from '../components/chat/ChatsTab';
 import InventoryTab from './InventoryTab';
 
 export default function Coordinator({ onLogout, onBackToHome }) {
