@@ -2091,3 +2091,37 @@
         opacity: 1;
     }
 }
+
+.volunteers-list {
+    flex: 1;
+    padding: 10px 0;
+}
+
+.vol-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-radius: 6px;
+}
+
+.vol-list-item:hover {
+    background: rgba(30, 58, 138, 0.05);
+}
+
+.btn-delete-vol {
+    background: none;
+    border: none;
+    color: #dc2626;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.btn-delete-vol:hover {
+    background: rgba(220, 38, 38, 0.1);
+}

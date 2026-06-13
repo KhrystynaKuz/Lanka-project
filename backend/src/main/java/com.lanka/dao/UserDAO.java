@@ -106,7 +106,6 @@ public class UserDAO {
         }
     }
 
-    // ВИПРАВЛЕНИЙ МЕТОД - тепер оновлює всі поля включаючи dob
     public boolean updateUser(User user) throws SQLException {
         String sql = "UPDATE users SET first_name = ?, last_name = ?, patronymic = ?, phone_number = ?, dob = ? WHERE id = ?";
 
@@ -118,7 +117,6 @@ public class UserDAO {
             ps.setString(3, user.getPatronymic());
             ps.setString(4, user.getPhone_number());
 
-            // Додаємо оновлення дати народження
             if (user.getDob() != null) {
                 ps.setDate(5, Date.valueOf(user.getDob()));
             } else {
@@ -132,7 +130,25 @@ public class UserDAO {
         }
     }
 
-    // Додатковий метод для оновлення тільки специфічних полів (якщо потрібно)
+    public void updateRole(UUID userId, User.UserRole newRole) throws SQLException {
+        String sql = "UPDATE users SET role = ?::user_role WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newRole.name());
+            ps.setObject(2, userId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void updateUserRole(UUID userId, String newRole) throws SQLException {
+        String sql = "UPDATE users SET role = ?::user_role WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newRole);
+            ps.setObject(2, userId);
+            ps.executeUpdate();
+        }
+    }
     public boolean updateUserDetails(UUID userId, String phoneNumber, String patronymic, java.time.LocalDate dob) throws SQLException {
         String sql = "UPDATE users SET phone_number = ?, patronymic = ?, dob = ? WHERE id = ?";
 
@@ -202,6 +218,39 @@ public class UserDAO {
             }
         }
         return list;
+    }
+
+    public List<User> getVolunteersAndCoordinators() throws SQLException {
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at " +
+                "FROM users WHERE UPPER(role::text) IN ('VOLUNTEER', 'COORDINATOR') ORDER BY last_name ASC";
+
+        List<User> list = new ArrayList<>();
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapRowToUser(rs));
+            }
+        }
+        return list;
+    }
+
+    public UUID getCoordinatorIdByDepartmentId(UUID deptId) throws SQLException {
+        String sql = "SELECT u.id FROM users u " +
+                "JOIN user_departments ud ON u.id = ud.user_id " +
+                "WHERE ud.department_id = ? AND u.role = 'COORDINATOR'";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, deptId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getObject("id", UUID.class);
+                }
+            }
+        }
+        return null;
     }
 
     private User mapRowToUser(ResultSet rs) throws SQLException {

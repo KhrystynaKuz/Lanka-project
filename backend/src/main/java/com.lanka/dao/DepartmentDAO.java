@@ -117,4 +117,51 @@ public class DepartmentDAO {
         }
         return list;
     }
+
+    // Призначити волонтера до відділу
+    public void assignUserToDepartment(UUID userId, UUID deptId) throws SQLException {
+        String sql = "INSERT INTO user_department (user_id, department_id) VALUES (?, ?)";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, userId);
+            ps.setObject(2, deptId);
+            ps.executeUpdate();
+        }
+    }
+
+    // Видалити всі зв'язки користувача з відділами (щоб він був лише в одному)
+    public void removeAllAssignmentsForUser(UUID userId) throws SQLException {
+        String sql = "DELETE FROM user_department WHERE user_id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, userId);
+            ps.executeUpdate();
+        }
+    }
+
+    // Знайти координатора конкретного відділу (якщо у вас є поле coordinator_id у таблиці departments)
+    public UUID findCoordinatorByDeptId(UUID deptId) throws SQLException {
+        String sql = "SELECT coordinator_id FROM departments WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, deptId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getObject("coordinator_id", UUID.class);
+                }
+            }
+        }
+        return null;
+    }
+
+    // Оновити координатора для відділу
+    public void setCoordinatorForDepartment(UUID deptId, UUID userId) throws SQLException {
+        String sql = "UPDATE departments SET coordinator_id = ? WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, userId);
+            ps.setObject(2, deptId);
+            ps.executeUpdate();
+        }
+    }
 }
