@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './Volunteer.css'; // Імпортуємо винесені стилі
 
 export default function ArchiveTab() {
     const [archivedTasks, setArchivedTasks] = useState([]);
@@ -51,14 +52,25 @@ export default function ArchiveTab() {
         setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
     };
 
-    if (loading) return <div className="volunteer-loader">Завантаження завдань...</div>;
-    if (error) return <div className="volunteer-error">{error}</div>;
+    if (loading) return (
+        <div className="volunteer-archive-loading">
+            Завантаження завдань...
+        </div>
+    );
+
+    if (error) return (
+        <div className="volunteer-archive-error">
+            {error}
+        </div>
+    );
 
     return (
-        <div>
-            <div className="volunteer-tab-header">
-                <h2 className="volunteer-tab-title">Виконані завдання</h2>
-                <div className="volunteer-badge-counter">Всього: {archivedTasks.length}</div>
+        <div className="volunteer-archive-page">
+            <div className="tab-header-block">
+                <h2 className="tab-title">Виконані завдання</h2>
+                <div className="badge-counter">
+                    Усього: <span className="counter-number">{archivedTasks.length}</span>
+                </div>
             </div>
 
             {archivedTasks.length === 0 ? (
@@ -89,9 +101,7 @@ export default function ArchiveTab() {
                                     className="volunteer-detail-btn"
                                     onClick={() => toggleExpand(task.id)}
                                 >
-                                    {expandedTaskId === task.id
-                                        ? 'Згорнути ▲'
-                                        : 'Детальніше ▾'}
+                                    {expandedTaskId === task.id ? 'Згорнути ▲' : 'Розгорнути ▾'}
                                 </button>
 
                             </div>
@@ -109,7 +119,7 @@ export default function ArchiveTab() {
                                     <p><strong>Завантажені файли:</strong></p>
 
                                     {taskReports[task.id] && taskReports[task.id].length > 0 ? (
-                                        <ul>
+                                        <ul className="volunteer-file-list">
                                             {taskReports[task.id].map(report =>
                                                 report.attached_files_urls.map((url, i) => (
                                                     <li key={i}>
@@ -117,6 +127,7 @@ export default function ArchiveTab() {
                                                             href={url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
+                                                            className="volunteer-file-link"
                                                         >
                                                             📄 Файл {i + 1}
                                                         </a>
@@ -125,7 +136,7 @@ export default function ArchiveTab() {
                                             )}
                                         </ul>
                                     ) : (
-                                        <p>Файлів немає</p>
+                                        <p className="volunteer-no-files">Файлів немає</p>
                                     )}
 
                                 </div>

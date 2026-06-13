@@ -824,3 +824,163 @@
 .volunteer-expanded-details a:hover {
     text-decoration: underline;
 }
+
+.tab-header-block {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.tab-title {
+    font-size: 28px;
+    color: #1e3a8a;
+    margin: 0;
+    font-weight: 700;
+}
+
+.badge-counter {
+    background: rgba(255, 255, 255, 0.6);
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #374151;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.counter-number {
+    color: #e11d48; /* Той самий насичений малиново-червоний відтінок */
+    font-weight: 800;
+}
+
+
+/* Стилі для списку та карток архіву під ваш стиль */
+.volunteer-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 35px;
+}
+
+.volunteer-archive-card {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 18px;
+    padding: 22px 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.01);
+    transition: all 0.3s ease;
+}
+
+.volunteer-archive-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.volunteer-archive-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.volunteer-archive-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e3a8a;
+}
+
+.volunteer-archive-desc {
+    font-size: 14px;
+    color: #4b5563;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+/* Стиль для кнопки розгортання у форматі ваших кнопок */
+.volunteer-detail-btn {
+    background: #1e40af; /* Синій колір, як у вихідних бульбашок */
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.volunteer-detail-btn:hover {
+    background: #2563eb;
+}
+
+/* Розгорнуті деталі */
+.volunteer-expanded-details {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(30, 58, 138, 0.1);
+    color: #374151;
+    font-size: 14px;
+    animation: archiveFadeIn 0.2s ease-in-out;
+}
+
+.volunteer-expanded-details p {
+    margin: 6px 0;
+}
+
+.volunteer-expanded-details strong {
+    color: #1e3a8a;
+}
+
+.volunteer-file-list {
+    list-style-type: none;
+    padding-left: 0;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.volunteer-file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.volunteer-file-link:hover {
+    text-decoration: underline;
+}
+
+.volunteer-empty-state {
+    text-align: center;
+    padding: 35px;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 18px;
+    color: #4b5563;
+}
+
+.volunteer-loader,
+.volunteer-error {
+    text-align: center;
+    padding: 40px;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.volunteer-loader { color: #1e3a8a; }
+.volunteer-error { color: #dc2626; }
+
+@keyframes archiveFadeIn {
+    from { opacity: 0; transform: translateY(2px); }
+    to { opacity: 1; transform: translateY(0); }
+}
