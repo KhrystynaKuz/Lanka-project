@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import './Home.css';
 
-export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
+export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
     const [showDropdown, setShowDropdown] = useState(false);
     const [reports, setReports] = useState([]);
 
@@ -133,7 +133,7 @@ export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
                                 src={siteContent.home_image}
                                 alt="Волонтерська команда Ланка"
                                 className="about-hero-img"
-                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }}
+                                style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px'}}
                             />
                         ) : (
                             <div className="about-photo-placeholder">
@@ -143,44 +143,59 @@ export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
                     </div>
                 </section>
 
-                <hr className="section-divider" />
+                <hr className="section-divider"/>
 
                 {/* СЕКЦІЯ 2: АКТИВНІ ЗБОРИ */}
                 <section id="donate" className="fundraisers-public-section">
                     <div className="content-intro">
                         <h2 className="main-title">Активні термінові збори</h2>
-                        <p className="main-subtitle">Ваш внесок рятує життя. Оберіть напрямок та підтримайте фінансово або через QR-код.</p>
+                        <p className="main-subtitle">Ваш внесок рятує життя. Оберіть напрямок та підтримайте фінансово
+                            або через QR-код.</p>
                     </div>
 
-                    <div className="glass-tasks-feed" style={{ marginTop: '20px' }}>
+                    <div className="glass-tasks-feed" style={{marginTop: '30px'}}>
                         {fundraisers.length === 0 ? (
-                            <p style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', width: '100%' }}>Наразі немає активних зборів.</p>
+                            <p style={{
+                                color: 'rgba(255,255,255,0.4)',
+                                textAlign: 'center',
+                                width: '100%',
+                                fontStyle: 'italic'
+                            }}>
+                                Наразі немає активних зборів.
+                            </p>
                         ) : (
                             fundraisers.map((fundraiser) => (
-                                <div key={fundraiser.id} className="glass-task-card fundraiser-card" style={{ borderColor: 'rgba(0, 212, 255, 0.2)' }}>
-                                    <h2 className="card-title" style={{ color: '#00d4ff' }}>{fundraiser.title}</h2>
-                                    <p className="card-text">{fundraiser.description}</p>
+                                <div key={fundraiser.id} className="glass-task-card fundraiser-card">
+                                    <div className="card-top-tag">
+                                        <span className="status-indicator">● Терміновий збір</span>
+                                    </div>
 
-                                    {fundraiser.qr_code_url && (
-                                        <div style={{ margin: '15px 0', textAlign: 'center' }}>
-                                            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '5px' }}>Скануйте для донату:</div>
-                                            <img
-                                                src={fundraiser.qr_code_url}
-                                                alt="QR для оплати"
-                                                style={{ width: '120px', height: '120px', borderRadius: '8px', border: '2px solid rgba(255,255,255,0.2)' }}
-                                            />
+                                    {/* Новий контейнер для правильного розподілу простору */}
+                                    <div className="fundraiser-main-content">
+                                        <div className="fundraiser-text-side">
+                                            <h2 className="card-title">{fundraiser.title}</h2>
+                                            <p className="card-text">{fundraiser.description}</p>
                                         </div>
-                                    )}
 
-                                    <div className="card-bottom" style={{ marginTop: 'auto' }}>
-                                        <span className="status-indicator" style={{ color: '#ffb703' }}>● Терміново</span>
+                                        {fundraiser.qr_code_url && (
+                                            <div className="qr-code-container">
+                                                <div className="qr-hint">Скануйте для донату:</div>
+                                                <img
+                                                    src={fundraiser.qr_code_url}
+                                                    alt="QR для оплати"
+                                                    className="qr-image"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="card-bottom">
                                         {fundraiser.link && (
                                             <a
                                                 href={fundraiser.link}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="glass-details-btn"
-                                                style={{ textDecoration: 'none', textAlign: 'center', lineHeight: '30px' }}
                                             >
                                                 ПОСИЛАННЯ НА БАНКУ
                                             </a>
@@ -192,19 +207,24 @@ export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
                     </div>
                 </section>
 
-                <hr className="section-divider" />
+                <hr className="section-divider"/>
 
                 {/* СЕКЦІЯ 3: ЗВІТИ ТА ФОТО */}
                 <section id="reports" className="completed-tasks-section">
                     <div className="content-intro">
                         <h2 className="main-title">Звіти про виконану роботу</h2>
-                        <p className="main-subtitle">Простір добрих справ, які вдалося втілити завдяки вашій підтримці.</p>
+                        <p className="main-subtitle">Простір добрих справ, які вдалося втілити завдяки вашій
+                            підтримці.</p>
                     </div>
 
                     {/* БЛОК 1: ФОТО ЗВІТІВ */}
-                    <div className="reports-sub-section" style={{ marginTop: '30px' }}>
-                        <h3 className="section-subtitle" style={{ color: '#fff', marginBottom: '15px' }}>Фотозвіти</h3>
-                        <div className="glass-photo-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px' }}>
+                    <div className="reports-sub-section" style={{marginTop: '30px'}}>
+                        <h3 className="section-subtitle" style={{color: '#fff', marginBottom: '15px'}}>Фотозвіти</h3>
+                        <div className="glass-photo-grid" style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                            gap: '15px'
+                        }}>
                             {reports
                                 .filter(item => item.type === 'photo')
                                 .map((photo, index) => (
@@ -212,7 +232,12 @@ export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
                                         key={index}
                                         src={photo.url}
                                         alt={photo.name}
-                                        style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px' }}
+                                        style={{
+                                            width: '100%',
+                                            height: '150px',
+                                            objectFit: 'cover',
+                                            borderRadius: '8px'
+                                        }}
                                     />
                                 ))
                             }
@@ -220,8 +245,9 @@ export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
                     </div>
 
                     {/* БЛОК 2: ДОКУМЕНТИ */}
-                    <div className="reports-sub-section" style={{ marginTop: '40px' }}>
-                        <h3 className="section-subtitle" style={{ color: '#fff', marginBottom: '15px' }}>Офіційні документи</h3>
+                    <div className="reports-sub-section" style={{marginTop: '40px'}}>
+                        <h3 className="section-subtitle" style={{color: '#fff', marginBottom: '15px'}}>Офіційні
+                            документи</h3>
                         <div className="glass-docs-list">
                             {reports
                                 .filter(item => item.type === 'doc')
@@ -232,7 +258,15 @@ export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="glass-doc-link"
-                                        style={{ display: 'block', padding: '10px', background: 'rgba(255,255,255,0.05)', marginBottom: '8px', borderRadius: '6px', color: '#00d4ff', textDecoration: 'none' }}
+                                        style={{
+                                            display: 'block',
+                                            padding: '10px',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            marginBottom: '8px',
+                                            borderRadius: '6px',
+                                            color: '#00d4ff',
+                                            textDecoration: 'none'
+                                        }}
                                     >
                                         📄 {doc.name}
                                     </a>
@@ -250,7 +284,7 @@ export default function Home({ isLoggedIn, onLogOut, onNavigateToLogin }) {
                 </div>
                 <div className="footer-section">
                     <h3>Контакти:</h3>
-                    <p>Email: info@lanka.org<br />Instagram: @lanka_volunteer<br />WhatsApp: @lanka_volunteer</p>
+                    <p>Email: info@lanka.org<br/>Instagram: @lanka_volunteer<br/>WhatsApp: @lanka_volunteer</p>
                 </div>
             </footer>
         </div>
