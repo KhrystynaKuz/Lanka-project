@@ -495,7 +495,7 @@ html, body {
     text-transform: uppercase;
     letter-spacing: 1px;
     /* Використовуємо насищений синій колір, як у логотипа ЛАНКА */
-    color: #1d3557;
+    color:#1e3a8a;
     font-weight: 700;
     background: rgba(29, 53, 87, 0.08); /* Ніжна підкладка під статус */
     padding: 4px 10px;
@@ -505,7 +505,7 @@ html, body {
 /* Заголовок збору — глибокий синій, чудово читається */
 .glass-task-card .card-title {
     font-size: 20px;
-    color: #1d3557; /* Точно в тон твоїх головних заголовків */
+    color: #1e3a8a; /* Точно в тон твоїх головних заголовків */
     margin: 14px 0 10px 0;
     font-weight: 700;
     line-height: 1.4;
@@ -556,7 +556,7 @@ html, body {
     width: 100%;
     padding: 12px 0;
     /* Той самий фірмовий синій колір */
-    background: #1d3557;
+    background: #1e3a8a;
     border: none;
     border-radius: 10px; /* Квадратніша з легким округленням, як "Увійти" */
     color: #ffffff;
@@ -569,7 +569,7 @@ html, body {
 }
 
 .glass-task-card .glass-details-btn:hover {
-    background: #112237; /* Трохи темніший при наведенні */
+    background: #1c3378; /* Трохи темніший при наведенні */
 }
 
 .glass-task-card .glass-details-btn:active {

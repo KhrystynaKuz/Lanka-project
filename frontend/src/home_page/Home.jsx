@@ -264,7 +264,7 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
                                             background: 'rgba(255,255,255,0.05)',
                                             marginBottom: '8px',
                                             borderRadius: '6px',
-                                            color: '#00d4ff',
+                                            color: '#1e3a8a',
                                             textDecoration: 'none'
                                         }}
                                     >
