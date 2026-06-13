@@ -21,8 +21,6 @@ export default function ManagementTab({ showNotification }) {
 
     const [volunteers, setVolunteers] = useState([]);
     const [showAddVolModal, setShowAddVolModal] = useState(false);
-    const [volunteerSearch, setVolunteerSearch] = useState('');
-
     const [allAvailableVolunteers, setAllAvailableVolunteers] = useState([]);
     const [selectedUserId, setSelectedUserId] = useState('');
     const [viewingVol, setViewingVol] = useState(null);
@@ -229,6 +227,13 @@ export default function ManagementTab({ showNotification }) {
                     ...prev,
                     coordinatorId: userId
                 }));
+
+                // Оновлюємо список волонтерів після зміни ролі
+                const volunteersResponse = await fetch('http://localhost:8080/api/management/volunteers');
+                if (volunteersResponse.ok) {
+                    const updatedVolunteers = await volunteersResponse.json();
+                    setVolunteers(updatedVolunteers);
+                }
             }
         } catch (error) {
             console.error("Помилка мережі:", error);
@@ -243,15 +248,15 @@ export default function ManagementTab({ showNotification }) {
             const response = await fetch('http://localhost:8080/api/management/volunteers');
             const data = await response.json();
 
-            const allVolunteers = data.filter(u => u.role === 'VOLUNTEER');
             const alreadyInDeptIds = volunteers.map(v => v.id);
-            const availableToAdd = allVolunteers.filter(v => !alreadyInDeptIds.includes(v.id));
+            const availableToAdd = data.filter(v => !alreadyInDeptIds.includes(v.id));
 
             setAllAvailableVolunteers(availableToAdd);
             setSelectedUserId('');
             setShowAddVolModal(true);
         } catch (error) {
             console.error("Помилка при завантаженні списку волонтерів:", error);
+            if (showNotification) showNotification("🚨 Помилка завантаження списку волонтерів", "error");
         }
     };
 
@@ -288,6 +293,7 @@ export default function ManagementTab({ showNotification }) {
             setViewingVol(data);
         } catch (error) {
             console.error("Помилка завантаження деталей:", error);
+            if (showNotification) showNotification("🚨 Помилка завантаження деталей волонтера", "error");
         }
     };
 
@@ -347,11 +353,6 @@ export default function ManagementTab({ showNotification }) {
     const filteredVolunteers = volunteers.filter(vol =>
         vol.last_name.toLowerCase().startsWith(volSearchTerm.toLowerCase()) ||
         vol.first_name.toLowerCase().startsWith(volSearchTerm.toLowerCase())
-    );
-
-    const filteredAvailableVolunteers = allAvailableVolunteers.filter(vol =>
-        vol.last_name.toLowerCase().startsWith(volunteerSearch.toLowerCase()) ||
-        vol.first_name.toLowerCase().startsWith(volunteerSearch.toLowerCase())
     );
 
     return (
@@ -477,7 +478,7 @@ export default function ManagementTab({ showNotification }) {
                         Додати відділ
                     </button>
 
-                    {/* Модальне вікно для додавання ВІДДІЛУ (ТІЛЬКИ НАЗВА ТА ОПИС) */}
+                    {/* Модальне вікно для додавання ВІДДІЛУ */}
                     {showAddDeptModal && (
                         <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(4px)' }}>
                             <div className="modal-content" style={{ width: '480px', padding: 0, background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', border: 'none' }}>
@@ -542,14 +543,25 @@ export default function ManagementTab({ showNotification }) {
                                     </div>
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Координатор відділу:</label>
+                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Призначити координатора:</label>
                                         <select
                                             className="main-search-input"
-                                            style={{ width: '100%', padding: '14px 16px', cursor: 'pointer', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px' }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '14px 16px',
+                                                cursor: volunteers.length === 0 ? 'not-allowed' : 'pointer',
+                                                background: volunteers.length === 0 ? '#f3f4f6' : '#f0f7ff',
+                                                border: '1px solid #cbd5e1',
+                                                borderRadius: '14px',
+                                                color: volunteers.length === 0 ? '#9ca3af' : '#1f2937'
+                                            }}
                                             value={editingDept.coordinatorId || ""}
                                             onChange={(e) => handleSetCoordinatorClick(editingDept.id, e.target.value)}
+                                            disabled={volunteers.length === 0}
                                         >
-                                            <option value="">Оберіть координатора...</option>
+                                            <option value="" disabled>
+                                                {volunteers.length === 0 ? "📌 Немає волонтерів для призначення" : "Оберіть координатора"}
+                                            </option>
                                             {volunteers.map(vol => (
                                                 <option key={vol.id} value={vol.id}>
                                                     {vol.last_name} {vol.first_name}
@@ -559,10 +571,12 @@ export default function ManagementTab({ showNotification }) {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', padding: '0 24px 24px 24px' }}>
-                                    <button onClick={handleSaveDepartment} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Зберегти</button>
-                                    <button onClick={() => setIsEditModalOpen(false)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Скасувати</button>
-                                    <button onClick={handleDeleteDepartmentClick} style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '12px 20px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', marginLeft: 'auto' }}>Вилити</button>
+                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between', padding: '0 24px 24px 24px' }}>
+                                    <button onClick={handleDeleteDepartmentClick} style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '12px 20px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Видалити</button>
+                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                        <button onClick={() => setIsEditModalOpen(false)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Скасувати</button>
+                                        <button onClick={handleSaveDepartment} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Зберегти</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -621,7 +635,7 @@ export default function ManagementTab({ showNotification }) {
                         </button>
                     )}
 
-                    {/* Модальне вікно: ДОДАТИ ВОЛОНТЕРА ДО ВІДДІЛУ */}
+                    {/* Модальне вікно: ДОДАТИ ВОЛОНТЕРА ДО ВІДДІЛУ (БЕЗ ПОШУКУ) */}
                     {showAddVolModal && (
                         <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(4px)' }}>
                             <div className="modal-content" style={{ width: '480px', padding: 0, background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
@@ -631,33 +645,33 @@ export default function ManagementTab({ showNotification }) {
                                 </div>
                                 <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Пошук вільного волонтера:</label>
-                                        <input
-                                            type="text"
-                                            className="main-search-input"
-                                            placeholder="Введіть Прізвище..."
-                                            value={volunteerSearch}
-                                            onChange={(e) => setVolunteerSearch(e.target.value)}
-                                            style={{ width: '100%', padding: '12px', boxSizing: 'border-box', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '12px' }}
-                                        />
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Оберіть користувача зі списку:</label>
+                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Оберіть волонтера зі списку:</label>
                                         <select
                                             className="main-search-input"
                                             value={selectedUserId}
                                             onChange={(e) => setSelectedUserId(e.target.value)}
-                                            style={{ width: '100%', padding: '12px', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '12px', cursor: 'pointer' }}
+                                            style={{ width: '100%', padding: '14px 16px', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px', cursor: 'pointer', fontSize: '15px' }}
                                         >
-                                            <option value="">-- Виберіть волонтера --</option>
-                                            {filteredAvailableVolunteers.map(v => (
-                                                <option key={v.id} value={v.id}>{v.last_name} {v.first_name} ({v.email})</option>
-                                            ))}
+                                            <option value="">Виберіть волонтера</option>
+                                            {allAvailableVolunteers.length === 0 ? (
+                                                <option value="" disabled>Немає доступних волонтерів</option>
+                                            ) : (
+                                                allAvailableVolunteers.map(v => (
+                                                    <option key={v.id} value={v.id}>
+                                                        {v.last_name} {v.first_name}
+                                                    </option>
+                                                ))
+                                            )}
                                         </select>
+                                        {allAvailableVolunteers.length === 0 && (
+                                            <div style={{ fontSize: '13px', color: '#dc2626', marginTop: '8px', textAlign: 'center' }}>
+                                                ⚠️ Немає доступних волонтерів для додавання
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', padding: '0 24px 24px 24px' }}>
-                                    <button onClick={handleAddVolunteerToDept} disabled={!selectedUserId} style={{ background: selectedUserId ? '#3b82f6' : '#94a3b8', color: 'white', border: 'none', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: selectedUserId ? 'pointer' : 'not-allowed' }}>Додати</button>
+                                    <button onClick={handleAddVolunteerToDept} disabled={!selectedUserId || allAvailableVolunteers.length === 0} style={{ background: selectedUserId && allAvailableVolunteers.length > 0 ? '#3b82f6' : '#94a3b8', color: 'white', border: 'none', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: selectedUserId && allAvailableVolunteers.length > 0 ? 'pointer' : 'not-allowed' }}>Додати</button>
                                     <button onClick={() => setShowAddVolModal(false)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Скасувати</button>
                                 </div>
                             </div>
@@ -679,12 +693,12 @@ export default function ManagementTab({ showNotification }) {
                                         <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>✉️ Email:</strong> {viewingVol.user.email}</p>
                                         <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>📞 Телефон:</strong> {viewingVol.user.phone_number}</p>
                                         <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>🎂 Д.Н.:</strong> {viewingVol.user.dob}</p>
-                                        <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>⭐ Роль:</strong> <span style={{ background: '#3b82f6', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontSize: '12px' }}>{viewingVol.user.role}</span></p>
+                                        <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>⭐ Роль:</strong> <span style={{ background: viewingVol.user.role === 'COORDINATOR' ? '#f59e0b' : '#3b82f6', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontSize: '12px' }}>{viewingVol.user.role === 'COORDINATOR' ? 'Координатор' : 'Волонтер'}</span></p>
                                     </div>
 
                                     <h4 style={{ margin: '20px 0 10px 0', color: '#1e3a8a' }}>📂 Документи волонтера</h4>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        {viewingVol.documents.length > 0 ? (
+                                        {viewingVol.documents && viewingVol.documents.length > 0 ? (
                                             viewingVol.documents.map(doc => (
                                                 <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '12px' }}>
                                                     <span>📄 {doc.type}</span>
