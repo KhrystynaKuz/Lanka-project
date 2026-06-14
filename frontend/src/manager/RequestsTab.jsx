@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
+// Додаємо базову URL для всіх запитів до Spring Boot
+const API_BASE = 'http://localhost:8080';
+
 export default function RequestsTab() {
     const [requests, setRequests] = useState([]);
     const [newCount, setNewCount] = useState(0);
@@ -16,13 +19,14 @@ export default function RequestsTab() {
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
     // --- СТЕЙТИ ДЛЯ ВІДДІЛІВ ---
-    const [departments, setDepartments] = useState([]); // Список усіх відділів із БД
-    const [selectedDepartmentsByRequest, setSelectedDepartmentsByRequest] = useState({}); // Обрані відділи для кожної заявки
+    const [departments, setDepartments] = useState([]);
+    const [selectedDepartmentsByRequest, setSelectedDepartmentsByRequest] = useState({});
 
     const loadCoreData = () => {
-        fetch('/api/requests')
+        // Оновлено URL
+        fetch(`${API_BASE}/api/requests`)
             .then(res => {
-                if (!res.ok) throw new Error();
+                if (!res.ok) throw new Error("Помилка отримання заявок");
                 return res.json();
             })
             .then(setRequests)
@@ -30,18 +34,19 @@ export default function RequestsTab() {
     };
 
     useEffect(() => {
-        fetch('/api/requests/stats')
+        // Оновлено URL
+        fetch(`${API_BASE}/api/requests/stats`)
             .then(res => {
-                if (!res.ok) throw new Error();
+                if (!res.ok) throw new Error("Помилка отримання статистики");
                 return res.json();
             })
             .then(data => setNewCount(data.newCount))
             .catch(err => console.error("Помилка завантаження лічильника:", err));
 
-        // Отримання списку відділів із БД
-        fetch('http://localhost:8080/api/departments')
+        // Оновлено URL
+        fetch(`${API_BASE}/api/departments`)
             .then(res => {
-                if (!res.ok) throw new Error();
+                if (!res.ok) throw new Error("Помилка отримання відділів");
                 return res.json();
             })
             .then(data => setDepartments(data))
@@ -53,9 +58,10 @@ export default function RequestsTab() {
     useEffect(() => {
         if (showPendingDropdown && pendingRequests.length === 0) {
             setLoading(true);
-            fetch('/api/requests/pending')
+            // Оновлено URL
+            fetch(`${API_BASE}/api/requests/pending`)
                 .then(res => {
-                    if (!res.ok) throw new Error();
+                    if (!res.ok) throw new Error("Помилка отримання нових заявок");
                     return res.json();
                 })
                 .then(data => {
@@ -77,7 +83,8 @@ export default function RequestsTab() {
             console.log(`Передаємо заявку ${id} у відділи з ID:`, chosenDepts);
         }
 
-        fetch(`/api/requests/${id}/status`, {
+        // Оновлено URL
+        fetch(`${API_BASE}/api/requests/${id}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -133,7 +140,8 @@ export default function RequestsTab() {
     };
 
     const executeDeleteFetch = (id) => {
-        fetch(`/api/requests/${id}`, {
+        // Оновлено URL
+        fetch(`${API_BASE}/api/requests/${id}`, {
             method: 'DELETE'
         })
             .then(res => {
@@ -177,12 +185,16 @@ export default function RequestsTab() {
 
     const handleSearch = () => {
         setLoading(true);
+        // Оновлено URL
         const url = searchQuery.trim()
-            ? `/api/requests/search?title=${encodeURIComponent(searchQuery.trim())}`
-            : '/api/requests';
+            ? `${API_BASE}/api/requests/search?title=${encodeURIComponent(searchQuery.trim())}`
+            : `${API_BASE}/api/requests`;
 
         fetch(url)
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error("Помилка пошуку");
+                return res.json();
+            })
             .then(setRequests)
             .catch(err => console.error("Помилка пошуку:", err))
             .finally(() => setLoading(false));
@@ -245,7 +257,6 @@ export default function RequestsTab() {
                                             <p style={{ color: '#374151' }}><strong>Статус:</strong> <span className="status-badge pending request-pending-badge">{request.status}</span></p>
                                             {request.priority && <p style={{ color: '#374151' }}><strong>Пріоритет:</strong> {request.priority}</p>}
 
-                                            {/* --- ОНОВЛЕНИЙ БЛОК: ТЕПЕР ВІН ВИЩЕ ТА КОМПАКТНІШИЙ --- */}
                                             <div className="department-selection-block" style={{
                                                 margin: '10px 0 15px 0',
                                                 padding: '10px 16px',
