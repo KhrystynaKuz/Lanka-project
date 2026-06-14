@@ -27,7 +27,9 @@ export default function ManagementTab({ showNotification }) {
     const [volunteersLoading, setVolunteersLoading] = useState(false);
     const [volSearchTerm, setVolSearchTerm] = useState("");
 
-    // Стейт для універсального кастомного вікна підтвердження
+    const [customers, setCustomers] = useState([]);
+    const [viewingCustomer, setViewingCustomer] = useState(null);
+
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
         title: '',
@@ -46,7 +48,27 @@ export default function ManagementTab({ showNotification }) {
         });
     };
 
-    // 1. Завантаження всіх відділів при старті
+    const fetchCustomers = async () => {
+        try {
+            const response = await fetch('http://localhost:8080/api/management/customers');
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Помилка завантаження замовників');
+            }
+
+            const data = await response.json();
+            setCustomers(data);
+        } catch (err) {
+            console.error("Помилка завантаження замовників:", err.message);
+            if (showNotification) showNotification(`🚨 ${err.message}`, "error");
+        }
+    };
+
+    useEffect(() => {
+        fetchCustomers();
+    }, []);
+
     useEffect(() => {
         const fetchDepartments = async () => {
             setLoading(true);
@@ -66,7 +88,6 @@ export default function ManagementTab({ showNotification }) {
         fetchDepartments();
     }, []);
 
-    // 2. Завантаження волонтерів (всіх або конкретного відділу)
     useEffect(() => {
         const fetchVolunteers = async () => {
             setVolunteersLoading(true);
@@ -111,7 +132,6 @@ export default function ManagementTab({ showNotification }) {
         if (showNotification) showNotification("🛑 Відмову надіслано успішно", "info");
     };
 
-    // Створення відділу (Тільки Назва та Опис)
     const handleAddDepartment = async () => {
         if (!newDeptName.trim()) return;
 
@@ -228,7 +248,6 @@ export default function ManagementTab({ showNotification }) {
                     coordinatorId: userId
                 }));
 
-                // Оновлюємо список волонтерів після зміни ролі
                 const volunteersResponse = await fetch('http://localhost:8080/api/management/volunteers');
                 if (volunteersResponse.ok) {
                     const updatedVolunteers = await volunteersResponse.json();
@@ -242,7 +261,6 @@ export default function ManagementTab({ showNotification }) {
         }
     };
 
-    // Відкриття модалки додавання волонтера до обраного відділу
     const handleOpenAddVolModal = async () => {
         try {
             const response = await fetch('http://localhost:8080/api/management/volunteers');
@@ -260,7 +278,6 @@ export default function ManagementTab({ showNotification }) {
         }
     };
 
-    // Сабміт додавання обраного волонтера до відділу
     const handleAddVolunteerToDept = async () => {
         if (!selectedUserId || !selectedDept) return;
 
@@ -297,8 +314,23 @@ export default function ManagementTab({ showNotification }) {
         }
     };
 
+    const handleOpenCustomerInfo = async (customer) => {
+        try {
+            const response = await fetch(`http://localhost:8080/api/management/customers/${customer.id}/details`);
+            if (!response.ok) throw new Error('Не вдалося завантажити деталі');
+            const data = await response.json();
+
+            setViewingCustomer(data);
+        } catch (error) {
+            console.error("Помилка завантаження деталей замовника:", error);
+            if (showNotification) showNotification("🚨 Помилка завантаження деталей", "error");
+        }
+    };
+
     const handleDeptClick = async (dept) => {
         setSelectedDept(dept);
+
+        setShowAddVolModal(false);
 
         try {
             const response = await fetch(`http://localhost:8080/api/management/departments/${dept.id}/coordinator`);
@@ -357,23 +389,6 @@ export default function ManagementTab({ showNotification }) {
 
     return (
         <div className="admin-tab-content fade-in">
-
-            {/* ВЕРХНЯ ПАНЕЛЬ ПОШУКУ ЗАМОВНИКІВ */}
-            <div className="glass-sub-section" style={{ marginBottom: '25px', padding: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    <h3 style={{ margin: 0, color: '#1e3a8a', minWidth: '120px', letterSpacing: '0.5px' }}>ЗАМОВНИКИ</h3>
-                    <div style={{ flex: 1, display: 'flex', gap: '10px' }}>
-                        <input
-                            type="text"
-                            className="main-search-input"
-                            placeholder="Пошук замовника..."
-                            value={customerSearch}
-                            onChange={(e) => setCustomerSearch(e.target.value)}
-                        />
-                        <button className="main-search-btn" style={{ padding: '0 20px' }}>Пошук</button>
-                    </div>
-                </div>
-            </div>
 
             {/* СЕКЦІЯ ВЕРИФІКАЦІЇ */}
             <div className="glass-sub-section" style={{ marginBottom: '25px' }}>
@@ -762,6 +777,85 @@ export default function ManagementTab({ showNotification }) {
                     </div>
                 </div>
             )}
+
+            {/* Секція Замовників */}
+            <div className="glass-sub-section" style={{ marginTop: '40px', marginBottom: '25px', padding: '20px' }}>
+                <div className="sub-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h3>ЗАМОВНИКИ ({customers.filter(c => c.last_name?.toLowerCase().startsWith(customerSearch.toLowerCase())).length})</h3>
+
+                    <div className="search-bar-mini">
+                    <input
+                        type="text"
+                        placeholder="Пошук (за прізвищем)..."
+                        value={customerSearch}
+                        onChange={(e) => setCustomerSearch(e.target.value)}
+                        style={{
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            outline: 'none',
+                            width: '200px'
+                        }}
+                    /> 🔍
+                    </div>
+                </div>
+
+                <div className="list-items-box" style={{ padding: '10px 0', maxHeight: '300px', overflowY: 'auto' }}>
+                    {customers
+                        .filter(c => c.last_name?.toLowerCase().startsWith(customerSearch.toLowerCase()))
+                        .map(customer => (
+                            <div
+                                key={customer.id}
+                                className="list-item"
+                                onClick={() => handleOpenCustomerInfo(customer)}
+                                style={{ cursor: 'pointer', padding: '10px', borderBottom: '1px solid #f1f5f9' }}
+                            >
+                                {customer.last_name} {customer.first_name}
+                            </div>
+                        ))
+                    }
+                </div>
+
+                {viewingCustomer && (
+                    <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(4px)' }}>
+                        <div className="modal-content" style={{ width: '520px', padding: 0, background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
+                            <div className="modal-header" style={{ background: '#3b82f6', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <h3 style={{ margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600' }}>👤 Профіль замовника</h3>
+                                <button onClick={() => setViewingCustomer(null)} style={{ background: 'rgba(255,255,255,0.2)', width: '32px', height: '32px', borderRadius: '50%', border: 'none', color: '#fff', cursor: 'pointer' }}>✕</button>
+                            </div>
+
+                            <div style={{ padding: '24px' }}>
+                                {/* Тепер використовуємо viewingCustomer.user */}
+                                <div style={{ background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '18px', padding: '16px' }}>
+                                    <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>👤 ПІБ:</strong> {viewingCustomer.user.last_name} {viewingCustomer.user.first_name} {viewingCustomer.user.patronymic}</p>
+                                    <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>📞 Телефон:</strong> {viewingCustomer.user.phone_number || 'Не вказано'}</p>
+                                    <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>🎂 Дата народження:</strong> {viewingCustomer.user.dob || 'Не вказано'}</p>
+                                    <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>✉️ Email:</strong> {viewingCustomer.user.email}</p>
+                                </div>
+
+                                <h4 style={{ margin: '20px 0 10px 0', color: '#1e3a8a' }}>📂 Документи замовника</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {/* Тут шлях залишається viewingCustomer.documents, це правильно */}
+                                    {viewingCustomer.documents && viewingCustomer.documents.length > 0 ? (
+                                        viewingCustomer.documents.map(doc => (
+                                            <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '12px' }}>
+                                                <span>📄 {doc.type}</span>
+                                                <span style={{ fontWeight: '700', color: doc.status === 'APPROVED' ? 'green' : 'orange' }}>{doc.status}</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div style={{ padding: '12px', border: '1px dashed #cbd5e1', textAlign: 'center', borderRadius: '12px', color: '#64748b' }}>Документи відсутні</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'center', padding: '0 24px 24px 24px' }}>
+                                <button onClick={() => setViewingCustomer(null)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '12px 40px', borderRadius: '14px', fontWeight: '600', cursor: 'pointer' }}>Закрити</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
 
         </div>
     );

@@ -60,23 +60,6 @@ public class UserDAO {
         return Optional.empty();
     }
 
-    public User getUserByEmail(String email) throws SQLException {
-        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at FROM users WHERE email = ?";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, email);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapRowToUser(rs);
-                }
-            }
-        }
-        return null;
-    }
-
     public List<User> getUnverifiedUsers() throws SQLException {
         String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at " +
                 "FROM users WHERE is_verified = false AND document_url IS NOT NULL ORDER BY created_at ASC";
@@ -251,6 +234,22 @@ public class UserDAO {
             }
         }
         return null;
+    }
+
+    public List<User> getCustomers() throws SQLException {
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at " +
+                "FROM users WHERE role = 'CUSTOMER'::user_role ORDER BY last_name ASC";
+
+        List<User> list = new ArrayList<>();
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapRowToUser(rs));
+            }
+        }
+        return list;
     }
 
     private User mapRowToUser(ResultSet rs) throws SQLException {

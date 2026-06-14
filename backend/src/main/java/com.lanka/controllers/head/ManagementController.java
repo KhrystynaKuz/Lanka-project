@@ -217,4 +217,31 @@ public class ManagementController {
             return ResponseEntity.internalServerError().body("Помилка: " + e.getMessage());
         }
     }
+
+    @GetMapping("/customers")
+    public ResponseEntity<?> getCustomers() {
+        try {
+            return ResponseEntity.ok(userDAO.getCustomers());
+        } catch (SQLException e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/customers/{userId}/details")
+    public ResponseEntity<?> getCustomerDetails(@PathVariable UUID userId) {
+        try {
+            User user = userDAO.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Замовника не знайдено"));
+
+            List<Map<String, String>> docs = documentDAO.getUserDocuments(userId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("user", user);
+            response.put("documents", docs);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Помилка: " + e.getMessage());
+        }
+    }
 }
