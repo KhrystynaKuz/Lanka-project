@@ -50,7 +50,6 @@ public class ManagementController {
         }
     }
 
-    // Отримати всіх волонтерів відділу
     @GetMapping("/departments/{deptId}/volunteers")
     public ResponseEntity<?> getVolunteersByDepartment(@PathVariable UUID deptId) {
         try {
@@ -60,7 +59,7 @@ public class ManagementController {
                         try { return userDAO.findById(ud.getUser_id()).orElse(null); }
                         catch (SQLException e) { return null; }
                     })
-                    .filter(u -> u != null)
+                    .filter(u -> u != null && u.isIs_verified())
                     .collect(Collectors.toList());
             return ResponseEntity.ok(volunteers);
         } catch (SQLException e) {
@@ -143,7 +142,13 @@ public class ManagementController {
     @GetMapping("/volunteers")
     public ResponseEntity<?> getVolunteers() {
         try {
-            return ResponseEntity.ok(userDAO.getVolunteersAndCoordinators());
+            List<User> allVolunteers = userDAO.getVolunteersAndCoordinators();
+
+            List<User> verifiedVolunteers = allVolunteers.stream()
+                    .filter(User::isIs_verified)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(verifiedVolunteers);
         } catch (SQLException e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
@@ -221,7 +226,13 @@ public class ManagementController {
     @GetMapping("/customers")
     public ResponseEntity<?> getCustomers() {
         try {
-            return ResponseEntity.ok(userDAO.getCustomers());
+            List<User> allCustomers = userDAO.getCustomers();
+
+            List<User> verifiedCustomers = allCustomers.stream()
+                    .filter(User::isIs_verified)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(verifiedCustomers);
         } catch (SQLException e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }

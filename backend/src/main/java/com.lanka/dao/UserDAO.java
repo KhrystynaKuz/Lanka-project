@@ -16,18 +16,14 @@ import java.util.UUID;
 public class UserDAO {
 
     public void addUser(User user) throws SQLException {
-        String sql = "INSERT INTO users (id, email, first_name, last_name, patronymic, dob, role, phone_number, created_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?::user_role, ?, ?)";
+        String sql = "INSERT INTO users (id, email, first_name, last_name, patronymic, dob, role, phone_number, created_at, is_verified) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?::user_role, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            if (user.getId() == null) {
-                user.setId(UUID.randomUUID());
-            }
-            if (user.getCreated_at() == null) {
-                user.setCreated_at(java.time.OffsetDateTime.now());
-            }
+            if (user.getId() == null) user.setId(UUID.randomUUID());
+            if (user.getCreated_at() == null) user.setCreated_at(java.time.OffsetDateTime.now());
 
             ps.setObject(1, user.getId());
             ps.setString(2, user.getEmail());
@@ -38,53 +34,43 @@ public class UserDAO {
             ps.setString(7, user.getRole().name());
             ps.setString(8, user.getPhone_number());
             ps.setObject(9, user.getCreated_at());
+            ps.setBoolean(10, user.isIs_verified());
 
             ps.executeUpdate();
         }
     }
 
     public Optional<User> findById(UUID id) throws SQLException {
-        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at FROM users WHERE id = ?";
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at, is_verified FROM users WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setObject(1, id);
-
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapRowToUser(rs));
-                }
+                if (rs.next()) return Optional.of(mapRowToUser(rs));
             }
         }
         return Optional.empty();
     }
 
     public List<User> getUnverifiedUsers() throws SQLException {
-        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at " +
-                "FROM users WHERE is_verified = false AND document_url IS NOT NULL ORDER BY created_at ASC";
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at, is_verified " +
+                "FROM users WHERE is_verified = false ORDER BY created_at ASC";
         List<User> list = new ArrayList<>();
-
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(mapRowToUser(rs));
-            }
+            while (rs.next()) list.add(mapRowToUser(rs));
         }
         return list;
     }
 
     public void updateVerificationStatus(UUID id, boolean isVerified) throws SQLException {
         String sql = "UPDATE users SET is_verified = ? WHERE id = ?";
-
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setBoolean(1, isVerified);
             ps.setObject(2, id);
-
             ps.executeUpdate();
         }
     }
@@ -165,56 +151,14 @@ public class UserDAO {
         }
     }
 
-    public List<User> getUsersByRoleAndDepartment(User.UserRole role, UUID departmentId) throws SQLException {
-        String sql = "SELECT u.id, u.email, u.first_name, u.last_name, u.patronymic, u.dob, u.role::text, u.phone_number, u.created_at " +
-                "FROM users u " +
-                "JOIN user_departments ud ON u.id = ud.user_id " +
-                "WHERE u.role = ?::user_role AND ud.department_id = ? " +
-                "ORDER BY u.last_name ASC, u.first_name ASC";
-
-        List<User> list = new ArrayList<>();
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, role.name());
-            ps.setObject(2, departmentId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRowToUser(rs));
-                }
-            }
-        }
-        return list;
-    }
-
-    public List<User> getAllActiveUsers() throws SQLException {
-        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at " +
-                "FROM users WHERE is_verified = true ORDER BY last_name ASC";
-        List<User> list = new ArrayList<>();
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                list.add(mapRowToUser(rs));
-            }
-        }
-        return list;
-    }
-
     public List<User> getVolunteersAndCoordinators() throws SQLException {
-        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at " +
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at, is_verified " +
                 "FROM users WHERE UPPER(role::text) IN ('VOLUNTEER', 'COORDINATOR') ORDER BY last_name ASC";
-
         List<User> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(mapRowToUser(rs));
-            }
+            while (rs.next()) list.add(mapRowToUser(rs));
         }
         return list;
     }
@@ -237,17 +181,13 @@ public class UserDAO {
     }
 
     public List<User> getCustomers() throws SQLException {
-        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at " +
+        String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at, is_verified " +
                 "FROM users WHERE role = 'CUSTOMER'::user_role ORDER BY last_name ASC";
-
         List<User> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(mapRowToUser(rs));
-            }
+            while (rs.next()) list.add(mapRowToUser(rs));
         }
         return list;
     }
@@ -260,15 +200,13 @@ public class UserDAO {
         user.setLast_name(rs.getString("last_name"));
         user.setPatronymic(rs.getString("patronymic"));
 
+        user.setIs_verified(rs.getBoolean("is_verified"));
+
         Date dobDate = rs.getDate("dob");
-        if (dobDate != null) {
-            user.setDob(dobDate.toLocalDate());
-        }
+        if (dobDate != null) user.setDob(dobDate.toLocalDate());
 
         String roleStr = rs.getString("role");
-        if (roleStr != null) {
-            user.setRole(UserRole.valueOf(roleStr.toUpperCase().trim()));
-        }
+        if (roleStr != null) user.setRole(UserRole.valueOf(roleStr.toUpperCase().trim()));
 
         user.setPhone_number(rs.getString("phone_number"));
         user.setCreated_at(rs.getObject("created_at", java.time.OffsetDateTime.class));
