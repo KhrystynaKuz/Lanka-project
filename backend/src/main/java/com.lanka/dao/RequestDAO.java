@@ -15,7 +15,7 @@ import java.util.UUID;
 public class RequestDAO {
 
     public void addRequest(Request request) throws SQLException {
-        String sql = "INSERT INTO requests (id, customer_id, title, description, status, priority, created_at, updated_at) " +
+        String sql = "INSERT INTO requests (id, customer_id, title, description, status, priority, created_at, updated_at, manager_id) " +
                 "VALUES (?, ?, ?, ?, ?::request_status, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -112,8 +112,10 @@ public class RequestDAO {
         return null;
     }
 
+    // 1. UPDATE THE SQL IN THIS METHOD
     public List<Request> getRequestsByCustomerId(UUID customerId) throws SQLException {
-        String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at " +
+        // ADD manager_id to the SELECT statement here!
+        String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests WHERE customer_id = ? ORDER BY created_at DESC";
         List<Request> list = new ArrayList<>();
 
@@ -128,6 +130,29 @@ public class RequestDAO {
             }
         }
         return list;
+    }
+
+    // 2. UPDATE THE MAPPING METHOD
+    private Request mapRowToRequest(ResultSet rs) throws SQLException {
+        Request request = new Request();
+        request.setId(rs.getObject("id", UUID.class));
+        request.setCustomer_id(rs.getObject("customer_id", UUID.class));
+        request.setTitle(rs.getString("title"));
+        request.setDescription(rs.getString("description"));
+
+        String statusStr = rs.getString("status");
+        if (statusStr != null) {
+            request.setStatus(RequestStatus.valueOf(statusStr.toUpperCase()));
+        }
+
+        request.setPriority(rs.getInt("priority"));
+        request.setCreated_at(rs.getObject("created_at", OffsetDateTime.class));
+        request.setUpdated_at(rs.getObject("updated_at", OffsetDateTime.class));
+
+        // ADD THIS LINE TO GET THE MANAGER ID!
+        request.setManager_id(rs.getObject("manager_id", UUID.class));
+
+        return request;
     }
 
     public List<Request> searchByTitle(String titlePart) throws SQLException {
@@ -209,23 +234,5 @@ public class RequestDAO {
 
             ps.executeUpdate();
         }
-    }
-
-    private Request mapRowToRequest(ResultSet rs) throws SQLException {
-        Request request = new Request();
-        request.setId(rs.getObject("id", UUID.class));
-        request.setCustomer_id(rs.getObject("customer_id", UUID.class));
-        request.setTitle(rs.getString("title"));
-        request.setDescription(rs.getString("description"));
-
-        String statusStr = rs.getString("status");
-        if (statusStr != null) {
-            request.setStatus(RequestStatus.valueOf(statusStr.toUpperCase()));
-        }
-
-        request.setPriority(rs.getInt("priority"));
-        request.setCreated_at(rs.getObject("created_at", OffsetDateTime.class));
-        request.setUpdated_at(rs.getObject("updated_at", OffsetDateTime.class));
-        return request;
     }
 }

@@ -129,6 +129,8 @@ export default function Customer({ onLogOut }) {
         }, 1000);
     };
 
+    const [activeChatId, setActiveChatId] = useState(null);
+
     return (
         <div className="admin-glass-container">
             {/* КАНАЛ СПОВІЩЕНЬ */}
@@ -208,12 +210,15 @@ export default function Customer({ onLogOut }) {
                 {activeTab === 'my_requests' && (
                     <MyRequestsTab
                         userId={currentUserId}
-                        onGoToChat={() => setActiveTab('chats')}
+                        onGoToChat={(id) => {
+                            setActiveChatId(id);
+                            setActiveTab('chats');
+                        }}
                     />
                 )}
 
                 {activeTab === 'chats' && (
-                    <ChatsTab />
+                    <ChatsTab initialChatId={activeChatId} />
                 )}
             </main>
 

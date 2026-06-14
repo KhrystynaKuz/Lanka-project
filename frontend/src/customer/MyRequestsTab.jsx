@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 
 // Компонент тосту
 const Toast = ({ message, type, onClose }) => {
@@ -130,6 +131,36 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
         }
     };
 
+    const handleChatNavigation = async (managerId) => {
+        if (!managerId) {
+            alert("До цієї заявки ще не призначено менеджера.");
+            return;
+        }
+
+        try {
+            // Call the Supabase function directly
+            const { data: newChatId, error } = await supabase.rpc('get_or_create_direct_chat', {
+                user1_id: userId,
+                user2_id: managerId
+            });
+
+            if (error) {
+                console.error("Supabase Error:", error);
+                alert("Помилка при створенні чату.");
+                return;
+            }
+
+            // Pass the new chat ID up to Customer.jsx
+            if (newChatId) {
+                onGoToChat(newChatId);
+            }
+
+        } catch (error) {
+            console.error("Network Error:", error);
+            alert("Не вдалося з'єднатися з сервером.");
+        }
+    };
+
     const getStatusColor = (status) => {
         switch (status?.toUpperCase()) {
             case 'PENDING': return '#eab308';
@@ -175,6 +206,7 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
                 isDanger={true}
             />
 
+            {/* Header logic remains exactly the same */}
             <div className="tab-header-block">
                 <h2 className="tab-title">Історія моїх заявок</h2>
                 <div className="badge-counter">
@@ -210,8 +242,13 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
                                 </div>
 
                                 <div className="action-buttons-side">
-                                    <button className="btn-detail-view" onClick={onGoToChat}>
-                                        Чат по заявці
+                                    {/* --- UPDATED BUTTON --- */}
+                                    <button
+                                        className="btn-detail-view"
+                                        onClick={() => handleChatNavigation(req.manager_id)}
+                                        style={!req.manager_id ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+                                    >
+                                        {req.manager_id ? "Чат з менеджером" : "Очікує менеджера"}
                                     </button>
 
                                     <button

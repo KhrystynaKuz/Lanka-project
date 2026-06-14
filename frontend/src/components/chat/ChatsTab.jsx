@@ -8,7 +8,7 @@ import GroupSettingsModal from '../../components/chat/GroupSettingsModal';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../supabaseClient';
 
-export default function ChatsTab() {
+export default function ChatsTab({ initialChatId }) {
     const { user, loading: authLoading } = useAuth();
     const userId = user?.id;
     const isHeadOrCoord = ['HEAD', 'COORDINATOR'].includes(user?.role);
@@ -17,6 +17,12 @@ export default function ChatsTab() {
     const [selectedChatId, setSelectedChatId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('ACTIVE');
+
+    useEffect(() => {
+        if (initialChatId) {
+            setSelectedChatId(initialChatId);
+        }
+    }, [initialChatId]);
 
     const { messages, loading: msgsLoading, hasMore, loadMore, sendMessage } = useMessages(selectedChatId);
 
