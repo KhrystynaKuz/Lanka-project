@@ -1,17 +1,54 @@
 import React, { useState } from 'react';
 
+// Компонент тосту
+const Toast = ({ message, type, onClose }) => {
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            onClose();
+        }, 4000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <div className={`toast-item toast-${type}`}>
+            <span>{message}</span>
+            <button className="toast-close-btn" onClick={onClose}>✕</button>
+        </div>
+    );
+};
+
 export default function CreateRequestTab({ userId, onSuccessSubmit }) {
     const [title, setTitle] = useState('');
     const [category, setCategory] = useState('Гуманітарна допомога');
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+    const [toasts, setToasts] = useState([]);
+
+    const addToast = (message, type = 'info') => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+    };
+
+    const removeToast = (id) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+    };
 
     const handleCreateRequest = async (e) => {
         e.preventDefault();
 
         if (!userId) {
-            alert("Помилка: Не вдалося визначити ID користувача. Перезайдіть у систему.");
+            addToast("⚠️ Помилка: Не вдалося визначити ID користувача. Перезайдіть у систему.", "error");
+            return;
+        }
+
+        if (!title.trim()) {
+            addToast("⚠️ Будь ласка, введіть назву заявки.", "warning");
+            return;
+        }
+
+        if (!description.trim()) {
+            addToast("⚠️ Будь ласка, введіть опис заявки.", "warning");
             return;
         }
 
@@ -36,18 +73,18 @@ export default function CreateRequestTab({ userId, onSuccessSubmit }) {
 
             if (response.ok) {
                 await response.json();
-                alert(`Заявку успішно створено в БД!`);
+                addToast("✅ Заявку успішно створено!", "success");
                 setTitle('');
                 setDescription('');
                 setPriority(1);
                 if (onSuccessSubmit) onSuccessSubmit();
             } else {
                 const errorText = await response.text();
-                alert(`Помилка сервера: ${errorText}`);
+                addToast(`🚨 Помилка сервера: ${errorText}`, "error");
             }
         } catch (error) {
             console.error("Error sending request:", error);
-            alert("Не вдалося з'єднатися з сервером.");
+            addToast("🚨 Не вдалося з'єднатися з сервером.", "error");
         } finally {
             setIsLoading(false);
         }
@@ -55,6 +92,18 @@ export default function CreateRequestTab({ userId, onSuccessSubmit }) {
 
     return (
         <div className="fade-in" style={{ marginTop: '15px' }}>
+            {/* Контейнер для тостів */}
+            <div className="toast-notifications-container">
+                {toasts.map(toast => (
+                    <Toast
+                        key={toast.id}
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => removeToast(toast.id)}
+                    />
+                ))}
+            </div>
+
             <div className="tab-header-block">
                 <h2 className="tab-title">Нова заявка на допомогу</h2>
             </div>
@@ -98,10 +147,10 @@ export default function CreateRequestTab({ userId, onSuccessSubmit }) {
                             style={{ width: '100%', padding: '12px' }}
                             disabled={isLoading}
                         >
-                            <option value={1}> Низький </option>
-                            <option value={2}> Середній </option>
-                            <option value={3}> Високий </option>
-                            <option value={4}> Критичний </option>
+                            <option value={1}>Низький</option>
+                            <option value={2}>Середній</option>
+                            <option value={3}>Високий</option>
+                            <option value={4}>Критичний</option>
                         </select>
                     </div>
 
