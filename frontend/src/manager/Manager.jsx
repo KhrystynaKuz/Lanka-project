@@ -210,8 +210,10 @@ export default function Header({ onLogOut, onBackToHome }) {
                                 <div className="info-row">
                                     <span className="info-label">👤 ПІБ:</span>
                                     <span className="info-value">
-                            {fullUserData.lastName} {fullUserData.firstName} {fullUserData.patronymic || '—'}
-                        </span>
+                                        {[fullUserData.lastName, fullUserData.firstName, fullUserData.patronymic]
+                                            .filter(Boolean)
+                                            .join(' ') || 'Не вказано'}
+                                     </span>
                                 </div>
 
                                 <div className="info-row">
@@ -280,10 +282,6 @@ export default function Header({ onLogOut, onBackToHome }) {
                                 )}
                             </div>
                         </div>
-
-                        <button className="close-modal-btn" onClick={() => setShowFullProfileModal(false)}>
-                            Закрити
-                        </button>
                     </div>
                 </div>
             )}
