@@ -251,3 +251,43 @@
         padding: 20px;
     }
 }
+
+/* Стилі для поля завантаження документа у волонтера */
+#volunteerDocument {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+/* Адаптивність для мобільних пристроїв */
+@media (max-width: 640px) {
+    .role-selection-wrapper {
+        gap: 12px;
+    }
+
+    .role-card {
+        padding: 16px;
+    }
+
+    .role-icon-box {
+        width: 40px;
+        height: 40px;
+    }
+
+    .role-icon-box svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .role-card h3 {
+        font-size: 16px;
+    }
+
+    .role-card p {
+        font-size: 12px;
+    }
+}

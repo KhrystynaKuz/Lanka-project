@@ -59,12 +59,39 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
         }
     };
 
+    // Функція для завантаження документа на сервер
+    const uploadDocument = async (userId, file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('userId', userId);
+        formData.append('title', `${lastName} ${firstName} - реєстраційний документ`);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/profile/documents/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                console.error('Помилка завантаження документа');
+                return false;
+            }
+
+            const result = await response.json();
+            return result;
+        } catch (err) {
+            console.error('Помилка при завантаженні документа:', err);
+            return false;
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
+            // 1. Створення акаунту в Supabase Auth
             const authResponse = await fetch(`${SUPABASE_BASE_URL}/auth/v1/signup`, {
                 method: 'POST',
                 headers: {
@@ -89,6 +116,7 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                 throw new Error('Не вдалося отримати ідентифікатор користувача.');
             }
 
+            // 2. Збереження даних користувача
             const userData = {
                 id: userId,
                 email: email,
@@ -118,6 +146,11 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
             if (!dbResponse.ok) {
                 const dbError = await dbResponse.json();
                 throw new Error(dbError.message || 'Акаунт створено, але виникла помилка збереження анкетних даних у таблиці users.');
+            }
+
+            // 3. Завантаження документа (для волонтерів або замовників)
+            if (document) {
+                await uploadDocument(userId, document);
             }
 
             setLoading(false);
@@ -262,47 +295,76 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                             </div>
                         </div>
 
-                        {/* Для волонтерів: пароль зліва, відділ справа */}
+                        {/* Для волонтерів: пароль ліворуч, відділ праворуч */}
                         {role === 'VOLUNTEER' && (
-                            <div className="form-grid-row">
-                                <div className="input-group">
-                                    <label htmlFor="password">Пароль <span className="required-star">*</span></label>
-                                    <input
-                                        type="password"
-                                        id="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="••••••••"
-                                        required
-                                        disabled={loading}
-                                    />
-                                </div>
-
-                                <div className="input-group">
-                                    <label htmlFor="department">Відділ <span className="required-star">*</span></label>
-                                    {loadingDepartments ? (
-                                        <div className="loading-departments">
-                                            <span>Завантаження...</span>
-                                        </div>
-                                    ) : (
-                                        <select
-                                            id="department"
-                                            value={departmentId}
-                                            onChange={(e) => setDepartmentId(e.target.value)}
+                            <>
+                                <div className="form-grid-row">
+                                    <div className="input-group">
+                                        <label htmlFor="password">Пароль <span className="required-star">*</span></label>
+                                        <input
+                                            type="password"
+                                            id="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            placeholder="••••••••"
                                             required
                                             disabled={loading}
-                                            className="department-select"
-                                        >
-                                            <option value="" disabled>Оберіть відділ</option>
-                                            {departments.map((dept) => (
-                                                <option key={dept.id} value={dept.id}>
-                                                    {dept.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    )}
+                                        />
+                                    </div>
+
+                                    <div className="input-group">
+                                        <label htmlFor="department">Відділ <span className="required-star">*</span></label>
+                                        {loadingDepartments ? (
+                                            <div className="loading-departments">
+                                                <span>Завантаження...</span>
+                                            </div>
+                                        ) : (
+                                            <select
+                                                id="department"
+                                                value={departmentId}
+                                                onChange={(e) => setDepartmentId(e.target.value)}
+                                                required
+                                                disabled={loading}
+                                                className="department-select"
+                                            >
+                                                <option value="" disabled>Оберіть відділ</option>
+                                                {departments.map((dept) => (
+                                                    <option key={dept.id} value={dept.id}>
+                                                        {dept.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+
+                                {/* Документ для волонтера */}
+                                <div className="form-grid-row">
+                                    <div className="input-group">
+                                        <label htmlFor="volunteerDocument">Документ для реєстрації <span className="required-star">*</span></label>
+                                        <div className="file-upload-wrapper">
+                                            <input
+                                                type="file"
+                                                id="volunteerDocument"
+                                                accept=".jpg,.jpeg,.png,.pdf"
+                                                onChange={handleFileChange}
+                                                required
+                                                disabled={loading}
+                                                className="file-hidden-input"
+                                            />
+                                            <label htmlFor="volunteerDocument" className="file-custom-label">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                                                </svg>
+                                                {document ? document.name : 'Оберіть файл'}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="input-group">
+                                        {/* Пустий простір для вирівнювання */}
+                                    </div>
+                                </div>
+                            </>
                         )}
 
                         {/* Для замовників: пароль ліворуч, документ праворуч */}

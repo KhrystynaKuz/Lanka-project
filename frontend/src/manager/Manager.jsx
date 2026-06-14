@@ -205,105 +205,81 @@ export default function Header({ onLogOut, onBackToHome }) {
                             <button className="modal-close" onClick={() => setShowFullProfileModal(false)}>✖</button>
                         </div>
 
-                        <div className="info-content">
-                            <div className="info-row">
-                                <span className="info-label">👤 ПІБ:</span>
-                                <span className="info-value">
-                                    {fullUserData.lastName} {fullUserData.firstName} {fullUserData.patronymic || '—'}
-                                </span>
-                            </div>
-
-                            <div className="info-row">
-                                <span className="info-label">📧 Email:</span>
-                                <span className="info-value">{fullUserData.email}</span>
-                            </div>
-
-                            <div className="info-row">
-                                <span className="info-label">📞 Телефон:</span>
-                                <span className="info-value">{fullUserData.phone_number || 'Не вказано'}</span>
-                            </div>
-
-                            <div className="info-row">
-                                <span className="info-label">⭐ Роль:</span>
-                                <span className="info-value">{fullUserData.role}</span>
-                            </div>
-
-                            <div className="info-row">
-                                <span className="info-label">🎂 Дата народження:</span>
-                                <span className="info-value">{fullUserData.dob || 'Не вказано'}</span>
-                            </div>
-
-                            <div className="info-row">
-                                <span className="info-label">📅 Дата реєстрації:</span>
-                                <span className="info-value">
-                                    {fullUserData.created_at ? new Date(fullUserData.created_at).toLocaleDateString() : 'Не вказано'}
-                                </span>
-                            </div>
-
-                            <div style={{ marginTop: '20px', textAlign: 'right' }}>
-                                <button className="edit-phone-btn" onClick={openEditProfileModal}>✏️ Редагувать дані</button>
-                            </div>
-                        </div>
-
-                        <hr />
-
-                        <div className="documents-section">
-                            <h4>📁 Мої документи</h4>
-
-                            <div className="file-upload-area">
-                                <label className="file-upload-label">
-                                    📎 Завантажити файл (фото/PDF)
-                                    <input type="file" accept="image/*,application/pdf" onChange={handleFileUpload} disabled={uploadingFile} style={{ display: 'none' }} />
-                                </label>
-                                {uploadingFile && <span className="upload-spinner">⏳ Завантаження...</span>}
-                            </div>
-
-                            {documents.length === 0 ? (
-                                <p className="no-docs">Немає документів</p>
-                            ) : (
-                                <div className="documents-list">
-                                    {documents.map(doc => (
-                                        <div key={doc.id} className="document-card">
-                                            <div className="doc-icon">📄</div>
-                                            <div className="doc-info">
-                                                <div className="doc-title">{doc.title}</div>
-                                                {doc.content && <div className="doc-preview">{doc.content.substring(0, 50)}...</div>}
-                                                {doc.file_url && <div className="doc-file">📎 {doc.file_url}</div>}
-                                            </div>
-                                            <div className="doc-actions">
-                                                <button onClick={() => setEditingDoc(doc)} className="doc-edit">✏️</button>
-                                                <button onClick={() => deleteDocument(doc.id)} className="doc-delete">🗑️</button>
-                                            </div>
-                                        </div>
-                                    ))}
+                        <div className="modal-scrollable-content">
+                            <div className="info-content">
+                                <div className="info-row">
+                                    <span className="info-label">👤 ПІБ:</span>
+                                    <span className="info-value">
+                            {fullUserData.lastName} {fullUserData.firstName} {fullUserData.patronymic || '—'}
+                        </span>
                                 </div>
-                            )}
 
-                            <button className="add-doc-btn" onClick={() => setEditingDoc({ id: null, title: '', content: '' })}>
-                                + Додати текстовий документ
-                            </button>
-                        </div>
+                                <div className="info-row">
+                                    <span className="info-label">📧 Email:</span>
+                                    <span className="info-value">{fullUserData.email}</span>
+                                </div>
 
-                        {editingDoc && (
-                            <div className="doc-editor">
-                                <h5>{editingDoc.id ? '✏️ Редагування документа' : '📝 Новий документ'}</h5>
-                                <input
-                                    type="text"
-                                    placeholder="Назва документа"
-                                    value={editingDoc.title}
-                                    onChange={e => setEditingDoc({...editingDoc, title: e.target.value})}
-                                />
-                                <textarea
-                                    placeholder="Зміст документа"
-                                    value={editingDoc.content || ''}
-                                    onChange={e => setEditingDoc({...editingDoc, content: e.target.value})}
-                                />
-                                <div className="editor-actions">
-                                    <button onClick={() => showNotification('✨ Документ успішно збережено!', 'success')} className="save-doc-btn">Зберегти</button>
-                                    <button onClick={() => setEditingDoc(null)} className="cancel-doc-btn">Скасувати</button>
+                                <div className="info-row">
+                                    <span className="info-label">📞 Телефон:</span>
+                                    <span className="info-value">{fullUserData.phone_number || 'Не вказано'}</span>
+                                </div>
+
+                                <div className="info-row">
+                                    <span className="info-label">⭐ Роль:</span>
+                                    <span className="info-value">{fullUserData.role}</span>
+                                </div>
+
+                                <div className="info-row">
+                                    <span className="info-label">🎂 Дата народження:</span>
+                                    <span className="info-value">{fullUserData.dob || 'Не вказано'}</span>
+                                </div>
+
+                                <div className="info-row">
+                                    <span className="info-label">📅 Дата реєстрації:</span>
+                                    <span className="info-value">
+                            {fullUserData.created_at ? new Date(fullUserData.created_at).toLocaleDateString() : 'Не вказано'}
+                        </span>
+                                </div>
+
+                                <div style={{ marginTop: '20px', textAlign: 'right' }}>
+                                    <button className="edit-phone-btn" onClick={openEditProfileModal}>✏️ Редагувати дані</button>
                                 </div>
                             </div>
-                        )}
+
+                            <hr />
+
+                            <div className="documents-section">
+                                <h4>📁 Мої документи</h4>
+
+                                <div className="file-upload-area">
+                                    <label className="file-upload-label">
+                                        📎 Завантажити файл (фото/PDF)
+                                        <input type="file" accept="image/*,application/pdf" onChange={handleFileUpload} disabled={uploadingFile} style={{ display: 'none' }} />
+                                    </label>
+                                    {uploadingFile && <span className="upload-spinner">⏳ Завантаження...</span>}
+                                </div>
+
+                                {documents.length === 0 ? (
+                                    <p className="no-docs">Немає документів</p>
+                                ) : (
+                                    <div className="documents-list">
+                                        {documents.map(doc => (
+                                            <div key={doc.id} className="document-card">
+                                                <div className="doc-icon">📄</div>
+                                                <div className="doc-info">
+                                                    <div className="doc-title">{doc.title}</div>
+                                                    {doc.content && <div className="doc-preview">{doc.content.substring(0, 50)}...</div>}
+                                                    {doc.file_url && <div className="doc-file">📎 {doc.file_url}</div>}
+                                                </div>
+                                                <div className="doc-actions">
+                                                    <button onClick={() => deleteDocument(doc.id)} className="doc-delete">🗑️</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
                         <button className="close-modal-btn" onClick={() => setShowFullProfileModal(false)}>
                             Закрити
