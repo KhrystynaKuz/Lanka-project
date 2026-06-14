@@ -1,5 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Coordinator.css';
+
+// Компонент тосту з використанням стилів з Manager.css
+const Toast = ({ message, type, onClose }) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onClose();
+        }, 4000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <div className={`toast-item toast-${type}`}>
+            <span>{message}</span>
+            <button className="toast-close-btn" onClick={onClose}>✕</button>
+        </div>
+    );
+};
+
+// Компонент модального вікна підтвердження (в стилі з Manager.css)
+const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Так, видалити", cancelText = "Скасувати", isDanger = true }) => {
+    const [dontShowAgain, setDontShowAgain] = useState(false);
+
+    useEffect(() => {
+        const handleEsc = (e) => {
+            if (e.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
+
+    if (!isOpen) return null;
+
+    const handleConfirm = () => {
+        if (dontShowAgain) {
+            sessionStorage.setItem('dontShowInventoryConfirm', 'true');
+        }
+        onConfirm();
+        onClose();
+    };
+
+    return (
+        <div className="custom-confirm-overlay" onClick={onClose} style={{ zIndex: 10001 }}>
+            <div className="custom-confirm-card" onClick={(e) => e.stopPropagation()}>
+                <div className="custom-confirm-icon">
+                    {isDanger ? '🗑️' : '⚠️'}
+                </div>
+                <h3 className="custom-confirm-title">{title || "Остаточне видалення"}</h3>
+                <p className="custom-confirm-text">
+                    {message || "Ви впевнені, що хочете видалити цей товар? Цю дію не можна скасувати."}
+                </p>
+                <div className="modal-checkbox-container">
+                    <input
+                        type="checkbox"
+                        id="dontShowAgain"
+                        className="modal-checkbox-input"
+                        checked={dontShowAgain}
+                        onChange={(e) => setDontShowAgain(e.target.checked)}
+                    />
+                    <label htmlFor="dontShowAgain" className="modal-checkbox-label">
+                        Більше не попереджати в цій сесії
+                    </label>
+                </div>
+                <div className="custom-confirm-actions">
+                    <button className="btn-confirm-cancel" onClick={onClose}>
+                        {cancelText}
+                    </button>
+                    <button className={`btn-confirm-execute ${isDanger ? 'danger-action' : ''}`} onClick={handleConfirm}>
+                        {confirmText}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default function InventoryTab() {
     const [warehouseItems, setWarehouseItems] = useState([]);
@@ -8,20 +84,51 @@ export default function InventoryTab() {
     const [searchQuery, setSearchQuery] = useState('');
     const [bookingMode, setBookingMode] = useState(false);
     const [requests, setRequests] = useState([]);
+    const [toasts, setToasts] = useState([]);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
+
+    // Використовуємо ref для відстеження, чи було вже завантаження
+    const hasLoadedRef = useRef(false);
+    const toastShownRef = useRef(false);
+
+    const addToast = (message, type = 'info') => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+    };
+
+    const removeToast = (id) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+    };
 
     useEffect(() => {
+        // Запобігаємо подвійному завантаженню в StrictMode
+        if (hasLoadedRef.current) return;
+        hasLoadedRef.current = true;
+
         const loadInventory = async () => {
             try {
                 const res = await fetch('/api/warehouse');
                 if (!res.ok) throw new Error('Network error');
                 const data = await res.json();
                 setWarehouseItems(Array.isArray(data) ? data : []);
+
+                // Показуємо тост тільки один раз
+                if (!toastShownRef.current) {
+                    toastShownRef.current = true;
+                    addToast("📦 Склад успішно завантажено", "success");
+                }
             } catch (err) {
                 console.error("Помилка завантаження складу:", err);
+                if (!toastShownRef.current) {
+                    toastShownRef.current = true;
+                    addToast("🚨 Помилка завантаження складу", "error");
+                }
             }
         };
+
         loadInventory();
-    }, []);
+    }, []); // Пустий масив залежностей - виконується один раз
 
     const filteredItems = warehouseItems.filter(item =>
         item.item_name?.toLowerCase().startsWith(searchQuery.toLowerCase().trim())
@@ -29,47 +136,123 @@ export default function InventoryTab() {
 
     const saveItem = async () => {
         if (!editingItem.item_name?.trim() || editingItem.quantity < 0) {
-            alert("Будь ласка, заповніть коректно всі поля.");
+            addToast("⚠️ Будь ласка, заповніть коректно всі поля.", "warning");
             return;
         }
 
         const url = isNew ? '/api/warehouse' : `/api/warehouse/${editingItem.id}`;
         const method = isNew ? 'POST' : 'PUT';
 
-        const response = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(editingItem)
-        });
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editingItem)
+            });
 
-        if (response.ok) {
-            fetch('/api/warehouse').then(res => res.json()).then(setWarehouseItems);
-            setEditingItem(null);
+            if (response.ok) {
+                // Оновлюємо список після збереження
+                const res = await fetch('/api/warehouse');
+                const data = await res.json();
+                setWarehouseItems(Array.isArray(data) ? data : []);
+                setEditingItem(null);
+                addToast(isNew ? "📦 Новий товар успішно додано!" : "💾 Товар успішно оновлено!", "success");
+            } else {
+                addToast("🚨 Помилка при збереженні товару.", "error");
+            }
+        } catch (err) {
+            console.error("Помилка:", err);
+            addToast("🚨 Критична помилка під час збереження.", "error");
         }
     };
 
-    const handleDelete = async () => {
-        if (window.confirm('Видалити цей товар зі складу?')) {
-            await fetch(`/api/warehouse/${editingItem.id}`, { method: 'DELETE' });
-            setWarehouseItems(prev => prev.filter(i => i.id !== editingItem.id));
+    const performDelete = async () => {
+        if (!itemToDelete) return;
+
+        try {
+            await fetch(`/api/warehouse/${itemToDelete.id}`, { method: 'DELETE' });
+            // Оновлюємо список після видалення
+            const res = await fetch('/api/warehouse');
+            const data = await res.json();
+            setWarehouseItems(Array.isArray(data) ? data : []);
             setEditingItem(null);
+            addToast("🗑️ Товар успішно видалено зі складу", "success");
+        } catch (err) {
+            console.error("Помилка:", err);
+            addToast("🚨 Не вдалося видалити товар", "error");
+        } finally {
+            setItemToDelete(null);
         }
+    };
+
+    const handleDeleteClick = () => {
+        const currentItem = editingItem;
+        setEditingItem(null);
+
+        setTimeout(() => {
+            if (sessionStorage.getItem('dontShowInventoryConfirm') === 'true') {
+                setItemToDelete(currentItem);
+                performDelete();
+            } else {
+                setItemToDelete(currentItem);
+                setShowDeleteConfirm(true);
+            }
+        }, 50);
     };
 
     const handleBook = async (reqId, qty) => {
-        if (!reqId || qty <= 0) return alert("Введіть коректні дані");
-        await fetch(`/api/warehouse/book/${editingItem.id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ request_id: reqId, quantity_changed: qty })
-        });
-        setBookingMode(false);
-        setEditingItem(null);
-        fetch('/api/warehouse').then(res => res.json()).then(setWarehouseItems);
+        if (!reqId || qty <= 0) {
+            addToast("⚠️ Введіть коректні дані для бронювання", "warning");
+            return;
+        }
+
+        try {
+            await fetch(`/api/warehouse/book/${editingItem.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ request_id: reqId, quantity_changed: qty })
+            });
+            setBookingMode(false);
+            setEditingItem(null);
+            const res = await fetch('/api/warehouse');
+            const data = await res.json();
+            setWarehouseItems(Array.isArray(data) ? data : []);
+            addToast("✅ Товар успішно заброньовано!", "success");
+        } catch (err) {
+            console.error("Помилка:", err);
+            addToast("🚨 Помилка при бронюванні товару", "error");
+        }
     };
 
     return (
         <div className="coord-warehouse-section">
+            {/* Контейнер для тостів */}
+            <div className="toast-notifications-container">
+                {toasts.map(toast => (
+                    <Toast
+                        key={toast.id}
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => removeToast(toast.id)}
+                    />
+                ))}
+            </div>
+
+            {/* Модальне вікно підтвердження видалення */}
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                onClose={() => {
+                    setShowDeleteConfirm(false);
+                    setItemToDelete(null);
+                }}
+                onConfirm={performDelete}
+                title="Остаточне видалення"
+                message="Ви впевнені, що хочете видалити цей товар зі складу? Цю дію не можна скасувати."
+                confirmText="Так, видалити"
+                cancelText="Скасувати"
+                isDanger={true}
+            />
+
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
                 <input
                     className="coord-search-input"
@@ -97,7 +280,7 @@ export default function InventoryTab() {
 
             {/* Модальне вікно редагування */}
             {editingItem && !bookingMode && (
-                <div className="modal-overlay">
+                <div className="modal-overlay" style={{ zIndex: 10000 }}>
                     <div className="coord-modal-content">
                         <h3 className="coord-modal-title">{isNew ? 'ДОДАВАННЯ ТОВАРУ' : 'РЕДАГУВАННЯ ТОВАРУ'}</h3>
 
@@ -107,7 +290,7 @@ export default function InventoryTab() {
 
                         <div className="coord-modal-actions" style={{ flexDirection: 'row', gap: '10px' }}>
                             <button className="btn-save" style={{ margin: 0 }} onClick={saveItem}>{isNew ? 'ДОДАТИ' : 'ЗБЕРЕГТИ'}</button>
-                            {!isNew && <button className="btn-delete" style={{ margin: 0 }} onClick={handleDelete}>ВИДАЛИТИ</button>}
+                            {!isNew && <button className="btn-delete" style={{ margin: 0 }} onClick={handleDeleteClick}>ВИДАЛИТИ</button>}
                             <button className="btn-cancel" style={{ margin: 0 }} onClick={() => setEditingItem(null)}>СКАСУВАТИ</button>
                         </div>
 
@@ -116,13 +299,18 @@ export default function InventoryTab() {
                                 className="btn-save"
                                 style={{ background: '#f59e0b', marginTop: '10px' }}
                                 onClick={async () => {
-                                    const res = await fetch('/api/warehouse/requests/mine');
-                                    if (res.ok) {
-                                        const data = await res.json();
-                                        setRequests(data);
-                                        setBookingMode(true);
-                                    } else {
-                                        alert("Не вдалося завантажити ваші заявки.");
+                                    try {
+                                        const res = await fetch('/api/warehouse/requests/mine');
+                                        if (res.ok) {
+                                            const data = await res.json();
+                                            setRequests(data);
+                                            setBookingMode(true);
+                                        } else {
+                                            addToast("🚨 Не вдалося завантажити ваші заявки.", "error");
+                                        }
+                                    } catch (err) {
+                                        console.error("Помилка:", err);
+                                        addToast("🚨 Помилка завантаження заявок", "error");
                                     }
                                 }}
                             >
@@ -135,11 +323,10 @@ export default function InventoryTab() {
 
             {/* Модальне вікно бронювання */}
             {bookingMode && (
-                <div className="modal-overlay">
+                <div className="modal-overlay" style={{ zIndex: 10000 }}>
                     <div className="coord-modal-content">
                         <h3 className="coord-modal-title">БРОНЮВАННЯ</h3>
 
-                        {/* Випадаючий список з назвами заявок */}
                         <label style={{ fontSize: '0.8rem', color: '#666', marginBottom: '5px', display: 'block' }}>
                             Оберіть заявку:
                         </label>
