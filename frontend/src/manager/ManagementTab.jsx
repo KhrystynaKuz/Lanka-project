@@ -734,7 +734,6 @@ export default function ManagementTab({ showNotification }) {
                 </div>
             </div>
 
-            {/* КАСТОМІЗОВАНЕ МОДАЛЬНЕ ВІКНО: ПРИЧИНА ВІДМОВИ */}
             {showRejectModal && (
                 <div className="custom-reject-overlay">
                     <div className="custom-reject-card">
@@ -758,7 +757,6 @@ export default function ManagementTab({ showNotification }) {
                 </div>
             )}
 
-            {/* УНІВЕРСАЛЬНЕ КАСТОМНЕ МОДАЛЬНЕ ВІКНО ПІДТВЕРДЖЕННЯ */}
             {confirmModal.isOpen && (
                 <div className="custom-confirm-overlay">
                     <div className="custom-confirm-card">
@@ -835,7 +833,6 @@ export default function ManagementTab({ showNotification }) {
 
                                 <h4 style={{ margin: '20px 0 10px 0', color: '#1e3a8a' }}>📂 Документи замовника</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {/* Тут шлях залишається viewingCustomer.documents, це правильно */}
                                     {viewingCustomer.documents && viewingCustomer.documents.length > 0 ? (
                                         viewingCustomer.documents.map(doc => (
                                             <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '12px' }}>

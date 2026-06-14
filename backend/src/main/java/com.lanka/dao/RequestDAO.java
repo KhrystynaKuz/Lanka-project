@@ -79,39 +79,6 @@ public class RequestDAO {
         }
     }
 
-    public List<Request> getAllRequests() throws SQLException {
-        String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at " +
-                "FROM requests ORDER BY created_at DESC";
-        List<Request> list = new ArrayList<>();
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(mapRowToRequest(rs));
-            }
-        }
-        return list;
-    }
-
-    public Request getRequestById(UUID id) throws SQLException {
-        String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at " +
-                "FROM requests WHERE id = ?";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setObject(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapRowToRequest(rs);
-                }
-            }
-        }
-        return null;
-    }
-
     // 1. UPDATE THE SQL IN THIS METHOD
     public List<Request> getRequestsByCustomerId(UUID customerId) throws SQLException {
         // ADD manager_id to the SELECT statement here!
@@ -155,51 +122,6 @@ public class RequestDAO {
         return request;
     }
 
-    public List<Request> searchByTitle(String titlePart) throws SQLException {
-
-        String sql = """
-        SELECT id, customer_id, title, description,
-               status::text, priority, created_at, updated_at
-        FROM requests
-        WHERE title ILIKE ?
-        ORDER BY created_at DESC
-        """;
-
-        List<Request> list = new ArrayList<>();
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, titlePart + "%");
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRowToRequest(rs));
-                }
-            }
-        }
-
-        return list;
-    }
-
-    public List<Request> getRequestsByStatus(RequestStatus status) throws SQLException {
-        String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at " +
-                "FROM requests WHERE status::text = ? ORDER BY priority DESC, created_at DESC";
-        List<Request> list = new ArrayList<>();
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, status.name());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRowToRequest(rs));
-                }
-            }
-        }
-        return list;
-    }
-
     public List<Request> getPendingRequests() throws SQLException {
         return getRequestsByStatus(RequestStatus.PENDING);
     }
@@ -228,5 +150,85 @@ public class RequestDAO {
 
             ps.executeUpdate();
         }
+    }
+    public List<Request> getAllRequests() throws SQLException {
+        // ДОДАНО manager_id В SQL
+        String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
+                "FROM requests ORDER BY created_at DESC";
+        List<Request> list = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapRowToRequest(rs));
+            }
+        }
+        return list;
+    }
+
+    public Request getRequestById(UUID id) throws SQLException {
+        // ДОДАНО manager_id В SQL
+        String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
+                "FROM requests WHERE id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setObject(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRowToRequest(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    public List<Request> searchByTitle(String titlePart) throws SQLException {
+        // ДОДАНО manager_id В SQL
+        String sql = """
+        SELECT id, customer_id, title, description,
+               status::text, priority, created_at, updated_at, manager_id
+        FROM requests
+        WHERE title ILIKE ?
+        ORDER BY created_at DESC
+        """;
+
+        List<Request> list = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, titlePart + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRowToRequest(rs));
+                }
+            }
+        }
+
+        return list;
+    }
+
+    public List<Request> getRequestsByStatus(RequestStatus status) throws SQLException {
+        // ДОДАНО manager_id В SQL
+        String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
+                "FROM requests WHERE status::text = ? ORDER BY priority DESC, created_at DESC";
+        List<Request> list = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, status.name());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRowToRequest(rs));
+                }
+            }
+        }
+        return list;
     }
 }

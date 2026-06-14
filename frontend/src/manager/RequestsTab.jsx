@@ -74,45 +74,22 @@ export default function RequestsTab() {
                 alert('🚨 Нам треба спершу обрати відділ, а потім лише натиснути кнопку «затвердити і передати»!');
                 return;
             }
-
-            // ДЕТАЛЬНЕ ЛОГУВАННЯ
-            console.log("=== ВІДПРАВКА ЗАЯВКИ НА ЗАТВЕРДЖЕННЯ ===");
-            console.log("ID заявки:", id);
-            console.log("Новий статус:", newStatus);
-            console.log("Вибрані відділи (ID):", chosenDepts);
-
-            // Отримаємо назви відділів для краси
-            const selectedDeptNames = departments
-                .filter(dept => chosenDepts.includes(dept.id))
-                .map(dept => dept.name);
-            console.log("Вибрані відділи (назви):", selectedDeptNames);
+            console.log(`Передаємо заявку ${id} у відділи з ID:`, chosenDepts);
         }
-
-        const requestBody = {
-            status: newStatus,
-            departmentIds: newStatus === 'APPROVED' ? (selectedDepartmentsByRequest[id] || []) : []
-        };
-
-        console.log("📦 Тіло запиту:", JSON.stringify(requestBody, null, 2));
 
         fetch(`/api/requests/${id}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({
+                status: newStatus,
+                departmentIds: newStatus === 'APPROVED' ? (selectedDepartmentsByRequest[id] || []) : []
+            })
         })
             .then(res => {
-                console.log("📡 Відповідь сервера. Статус:", res.status);
-                if (!res.ok) {
-                    return res.text().then(text => {
-                        console.error("❌ Текст помилки:", text);
-                        throw new Error(`Сервер відхилив запит: ${res.status} ${text}`);
-                    });
-                }
+                if (!res.ok) throw new Error("Сервер відхилив запит");
                 return res.json();
             })
-            .then(data => {
-                console.log("✅ Успішна відповідь:", data);
-
+            .then(() => {
                 const targetRequest = pendingRequests.find(req => req.id === id);
                 if (!targetRequest) return;
 
@@ -130,12 +107,10 @@ export default function RequestsTab() {
                     delete updated[id];
                     return updated;
                 });
-
-                alert(`✅ Заявку ${newStatus === 'APPROVED' ? 'затверджено' : 'відхилено'}!`);
             })
             .catch(err => {
-                console.error("❌ Помилка при оновленні статусу:", err);
-                alert("Помилка оновлення статусу заявки. Деталі в консолі (F12)");
+                console.error("Помилка при оновленні статусу:", err);
+                alert("Помилка оновлення статусу заявки.");
             });
     };
 
