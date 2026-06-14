@@ -1,11 +1,16 @@
 package com.lanka.controllers.head;
 
 import com.lanka.dao.RequestDAO;
+import com.lanka.dao.TaskDAO;
+import com.lanka.dao.UserDepartmentDAO;
 import com.lanka.models.Request;
 import com.lanka.models.Request.RequestStatus;
+import com.lanka.models.Task;
+import com.lanka.models.Task.TaskStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -16,12 +21,15 @@ import java.util.UUID;
 public class RequestController {
 
     private final RequestDAO requestDAO;
+    private final TaskDAO taskDAO;
+    private final UserDepartmentDAO userDepartmentDAO;
 
-    public RequestController(RequestDAO requestDAO) {
-        this.requestDAO = requestDAO;
+    public RequestController() {
+        this.requestDAO = new RequestDAO();
+        this.taskDAO = new TaskDAO();
+        this.userDepartmentDAO = new UserDepartmentDAO();
     }
 
-    // ДОДАТКОВО: Ендпоінт для отримання лічильника (виправляє 404)
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         try {
@@ -32,7 +40,6 @@ public class RequestController {
         }
     }
 
-    // 1. Отримати всі заявки (для історії)
     @GetMapping
     public ResponseEntity<List<Request>> getAll() {
         try {
@@ -42,7 +49,6 @@ public class RequestController {
         }
     }
 
-    // 3. Пошук по назві
     @GetMapping("/search")
     public ResponseEntity<List<Request>> search(@RequestParam String title) {
         try {
@@ -52,7 +58,6 @@ public class RequestController {
         }
     }
 
-    // 4. Отримати тільки PENDING
     @GetMapping("/pending")
     public ResponseEntity<List<Request>> getPending() {
         try {
@@ -62,14 +67,13 @@ public class RequestController {
         }
     }
 
-    // 5. Зміна статусу (ЗАТВЕРДИТИ / ВІДХИЛИТИ)
     @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(
             @PathVariable String id,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, Object> body) {
 
         try {
-            String statusStr = body.get("status");
+            String statusStr = (String) body.get("status");
             if (statusStr == null) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Status field is missing"));
             }
@@ -77,28 +81,50 @@ public class RequestController {
             RequestStatus status = RequestStatus.valueOf(statusStr.toUpperCase());
             requestDAO.updateStatus(id, status.name());
 
+            if (status == RequestStatus.APPROVED) {
+                @SuppressWarnings("unchecked")
+                List<String> departmentIds = (List<String>) body.get("departmentIds");
+
+                if (departmentIds != null && !departmentIds.isEmpty()) {
+                    UUID requestId = UUID.fromString(id);
+                    Request request = requestDAO.getRequestById(requestId);
+
+                    for (String deptIdStr : departmentIds) {
+                        UUID departmentId = UUID.fromString(deptIdStr);
+                        List<UUID> coordinatorIds = userDepartmentDAO.getCoordinatorsByDepartment(departmentId);
+
+                        for (UUID coordinatorId : coordinatorIds) {
+                            Task task = new Task();
+                            task.setId(UUID.randomUUID());
+                            task.setRequest_id(requestId);
+                            task.setDepartment_id(departmentId);
+                            task.setCoordinator_id(coordinatorId);
+                            task.setStatus(TaskStatus.ASSIGNED);
+                            task.setTitle(request.getTitle());
+                            task.setDescription(request.getDescription());
+                            taskDAO.addTask(task);
+                        }
+                    }
+                }
+            }
+
             return ResponseEntity.ok(Map.of(
                     "message", "updated",
                     "id", id,
                     "status", status.name()
             ));
 
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid status value"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // 6. Видалення заявки
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRequest(@PathVariable String id) {
         try {
             UUID uuid = UUID.fromString(id);
             requestDAO.deleteRequest(uuid);
             return ResponseEntity.ok(Map.of("message", "Заявка успішно видалена", "id", id));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Невірний формат ID"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }

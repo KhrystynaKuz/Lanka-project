@@ -123,4 +123,22 @@ public class UserDepartmentDAO {
         ud.setDepartment_id(rs.getObject("department_id", UUID.class));
         return ud;
     }
+
+    public List<UUID> getCoordinatorsByDepartment(UUID departmentId) throws SQLException {
+        String sql = "SELECT u.id FROM users u " +
+                "JOIN user_departments ud ON ud.user_id = u.id " +
+                "WHERE ud.department_id = ? AND u.role = 'COORDINATOR'";
+        List<UUID> coordinatorIds = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, departmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    coordinatorIds.add(rs.getObject("id", UUID.class));
+                }
+            }
+        }
+        return coordinatorIds;
+    }
 }

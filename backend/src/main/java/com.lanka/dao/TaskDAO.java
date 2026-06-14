@@ -15,8 +15,9 @@ import java.util.UUID;
 public class TaskDAO {
 
     public void addTask(Task task) throws SQLException {
+        // Зміни SQL - додай ::task_status для кастування
         String sql = "INSERT INTO tasks (id, request_id, department_id, assigned_volunteer_id, coordinator_id, title, description, status, created_at, completed_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?::task_status, ?, ?)";  // ← ТУТ ДОДАНО ::task_status
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -38,7 +39,7 @@ public class TaskDAO {
             ps.setObject(5, task.getCoordinator_id());
             ps.setString(6, task.getTitle());
             ps.setString(7, task.getDescription());
-            ps.setString(8, task.getStatus().name());
+            ps.setString(8, task.getStatus().name());  // ← статус як String, але SQL зробить каст
             ps.setObject(9, task.getCreated_at());
             ps.setObject(10, task.getCompleted_at());
 
@@ -48,7 +49,7 @@ public class TaskDAO {
 
     public void updateTask(Task task) throws SQLException {
         String sql = "UPDATE tasks SET request_id = ?, department_id = ?, assigned_volunteer_id = ?, " +
-                "coordinator_id = ?, title = ?, description = ?, status = ?::task_status, completed_at = ? " +
+                "coordinator_id = ?, title = ?, description = ?, status = ?::task_status, completed_at = ? " +  // ← ТУТ ТЕЖ ДОДАТИ ::task_status
                 "WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -60,16 +61,7 @@ public class TaskDAO {
             ps.setObject(4, task.getCoordinator_id());
             ps.setString(5, task.getTitle());
             ps.setString(6, task.getDescription());
-
-            ps.setString(7, task.getStatus().name());
-
-            if (task.getStatus() == TaskStatus.COMPLETED && task.getCompleted_at() == null) {
-                task.setCompleted_at(OffsetDateTime.now());
-            }
-            if (task.getStatus() != TaskStatus.COMPLETED) {
-                task.setCompleted_at(null);
-            }
-
+            ps.setString(7, task.getStatus().name());  // ← String, але SQL кастує
             ps.setObject(8, task.getCompleted_at());
             ps.setObject(9, task.getId());
 
@@ -139,6 +131,9 @@ public class TaskDAO {
     }
 
     public List<Task> getTasksByCoordinatorId(UUID coordinatorId) throws SQLException {
+        System.out.println("=== TaskDAO.getTasksByCoordinatorId ===");
+        System.out.println("Looking for coordinator_id: " + coordinatorId);
+
         String sql = "SELECT id, request_id, department_id, assigned_volunteer_id, coordinator_id, title, description, status, created_at, completed_at " +
                 "FROM tasks WHERE coordinator_id = ? ORDER BY created_at DESC";
         List<Task> list = new ArrayList<>();
@@ -149,9 +144,11 @@ public class TaskDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(mapRowToTask(rs));
+                    System.out.println("  Found task with request_id: " + rs.getObject("request_id"));
                 }
             }
         }
+        System.out.println("Total tasks found: " + list.size());
         return list;
     }
 

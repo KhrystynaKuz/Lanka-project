@@ -217,18 +217,12 @@ public class RequestDAO {
     }
 
     public void updateStatus(String requestId, String status) throws SQLException {
-        String sql = """
-        UPDATE requests
-        SET status = ?::request_status, updated_at = ?
-        WHERE id = ?
-        """;
+        String sql = "UPDATE requests SET status = ?::request_status, updated_at = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            String statusEnumName = RequestStatus.valueOf(status.toUpperCase()).name();
-
-            ps.setString(1, statusEnumName);
+            ps.setString(1, status);
             ps.setObject(2, OffsetDateTime.now());
             ps.setObject(3, UUID.fromString(requestId));
 
