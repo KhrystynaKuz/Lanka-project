@@ -11,7 +11,7 @@ public class DocumentDAO {
 
     public void addDocument(UUID userId, String type, String fileUrl) throws SQLException {
         String sql = "INSERT INTO user_documents (id, user_id, type, file_url, status, uploaded_at) " +
-                "VALUES (?, ?, ?::document_type, ?, 'PENDING'::verification_status, ?)";
+                "VALUES (?, ?, ?, ?, 'PENDING'::public.document_status, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -59,7 +59,8 @@ public class DocumentDAO {
     }
 
     public void updateDocumentStatus(UUID docId, String status, UUID verifiedBy, String rejectionReason) throws SQLException {
-        String sql = "UPDATE user_documents SET status = ?::verification_status, verified_at = ?, verified_by = ?, rejection_reason = ? WHERE id = ?";
+        String sql = "UPDATE user_documents SET status = ?::public.document_status, " +
+                "verified_at = ?, verified_by = ?, rejection_reason = ? WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, status);

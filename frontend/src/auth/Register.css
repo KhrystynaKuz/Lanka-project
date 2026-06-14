@@ -291,3 +291,16 @@
         font-size: 12px;
     }
 }
+
+.file-hidden-input {
+    display: none;
+}
+.file-custom-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 10px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+}

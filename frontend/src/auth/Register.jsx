@@ -5,14 +5,13 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
     const [step, setStep] = useState(1);
     const [role, setRole] = useState('');
 
-    // Поля форми
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [patronymic, setPatronymic] = useState('');
     const [email, setEmail] = useState('');
     const [dob, setDob] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [document, setDocument] = useState(null);
+    const [documents, setDocuments] = useState([]);
     const [password, setPassword] = useState('');
     const [departmentId, setDepartmentId] = useState('');
 
@@ -50,17 +49,28 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
 
     const handleSelectRole = (selectedRole) => {
         setRole(selectedRole.toUpperCase());
+        setDocuments([]);
         setStep(2);
     };
 
     const handleFileChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            setDocument(e.target.files[0]);
+        if (e.target.files) {
+            const newFiles = Array.from(e.target.files);
+
+            const validFiles = newFiles.filter(file => file.size <= 10 * 1024 * 1024);
+            if (validFiles.length !== newFiles.length) {
+                alert("Деякі файли завеликі (макс 10 МБ)");
+            }
+
+            setDocuments(prev => [...prev, ...validFiles]);
         }
     };
 
-    // Функція для завантаження документа на сервер
-    const uploadDocument = async (userId, file) => {
+    const removeFile = (index) => {
+        setDocuments(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const uploadDocument = async (userId, file, token) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('userId', userId);
@@ -69,97 +79,95 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
         try {
             const response = await fetch(`${API_BASE_URL}/api/profile/documents/upload`, {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
                 body: formData
             });
 
             if (!response.ok) {
-                console.error('Помилка завантаження документа');
-                return false;
+                const errorText = await response.text();
+                throw new Error(`Помилка сервера: ${errorText}`);
             }
-
-            const result = await response.json();
-            return result;
+            return await response.json();
         } catch (err) {
-            console.error('Помилка при завантаженні документа:', err);
+            console.error('Помилка при завантаженні:', err);
             return false;
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (documents.length === 0) {
+            setError("Будь ласка, завантажте хоча б один документ.");
+            return;
+        }
         setError('');
         setLoading(true);
 
         try {
-            // 1. Створення акаунту в Supabase Auth
             const authResponse = await fetch(`${SUPABASE_BASE_URL}/auth/v1/signup`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'apikey': SUPABASE_KEY
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
                 },
-                body: JSON.stringify({
-                    email: email,
-                    password: password
-                })
+                body: JSON.stringify({ email, password })
             });
 
             const authData = await authResponse.json();
+            if (!authResponse.ok) throw new Error(authData.message || "Помилка реєстрації");
 
-            if (!authResponse.ok) {
-                throw new Error(authData.message || 'Помилка створення акаунту в системі автентифікації.');
-            }
+            const userId = authData.user?.id;
+            const accessToken = authData.access_token;
 
-            const userId = authData.id || (authData.user && authData.user.id);
-
-            if (!userId) {
-                throw new Error('Не вдалося отримати ідентифікатор користувача.');
-            }
-
-            // 2. Збереження даних користувача
-            const userData = {
-                id: userId,
-                email: email,
-                first_name: firstName,
-                last_name: lastName,
-                patronymic: patronymic || null,
-                dob: dob || null,
-                phone_number: phoneNumber,
-                role: role
-            };
-
-            if (role === 'VOLUNTEER' && departmentId) {
-                userData.department_id = departmentId;
-            }
-
-            const dbResponse = await fetch(`${SUPABASE_BASE_URL}/rest/v1/users`, {
+            await fetch(`${SUPABASE_BASE_URL}/rest/v1/users`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Authorization': `Bearer ${accessToken}`,
                     'Prefer': 'return=minimal'
                 },
-                body: JSON.stringify(userData)
+                body: JSON.stringify({
+                    id: userId,
+                    email,
+                    first_name: firstName,
+                    last_name: lastName,
+                    patronymic,
+                    dob: dob || null,
+                    phone_number: phoneNumber,
+                    role,
+                    is_verified: false
+                })
             });
 
-            if (!dbResponse.ok) {
-                const dbError = await dbResponse.json();
-                throw new Error(dbError.message || 'Акаунт створено, але виникла помилка збереження анкетних даних у таблиці users.');
-            }
+            await fetch(`${SUPABASE_BASE_URL}/rest/v1/user_details`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({
+                    id: userId,
+                    department_id: role === 'VOLUNTEER' ? departmentId : null,
+                    status: 'PENDING'
+                })
+            });
 
-            // 3. Завантаження документа (для волонтерів або замовників)
-            if (document) {
-                await uploadDocument(userId, document);
+            for (const file of documents) {
+                await uploadDocument(userId, file, accessToken);
             }
 
             setLoading(false);
-            if (onRegisterSuccess) {
-                onRegisterSuccess();
-            }
+            if (onRegisterSuccess) onRegisterSuccess();
 
         } catch (err) {
-            setError(err.message || 'Сталася непередбачувана помилка при реєстрації.');
+            console.error(err);
+            setError(err.message);
             setLoading(false);
         }
     };
@@ -295,7 +303,6 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                             </div>
                         </div>
 
-                        {/* Для волонтерів: пароль ліворуч, відділ праворуч */}
                         {role === 'VOLUNTEER' && (
                             <>
                                 <div className="form-grid-row">
@@ -338,36 +345,51 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                                     </div>
                                 </div>
 
-                                {/* Документ для волонтера */}
                                 <div className="form-grid-row">
-                                    <div className="input-group">
-                                        <label htmlFor="volunteerDocument">Документ для реєстрації <span className="required-star">*</span></label>
+                                    <div className="input-group" style={{ width: '100%' }}>
+                                        <label>Документи для реєстрації <span className="required-star">*</span></label>
                                         <div className="file-upload-wrapper">
                                             <input
                                                 type="file"
-                                                id="volunteerDocument"
+                                                id="docs-upload"
+                                                multiple
                                                 accept=".jpg,.jpeg,.png,.pdf"
                                                 onChange={handleFileChange}
-                                                required
                                                 disabled={loading}
                                                 className="file-hidden-input"
                                             />
-                                            <label htmlFor="volunteerDocument" className="file-custom-label">
+                                            <label htmlFor="docs-upload" className="file-custom-label">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                                                 </svg>
-                                                {document ? document.name : 'Оберіть файл'}
+                                                {documents.length > 0 ? `Вибрано файлів: ${documents.length}` : 'Оберіть файли'}
                                             </label>
                                         </div>
-                                    </div>
-                                    <div className="input-group">
-                                        {/* Пустий простір для вирівнювання */}
+
+                                        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                            {documents.map((file, index) => (
+                                                <div key={index} style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    background: '#f1f5f9',
+                                                    padding: '5px 10px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '13px'
+                                                }}>
+                                                    <span>{file.name}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeFile(index)}
+                                                        style={{ border: 'none', background: 'none', color: '#ef4444', cursor: 'pointer' }}
+                                                    >✕</button>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </>
                         )}
 
-                        {/* Для замовників: пароль ліворуч, документ праворуч */}
                         {role === 'CUSTOMER' && (
                             <div className="form-grid-row">
                                 <div className="input-group">
@@ -384,11 +406,12 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                                 </div>
 
                                 <div className="input-group">
-                                    <label htmlFor="document">Документ для реєстрації <span className="required-star">*</span></label>
+                                    <label htmlFor="document">Документи для реєстрації <span className="required-star">*</span></label>
                                     <div className="file-upload-wrapper">
                                         <input
                                             type="file"
                                             id="document"
+                                            multiple
                                             accept=".jpg,.jpeg,.png,.pdf"
                                             onChange={handleFileChange}
                                             required
@@ -399,8 +422,21 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                                             </svg>
-                                            {document ? document.name : 'Оберіть файл'}
+                                            {documents.length > 0 ? `Вибрано файлів: ${documents.length}` : 'Оберіть файли'}
                                         </label>
+                                    </div>
+
+                                    <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                        {documents.map((file, index) => (
+                                            <div key={index} style={{
+                                                display: 'flex', justifyContent: 'space-between', background: '#f1f5f9',
+                                                padding: '5px 10px', borderRadius: '6px', fontSize: '13px'
+                                            }}>
+                                                <span>{file.name}</span>
+                                                <button type="button" onClick={() => removeFile(index)}
+                                                        style={{ border: 'none', background: 'none', color: '#ef4444', cursor: 'pointer' }}>✕</button>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
