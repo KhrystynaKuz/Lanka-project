@@ -50,12 +50,27 @@ export default function ChatWindow({ chatId }) {
             </div>
 
             <form onSubmit={handleSend} className="p-4 border-t flex gap-2">
-                <input
-                    type="text"
-                    value={newMsg}
-                    onChange={(e) => setNewMsg(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-1 border rounded-lg px-3 py-2"
+                // Replace the input with this textarea
+                <textarea
+                    placeholder="Напишіть повідомлення..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault(); // Prevent default new line
+                            handleSend(e);      // Trigger your send function
+                        }
+                    }}
+                    rows={1}
+                    style={{
+                        flex: 1,
+                        border: 'none',
+                        background: 'transparent',
+                        outline: 'none',
+                        padding: '10px',
+                        resize: 'none', // Prevent manual resizing
+                        maxHeight: '100px' // Allow it to grow slightly, but not infinitely
+                    }}
                 />
                 <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-lg">
                     Send
