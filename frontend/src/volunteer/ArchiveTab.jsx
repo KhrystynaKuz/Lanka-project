@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './Volunteer.css'; // Імпортуємо винесені стилі
+import './Volunteer.css';
 
 export default function ArchiveTab() {
     const [archivedTasks, setArchivedTasks] = useState([]);

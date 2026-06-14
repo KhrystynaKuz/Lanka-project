@@ -4,6 +4,7 @@ import com.lanka.dao.ReportDAO;
 import com.lanka.dao.TaskDAO;
 import com.lanka.models.Report;
 import com.lanka.models.Task;
+import com.lanka.service.BadgeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,9 @@ public class TaskController {
     @Autowired
     private ReportDAO reportDAO;
 
+    @Autowired
+    private BadgeService badgeService;
+
     @GetMapping("/volunteer/{volunteerId}")
     public ResponseEntity<List<Task>> getActiveTasks(@PathVariable UUID volunteerId) {
         try {
@@ -39,6 +43,11 @@ public class TaskController {
 
             existingTask.setStatus(task.getStatus());
             taskDAO.updateTask(existingTask);
+
+            if (task.getStatus() == Task.TaskStatus.COMPLETED) {
+                badgeService.checkAndGrantBadges(existingTask.getAssigned_volunteer_id(), existingTask.getId());
+            }
+
             return ResponseEntity.ok("Статус оновлено");
         } catch (Exception e) {
             e.printStackTrace();
@@ -55,6 +64,8 @@ public class TaskController {
             if (task != null) {
                 task.setStatus(Task.TaskStatus.COMPLETED);
                 taskDAO.updateTask(task);
+
+                badgeService.checkAndGrantBadges(task.getAssigned_volunteer_id(), task.getId());
             }
 
             return ResponseEntity.ok("Звіт успішно відправлено та статус змінено");

@@ -176,6 +176,54 @@ public class TaskDAO {
         return list;
     }
 
+    public int countCompletedTasks(UUID volunteerId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM tasks WHERE assigned_volunteer_id = ? AND status = 'COMPLETED'";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, volunteerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Рахує кількість активних (незавершених) завдань волонтера
+     */
+    public int countActiveTasks(UUID volunteerId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM tasks WHERE assigned_volunteer_id = ? AND status != 'COMPLETED'";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, volunteerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Рахує кількість завдань, виконаних за останні X днів
+     */
+    public int countTasksCompletedInLastDays(UUID volunteerId, int days) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM tasks WHERE assigned_volunteer_id = ? " +
+                "AND status = 'COMPLETED' " +
+                "AND completed_at >= NOW() - CAST(? AS INTERVAL)";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, volunteerId);
+            ps.setString(2, days + " days");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
     private Task mapRowToTask(ResultSet rs) throws SQLException {
         Task task = new Task();
         task.setId(rs.getObject("id", UUID.class));
