@@ -5,21 +5,15 @@ import { useAuth } from '../../hooks/useAuth';
 export default function GroupSettingsModal({ chatId, onClose }) {
     const { user } = useAuth();
 
-    // State for Name
     const [chatName, setChatName] = useState('');
     const [originalName, setOriginalName] = useState('');
-
-    // State for Members
     const [members, setMembers] = useState([]);
     const [originalMembers, setOriginalMembers] = useState([]);
-
-    // State for Search & UI
     const [search, setSearch] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    // Fetch current chat details and members on load
     useEffect(() => {
         const fetchDetails = async () => {
             const { data: chatData } = await supabase
@@ -49,7 +43,6 @@ export default function GroupSettingsModal({ chatId, onClose }) {
         fetchDetails();
     }, [chatId]);
 
-    // Search for new users to add
     useEffect(() => {
         const delayDebounce = setTimeout(async () => {
             if (search.length < 2) {
@@ -62,7 +55,6 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                 .or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%`)
                 .limit(5);
 
-            // Filter out people who are ALREADY in the local members array
             const filtered = data?.filter(u => !members.some(m => m.id === u.id)) || [];
             setSearchResults(filtered);
         }, 300);
@@ -70,19 +62,16 @@ export default function GroupSettingsModal({ chatId, onClose }) {
         return () => clearTimeout(delayDebounce);
     }, [search, members]);
 
-    // UI Action: Add user to local state
     const handleAddUser = (newUser) => {
         setMembers([...members, newUser]);
         setSearch('');
         setSearchResults([]);
     };
 
-    // UI Action: Remove user from local state
     const handleRemoveUser = (userId) => {
         setMembers(members.filter(m => m.id !== userId));
     };
 
-    // DB Action: Save all changes at once
     const handleSaveAll = async () => {
         setSaving(true);
         try {
@@ -92,26 +81,26 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                 await supabase.from('messages').insert({
                     chat_id: chatId,
                     content: `✏️ ${user.first_name} змінив(ла) назву групи на "${chatName}"`,
-                    sender_id: user.id
+                    sender_id: user.id,
+                    is_system_message: true // Appears as a grey centered badge
                 });
             }
 
-            // 2. Figure out exactly who was added and who was removed
             const addedMembers = members.filter(m => !originalMembers.some(om => om.id === m.id));
             const removedMembers = originalMembers.filter(om => !members.some(m => m.id === om.id));
 
-            // 3. Process Additions
+            // 2. Process Additions
             for (const added of addedMembers) {
                 const { error: insertError } = await supabase
                     .from('chat_members')
                     .insert({ chat_id: chatId, user_id: added.id });
 
-                // ONLY send the system message if the addition was actually successful
                 if (!insertError) {
                     await supabase.from('messages').insert({
                         chat_id: chatId,
                         content: `👋 ${user.first_name} додав(ла) ${added.first_name} до чату`,
-                        sender_id: user.id
+                        sender_id: user.id,
+                        is_system_message: true // Appears as a grey centered badge
                     });
                 } else {
                     console.error("Помилка додавання користувача:", insertError);
@@ -119,19 +108,19 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                 }
             }
 
-            // 4. Process Removals
+            // 3. Process Removals
             for (const removed of removedMembers) {
                 const { error: deleteError } = await supabase
                     .from('chat_members')
                     .delete()
                     .match({ chat_id: chatId, user_id: removed.id });
 
-                // ONLY send the system message if the deletion was actually successful
                 if (!deleteError) {
                     await supabase.from('messages').insert({
                         chat_id: chatId,
                         content: `🚪 ${removed.first_name} видалено з чату`,
-                        sender_id: user.id
+                        sender_id: user.id,
+                        is_system_message: true // Appears as a grey centered badge
                     });
                 } else {
                     console.error("Помилка видалення користувача:", deleteError);
@@ -139,7 +128,7 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                 }
             }
 
-            onClose(); // Close modal after successful save
+            onClose();
         } catch (error) {
             console.error("Помилка при збереженні:", error);
             alert("Сталася помилка при збереженні налаштувань. Перевірте консоль.");
@@ -212,7 +201,6 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                     )}
                 </div>
 
-                {/* Unified Action Buttons */}
                 <div className="modal-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
                     <button onClick={onClose} disabled={saving} style={{ padding: '8px 16px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                         Скасувати

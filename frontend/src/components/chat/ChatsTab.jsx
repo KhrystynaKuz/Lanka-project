@@ -5,7 +5,6 @@ import { useChats } from '../../hooks/useChats';
 import { useMessages } from '../../hooks/useMessages';
 import NewChatModal from '../../components/chat/NewChatModal';
 import GroupSettingsModal from '../../components/chat/GroupSettingsModal';
-import OrderDetailsModal from './OrderDetailsModal'; // Make sure this file exists in the same folder
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../supabaseClient';
 
@@ -23,10 +22,13 @@ export default function ChatsTab() {
 
     const [showNewChat, setShowNewChat] = useState(false);
     const [showGroupSettings, setShowGroupSettings] = useState(false);
-    const [showOrderDetails, setShowOrderDetails] = useState(null);
 
     const [newMessage, setNewMessage] = useState('');
+
+    // NEW: File upload state and ref
+    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef(null);
+
     const messagesContainerRef = useRef(null);
     const messagesEndRef = useRef(null);
 
@@ -65,22 +67,72 @@ export default function ChatsTab() {
         }
     };
 
-    const handleToggleArchive = async () => {
-        if (!selectedChat) return;
-        const newStatus = !selectedChat.is_archived;
+    const toggleArchiveChat = async (chatId, willArchive, currentUser) => {
+        try {
+            const { error: updateError } = await supabase
+                .from('chat_members')
+                .update({ is_archived: willArchive })
+                .eq('chat_id', chatId)
+                .eq('user_id', currentUser.id);
 
-        const { error } = await supabase
-            .from('chats')
-            .update({ is_archived: newStatus })
-            .eq('id', selectedChat.id);
-
-        if (!error) {
-            setActiveTab(newStatus ? 'ARCHIVED' : 'ACTIVE');
+            if (updateError) throw updateError;
             setSelectedChatId(null);
-        } else {
-            console.error("Failed to archive chat:", error);
-            alert("Помилка архівації чату.");
+        } catch (error) {
+            console.error("Error toggling archive status:", error);
         }
+    };
+
+    const handleToggleArchive = () => {
+        if (!selectedChat || !user) return;
+        const willArchive = !selectedChat.is_archived;
+        toggleArchiveChat(selectedChat.id, willArchive, user);
+    };
+
+    // FIXED: File upload function
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            setIsUploading(true);
+
+            // Create a unique file name
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userId}-${Date.now()}.${fileExt}`;
+            const filePath = `${selectedChatId}/${fileName}`;
+
+            // Upload to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from('chat-attachments')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('chat-attachments')
+                .getPublicUrl(filePath);
+
+            // Send message with attachment
+            await sendMessage({
+                content: newMessage.trim(), // Keep typed text if any
+                attachment_url: publicUrl
+            });
+
+            setNewMessage('');
+        } catch (error) {
+            console.error("Error uploading file:", error.message);
+            alert("Помилка завантаження файлу!");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    // Helper to check if file is an image based on URL extension
+    const isImageUrl = (url) => {
+        if (!url) return false;
+        return url.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) != null;
     };
 
     if (authLoading) return <div className="fullscreen-chat">Завантаження...</div>;
@@ -168,11 +220,6 @@ export default function ChatsTab() {
                                         )}
                                     </span>
                                 </div>
-                                {selectedChat.order_id && (
-                                    <button className="info-btn" onClick={() => setShowOrderDetails(selectedChat.order_id)}>
-                                        Деталі заявки #{selectedChat.order_id.substring(0, 8)}
-                                    </button>
-                                )}
                             </div>
 
                             <div
@@ -186,14 +233,57 @@ export default function ChatsTab() {
                                     <p style={{textAlign: 'center', color: '#888'}}>Почніть спілкування!</p>
                                 ) : (
                                     messages.map((msg) => {
+                                        if (msg.is_system_message) {
+                                            return (
+                                                <div key={msg.id} style={{ textAlign: 'center', margin: '16px 0' }}>
+                                                    <span style={{
+                                                        background: '#e0e0e0',
+                                                        color: '#555',
+                                                        padding: '6px 12px',
+                                                        borderRadius: '16px',
+                                                        fontSize: '12px'
+                                                    }}>
+                                                        {msg.content}
+                                                    </span>
+                                                </div>
+                                            );
+                                        }
+
                                         const isOwn = msg.sender_id === userId;
                                         const senderName = msg.sender ? `${msg.sender.first_name} ${msg.sender.last_name}` : 'Користувач';
+
                                         return (
                                             <div key={msg.id} className={`msg ${isOwn ? 'outgoing' : 'incoming'}`}>
                                                 {!isOwn && <span className="msg-author">{senderName}</span>}
-                                                <div className="msg-bubble" style={{ whiteSpace: 'pre-wrap' }}>
-                                                    {msg.content}
+
+                                                <div className="msg-bubble" style={{ whiteSpace: 'pre-wrap', position: 'relative' }}>
+                                                    {/* Text content if available */}
+                                                    {msg.content && <div>{msg.content}</div>}
+
+                                                    {/* Attachment Rendering */}
+                                                    {msg.attachment_url && (
+                                                        <div style={{ marginTop: msg.content ? '8px' : '0' }}>
+                                                            {isImageUrl(msg.attachment_url) ? (
+                                                                <img
+                                                                    src={msg.attachment_url}
+                                                                    alt="Додаток"
+                                                                    style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '8px', cursor: 'pointer' }}
+                                                                    onClick={() => window.open(msg.attachment_url, '_blank')}
+                                                                />
+                                                            ) : (
+                                                                <a
+                                                                    href={msg.attachment_url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    style={{ color: isOwn ? '#fff' : '#007bff', textDecoration: 'underline', wordBreak: 'break-all' }}
+                                                                >
+                                                                    📎 Вкладений файл
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
+
                                                 <span className="msg-time">
                                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
@@ -211,7 +301,25 @@ export default function ChatsTab() {
                             ) : (
                                 <div className="chat-footer">
                                     <form style={{ display: 'flex', width: '100%', gap: '8px' }}>
-                                        <div className="input-wrap" style={{ display: 'flex', flex: 1, alignItems: 'center', background: '#f1f1f1', borderRadius: '20px', padding: '5px 15px' }}>
+                                        <div className="input-wrap" style={{ display: 'flex', flex: 1, alignItems: 'center', background: '#f1f1f1', borderRadius: '20px', padding: '5px 15px', gap: '8px' }}>
+
+                                            {/* NEW: Hidden file input and visible Paperclip button */}
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                style={{ display: 'none' }}
+                                                onChange={handleFileUpload}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                disabled={isUploading}
+                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', padding: '0 5px' }}
+                                                title="Прикріпити файл"
+                                            >
+                                                {isUploading ? '⌛' : '📎'}
+                                            </button>
+
                                             <textarea
                                                 placeholder="Напишіть повідомлення (Shift+Enter для нового рядка)..."
                                                 value={newMessage}
@@ -224,12 +332,18 @@ export default function ChatsTab() {
                                                 }}
                                                 style={{
                                                     flex: 1, border: 'none', background: 'transparent', outline: 'none',
-                                                    padding: '10px', resize: 'none', maxHeight: '100px', fontFamily: 'inherit'
+                                                    padding: '10px 0', resize: 'none', maxHeight: '100px', fontFamily: 'inherit'
                                                 }}
                                                 rows={1}
                                             />
                                         </div>
-                                        <button type="button" onClick={handleSend} className="send-btn" style={{ borderRadius: '50%', width: '45px', height: '45px', border: 'none', background: '#007bff', color: 'white', cursor: 'pointer' }}>
+                                        <button
+                                            type="button"
+                                            onClick={handleSend}
+                                            disabled={isUploading}
+                                            className="send-btn"
+                                            style={{ borderRadius: '50%', width: '45px', height: '45px', border: 'none', background: '#007bff', color: 'white', cursor: 'pointer', opacity: isUploading ? 0.5 : 1 }}
+                                        >
                                             ➔
                                         </button>
                                     </form>
@@ -246,7 +360,6 @@ export default function ChatsTab() {
 
             {showNewChat && <NewChatModal onClose={() => setShowNewChat(false)} onChatCreated={(id) => { setSelectedChatId(id); setShowNewChat(false); }} />}
             {showGroupSettings && selectedChat && <GroupSettingsModal chatId={selectedChat.id} onClose={() => setShowGroupSettings(false)} />}
-            {showOrderDetails && <OrderDetailsModal orderId={showOrderDetails} onClose={() => setShowOrderDetails(null)} />}
         </div>
     );
 }

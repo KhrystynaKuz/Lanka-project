@@ -29,36 +29,50 @@ export default function ChatWindow({ chatId }) {
         <div className="flex-1 flex flex-col h-full">
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {loading && <p>Loading messages...</p>}
-                {messages.map((msg) => (
-                    <div
-                        key={msg.id}
-                        className={`flex ${msg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
-                    >
+                {messages.map((msg) => {
+                    // 1. Handle System Messages
+                    if (msg.is_system_message) {
+                        return (
+                            <div key={msg.id} className="flex justify-center my-4">
+                                <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs">
+                                    {msg.content}
+                                </span>
+                            </div>
+                        );
+                    }
+
+                    // 2. Handle Regular Messages
+                    const isOwn = msg.sender_id === user?.id;
+                    return (
                         <div
-                            className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                                msg.sender_id === user?.id ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
-                            }`}
+                            key={msg.id}
+                            className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                         >
-                            <p className="text-sm">{msg.content}</p>
-                            <span className="text-xs opacity-75">
-                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
+                            <div
+                                className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                                    isOwn ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
+                                }`}
+                            >
+                                <p className="text-sm" style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+                                <span className="text-xs opacity-75">
+                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
                 <div ref={messagesEndRef} />
             </div>
 
             <form onSubmit={handleSend} className="p-4 border-t flex gap-2">
-                // Replace the input with this textarea
                 <textarea
                     placeholder="Напишіть повідомлення..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    value={newMsg}
+                    onChange={(e) => setNewMsg(e.target.value)}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault(); // Prevent default new line
-                            handleSend(e);      // Trigger your send function
+                            e.preventDefault();
+                            handleSend(e);
                         }
                     }}
                     rows={1}
@@ -68,9 +82,10 @@ export default function ChatWindow({ chatId }) {
                         background: 'transparent',
                         outline: 'none',
                         padding: '10px',
-                        resize: 'none', // Prevent manual resizing
-                        maxHeight: '100px' // Allow it to grow slightly, but not infinitely
+                        resize: 'none',
+                        maxHeight: '100px'
                     }}
+                    className="border rounded-lg"
                 />
                 <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-lg">
                     Send

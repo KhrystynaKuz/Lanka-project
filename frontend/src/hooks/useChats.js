@@ -9,9 +9,10 @@ export function useChats(userId) {
         if (!userId) return;
         setLoading(true);
 
+        // 1. Fetch memberships INCLUDING the new is_archived flag
         const { data: memberships, error } = await supabase
             .from('chat_members')
-            .select('chat_id')
+            .select('chat_id, is_archived')
             .eq('user_id', userId);
 
         if (error || !memberships || memberships.length === 0) {
@@ -35,14 +36,19 @@ export function useChats(userId) {
 
         const enrichedChats = await Promise.all(
             chatsData.map(async (chat) => {
+                // Find the user's specific membership to grab their archive status
+                const membership = memberships.find(m => m.chat_id === chat.id);
+
                 if (chat.type === 'GROUP') {
                     return {
                         ...chat,
+                        is_archived: membership?.is_archived || false, // Inject archive flag
                         displayName: chat.name || 'Груповий чат',
                         preview: '',
                     };
                 }
 
+                // For Direct Chats
                 const { data: members } = await supabase
                     .from('chat_members')
                     .select('user_id')
@@ -72,6 +78,7 @@ export function useChats(userId) {
 
                 return {
                     ...chat,
+                    is_archived: membership?.is_archived || false, // Inject archive flag
                     displayName: name,
                     preview: lastMsg?.content || '',
                 };
@@ -87,15 +94,29 @@ export function useChats(userId) {
 
         if (!userId) return;
 
-        // 1. Listen for new chats being added
-        const membersChannel = supabase
-            .channel('chat_members_changes')
+        // 1. Listen for new chats being added to the user
+        const membersInsertChannel = supabase
+            .channel('chat_members_insert')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_members', filter: `user_id=eq.${userId}` }, () => {
                 fetchChats();
             })
             .subscribe();
 
-        // 2. Listen for Archive/Unarchive and Name changes
+        // 2. Listen for Archive/Unarchive toggles (UPDATE on chat_members)
+        const membersUpdateChannel = supabase
+            .channel('chat_members_update')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_members', filter: `user_id=eq.${userId}` }, (payload) => {
+                setChats(prevChats => prevChats.map(chat => {
+                    if (chat.id === payload.new.chat_id) {
+                        // Update only the archive status
+                        return { ...chat, is_archived: payload.new.is_archived };
+                    }
+                    return chat;
+                }));
+            })
+            .subscribe();
+
+        // 3. Listen for Name changes on the chats table (Groups)
         const chatsUpdateChannel = supabase
             .channel('chats_updates')
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chats' }, (payload) => {
@@ -104,7 +125,6 @@ export function useChats(userId) {
                         return {
                             ...chat,
                             name: payload.new.name,
-                            is_archived: payload.new.is_archived,
                             displayName: payload.new.type === 'GROUP' ? payload.new.name : chat.displayName
                         };
                     }
@@ -113,7 +133,7 @@ export function useChats(userId) {
             })
             .subscribe();
 
-        // 3. Listen for new messages to update the preview
+        // 4. Listen for new messages to update the preview snippet
         const messagesChannel = supabase
             .channel('messages_preview_changes')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
@@ -127,7 +147,8 @@ export function useChats(userId) {
             .subscribe();
 
         return () => {
-            supabase.removeChannel(membersChannel);
+            supabase.removeChannel(membersInsertChannel);
+            supabase.removeChannel(membersUpdateChannel);
             supabase.removeChannel(chatsUpdateChannel);
             supabase.removeChannel(messagesChannel);
         };

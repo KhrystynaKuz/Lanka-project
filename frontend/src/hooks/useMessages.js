@@ -26,16 +26,13 @@ export function useMessages(chatId) {
             .range(from, to);
 
         if (!error && data) {
-            // Reverse data so oldest is at the top, newest at bottom
             const orderedData = data.reverse();
             if (data.length < LIMIT) setHasMore(false);
-
             setMessages(prev => append ? [...orderedData, ...prev] : orderedData);
         }
         setLoading(false);
     }, [chatId]);
 
-    // Initial load
     useEffect(() => {
         if (!chatId) {
             setMessages([]);
@@ -45,12 +42,10 @@ export function useMessages(chatId) {
         setHasMore(true);
         fetchMessages(0, false);
 
-        // Realtime subscription for NEW messages
         const channel = supabase.channel(`chat_${chatId}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
                 async (payload) => {
                     const newMsg = payload.new;
-                    // Fetch sender details for the new message
                     const { data: senderData } = await supabase.from('users').select('first_name, last_name').eq('id', newMsg.sender_id).single();
                     newMsg.sender = senderData;
                     setMessages(prev => [...prev, newMsg]);
@@ -68,12 +63,28 @@ export function useMessages(chatId) {
         }
     };
 
-    const sendMessage = async (content) => {
-        if (!content.trim() || !chatId || !user) return;
+    // UPDATED: Now accepts an object or a string
+    const sendMessage = async (payload) => {
+        if (!chatId || !user) return;
+
+        let content = '';
+        let attachment_url = null;
+
+        if (typeof payload === 'string') {
+            content = payload;
+        } else {
+            content = payload.content;
+            attachment_url = payload.attachment_url;
+        }
+
+        // Prevent sending completely empty messages
+        if (!content?.trim() && !attachment_url) return;
+
         await supabase.from('messages').insert({
             chat_id: chatId,
             sender_id: user.id,
-            content: content
+            content: content?.trim() || null,
+            attachment_url: attachment_url
         });
     };
 

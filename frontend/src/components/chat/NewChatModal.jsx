@@ -9,7 +9,6 @@ export default function NewChatModal({ onClose, onChatCreated }) {
     const [loading, setLoading] = useState(false);
     const [searchTimeout, setSearchTimeout] = useState(null);
 
-    // Group Chat State
     const [isGroup, setIsGroup] = useState(false);
     const [groupName, setGroupName] = useState('');
     const [selectedUsers, setSelectedUsers] = useState([]);
@@ -26,7 +25,7 @@ export default function NewChatModal({ onClose, onChatCreated }) {
             .from('users')
             .select('id, first_name, last_name, role')
             .or(`first_name.ilike.%${safeQuery}%,last_name.ilike.%${safeQuery}%`)
-            .neq('id', user.id) // Don't search yourself
+            .neq('id', user.id)
             .limit(10);
 
         if (error) console.error("Search error:", error);
@@ -36,14 +35,12 @@ export default function NewChatModal({ onClose, onChatCreated }) {
 
     const handleUserSelect = async (selectedUser) => {
         if (!isGroup) {
-            // Direct Chat Logic
             const { data, error } = await supabase.rpc('get_or_create_direct_chat', {
                 user1_id: user.id,
                 user2_id: selectedUser.id,
             });
             if (data && !error) onChatCreated(data);
         } else {
-            // Group Chat Logic - add to array
             if (!selectedUsers.find(u => u.id === selectedUser.id)) {
                 setSelectedUsers([...selectedUsers, selectedUser]);
             }
@@ -53,7 +50,6 @@ export default function NewChatModal({ onClose, onChatCreated }) {
     const handleCreateGroup = async () => {
         if (!groupName.trim() || selectedUsers.length === 0) return;
 
-        // You'll need a custom RPC function in Supabase to handle group creation & adding participants
         const { data, error } = await supabase.rpc('create_group_chat', {
             creator_id: user.id,
             chat_name: groupName,
@@ -87,7 +83,6 @@ export default function NewChatModal({ onClose, onChatCreated }) {
                     />
                 )}
 
-                {/* Selected Users Pills for Group */}
                 {isGroup && selectedUsers.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '10px' }}>
                         {selectedUsers.map(u => (
