@@ -531,7 +531,7 @@ export default function NewChatModal({ onClose, onChatCreated }) {
                                 e.currentTarget.style.background = '#f1f5f9';
                             }}
                         >
-                            ✕ Скасувати
+                            Скасувати
                         </button>
                         {isGroup && (
                             <button
