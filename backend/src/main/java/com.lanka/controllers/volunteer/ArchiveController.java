@@ -26,7 +26,8 @@ public class ArchiveController {
     @GetMapping("/volunteer/{volunteerId}")
     public ResponseEntity<List<Task>> getArchive(@PathVariable UUID volunteerId) {
         try {
-            List<Task> tasks = taskDAO.getTasksByVolunteerAndStatus(volunteerId, TaskStatus.COMPLETED);
+            // ОНОВЛЕНО: Використовуємо новий метод для отримання як COMPLETED, так і CANCELLED завдань
+            List<Task> tasks = taskDAO.getArchivedTasksByVolunteerId(volunteerId);
             return ResponseEntity.ok(tasks);
         } catch (Exception e) {
             e.printStackTrace();
@@ -38,7 +39,8 @@ public class ArchiveController {
     public ResponseEntity<Task> getTaskDetails(@PathVariable UUID taskId) {
         try {
             Task task = taskDAO.getTaskById(taskId);
-            if (task != null && task.getStatus() == TaskStatus.COMPLETED) {
+            // ОНОВЛЕНО: Дозволяємо перегляд деталей для обох архівних статусів
+            if (task != null && (task.getStatus() == TaskStatus.COMPLETED || task.getStatus() == TaskStatus.CANCELLED)) {
                 return ResponseEntity.ok(task);
             }
             return ResponseEntity.notFound().build();

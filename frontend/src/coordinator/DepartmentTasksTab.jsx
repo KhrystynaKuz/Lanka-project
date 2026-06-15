@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Coordinator.css';
 
 // Компонент тосту
@@ -46,13 +46,18 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
 };
 
 export default function DepartmentTasksTab() {
-    const [isNewRequestsOpen, setIsNewRequestsOpen] = useState(true);
+    const [requests, setRequests] = useState([]);
+    const [departmentVolunteers, setDepartmentVolunteers] = useState([]);
+    const [tasksByRequest, setTasksByRequest] = useState({});
+    const [expandedRequests, setExpandedRequests] = useState({});
+
     const [filterStatus, setFilterStatus] = useState('all');
     const [toasts, setToasts] = useState([]);
     const [showConfirm, setShowConfirm] = useState(false);
-    const [subTasks, setSubTasks] = useState([
-        { id: 1, title: '', desc: '', assignee: '', deadline: '' }
-    ]);
+    const [pendingSaveReqId, setPendingSaveReqId] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const userId = localStorage.getItem('userId');
 
     const addToast = (message, type = 'info') => {
         const id = Date.now();
@@ -63,174 +68,353 @@ export default function DepartmentTasksTab() {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
 
-    const handleAddSubTask = () => {
-        const newId = subTasks.length > 0 ? Math.max(...subTasks.map(t => t.id)) + 1 : 1;
-        setSubTasks([...subTasks, { id: newId, title: '', desc: '', assignee: '', deadline: '' }]);
+    useEffect(() => {
+        if (!userId) return;
+
+        const loadCoordinatorData = async () => {
+            setLoading(true);
+            try {
+                const volsRes = await fetch(`http://localhost:8080/api/departments/coordinator/${userId}/volunteers`);
+                if (volsRes.ok) {
+                    setDepartmentVolunteers(await volsRes.json());
+                } else {
+                    console.error("Помилка 500: бекенд не зміг обробити запит на отримання волонтерів");
+                    addToast("🚨 Помилка отримання списку волонтерів (Помилка сервера)", "error");
+                }
+
+                const reqsRes = await fetch(`http://localhost:8080/api/departments/coordinator/${userId}/requests`);
+                if (reqsRes.ok) {
+                    const reqsData = await reqsRes.json();
+                    setRequests(reqsData);
+
+                    const tasksMap = {};
+                    for (const req of reqsData) {
+                        const tasksRes = await fetch(`http://localhost:8080/api/tasks/request/${req.id}`);
+                        if (tasksRes.ok) {
+                            tasksMap[req.id] = await tasksRes.json();
+                        } else {
+                            tasksMap[req.id] = [];
+                        }
+                    }
+                    setTasksByRequest(tasksMap);
+                }
+            } catch (err) {
+                console.error("Помилка завантаження даних:", err);
+                addToast("🚨 Помилка зв'язку з базою даних", "error");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadCoordinatorData();
+    }, [userId]);
+
+    const toggleExpand = (id) => {
+        setExpandedRequests(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
+    const handleAddSubTask = (reqId) => {
+        const newTask = {
+            id: `temp-${Date.now()}`,
+            request_id: reqId,
+            coordinator_id: userId,
+            title: '',
+            description: '',
+            assigned_volunteer_id: '',
+            status: 'ASSIGNED',
+            isNew: true
+        };
+
+        setTasksByRequest(prev => ({
+            ...prev,
+            [reqId]: [...(prev[reqId] || []), newTask]
+        }));
         addToast("📎 Додано нове підзавдання", "info");
     };
 
-    const handleUpdateSubTask = (id, field, value) => {
-        setSubTasks(subTasks.map(t => t.id === id ? { ...t, [field]: value } : t));
+    const handleUpdateSubTask = (reqId, taskId, field, value) => {
+        setTasksByRequest(prev => ({
+            ...prev,
+            [reqId]: prev[reqId].map(t => t.id === taskId ? { ...t, [field]: value } : t)
+        }));
     };
 
-    const handleDeleteSubTask = (id) => {
-        setSubTasks(subTasks.filter(t => t.id !== id));
-        addToast("🗑️ Підзавдання видалено", "success");
+    const handleDeleteSubTask = async (reqId, taskId, isNew) => {
+        const reqTasks = tasksByRequest[reqId] || [];
+
+        // Delete from backend if it isn't temporary
+        if (!isNew) {
+            try {
+                const res = await fetch(`http://localhost:8080/api/tasks/${taskId}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error("Помилка видалення");
+            } catch (err) {
+                addToast("🚨 Не вдалося видалити завдання з БД", "error");
+                return;
+            }
+        }
+
+        // If it was the last task, replace it with a new blank one
+        if (reqTasks.length === 1) {
+            const blankTask = {
+                id: `temp-${Date.now()}`,
+                request_id: reqId,
+                coordinator_id: userId,
+                title: '',
+                description: '',
+                assigned_volunteer_id: '',
+                status: 'ASSIGNED',
+                isNew: true
+            };
+
+            setTasksByRequest(prev => ({
+                ...prev,
+                [reqId]: [blankTask]
+            }));
+            addToast("🗑️ Останнє підзавдання видалено. Створено нове порожнє завдання.", "info");
+        } else {
+            setTasksByRequest(prev => ({
+                ...prev,
+                [reqId]: prev[reqId].filter(t => t.id !== taskId)
+            }));
+            addToast("🗑️ Підзавдання видалено", "success");
+        }
     };
 
-    const handleSaveTasks = () => {
-        const emptyTasks = subTasks.filter(t => !t.title.trim());
+    const handleSaveTasksTrigger = (reqId) => {
+        const tasks = tasksByRequest[reqId] || [];
+        const emptyTasks = tasks.filter(t => !t.title.trim());
+
         if (emptyTasks.length > 0) {
             addToast("⚠️ Будь ласка, заповніть назви всіх підзавдань", "warning");
             return;
         }
+
+        setPendingSaveReqId(reqId);
         setShowConfirm(true);
     };
 
-    const confirmSave = () => {
-        addToast("💾 Розподіл завдань успішно збережено!", "success");
-        setShowConfirm(false);
+    const confirmSave = async () => {
+        if (!pendingSaveReqId) return;
+        const rawTasks = tasksByRequest[pendingSaveReqId] || [];
+
+        const tasksToSave = rawTasks.map(task => {
+            const cleanedTask = { ...task };
+
+            if (cleanedTask.isNew) {
+                cleanedTask.id = null;
+            }
+
+            if (cleanedTask.assigned_volunteer_id === '') {
+                cleanedTask.assigned_volunteer_id = null;
+            }
+
+            return cleanedTask;
+        });
+
+        try {
+            const res = await fetch(`http://localhost:8080/api/tasks/request/${pendingSaveReqId}/batch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(tasksToSave)
+            });
+
+            if (res.ok) {
+                const updatedTasks = await res.json();
+                setTasksByRequest(prev => ({
+                    ...prev,
+                    [pendingSaveReqId]: updatedTasks
+                }));
+                addToast("💾 Розподіл завдань успішно збережено!", "success");
+            } else {
+                throw new Error("Помилка сервера");
+            }
+        } catch (err) {
+            console.error(err);
+            addToast("🚨 Помилка при збереженні завдань", "error");
+        } finally {
+            setShowConfirm(false);
+            setPendingSaveReqId(null);
+        }
     };
 
-    const handleArchiveDetails = () => {
-        addToast("📋 Відкриття деталей архівної заявки", "info");
+    // Візуальний мапінг статусів завдань
+    const renderStatusBadge = (status) => {
+        switch (status) {
+            case 'ASSIGNED': return <span style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: '#fef08a', color: '#854d0e', borderRadius: '12px', fontWeight: 'bold' }}>⏳ Призначено</span>;
+            case 'IN_PROGRESS': return <span style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: '#bfdbfe', color: '#1e3a8a', borderRadius: '12px', fontWeight: 'bold' }}>⚙️ В процесі</span>;
+            case 'COMPLETED': return <span style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '12px', fontWeight: 'bold' }}>✅ Виконано</span>;
+            case 'CANCELLED': return <span style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '12px', fontWeight: 'bold' }}>❌ Скасовано</span>;
+            default: return null;
+        }
     };
 
-    const handleArchiveEdit = () => {
-        addToast("✏️ Редагування архівної заявки", "info");
-    };
-
-    const handleEditSubTask = (id) => {
-        addToast(`✏️ Редагування підзавдання #${id}`, "info");
-    };
+    if (loading) return <div className="coord-tasks-section"><p>Завантаження даних координатора...</p></div>;
 
     return (
         <div className="coord-tasks-section">
-            {/* Контейнер для тостів */}
             <div className="toast-notifications-container">
                 {toasts.map(toast => (
-                    <Toast
-                        key={toast.id}
-                        message={toast.message}
-                        type={toast.type}
-                        onClose={() => removeToast(toast.id)}
-                    />
+                    <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => removeToast(toast.id)} />
                 ))}
             </div>
 
-            {/* Модальне вікно підтвердження */}
             <ConfirmModal
                 isOpen={showConfirm}
                 onClose={() => setShowConfirm(false)}
                 onConfirm={confirmSave}
                 title="Збереження розподілу"
-                message="Ви впевнені, що хочете зберегти розподіл завдань для цієї заявки?"
+                message="Ви впевнені, що хочете зберегти оновлені завдання для цієї заявки?"
                 confirmText="Так, зберегти"
-                cancelText="Скасувати"
-                isDanger={false}
             />
 
-            <div className="coord-toggle-header" onClick={() => setIsNewRequestsOpen(!isNewRequestsOpen)}>
-                <span className="coord-toggle-title">Нові заявки <span className="coord-badge-count">1</span></span>
-                <span className="coord-toggle-icon">{isNewRequestsOpen ? '▲' : '▼'}</span>
-            </div>
-
-            {isNewRequestsOpen && (
-                <div className="coord-main-request-card fade-in">
-                    <div className="coord-req-header">ЗАЯВКА №123</div>
-                    <div className="coord-req-field"><strong>Назва:</strong> Медикаменти для дитячої лікарні №5</div>
-                    <div className="coord-req-field"><strong>Опис:</strong> Термінова потреба в перев'язувальних матеріалах та інсуліні.</div>
-                    <div className="coord-req-field"><strong>Складські ресурси:</strong> Бинти, антисептики, інсулін</div>
-
-                    <div className="coord-subtasks-divider">
-                        <span>РОЗПОДІЛ НА ЗАВДАННЯ</span>
-                    </div>
-
-                    <div className="coord-subtasks-list">
-                        {subTasks.map((task, index) => (
-                            <div className="coord-subtask-row" key={task.id}>
-                                <div className="coord-subtask-number">{index + 1}</div>
-                                <div className="coord-subtask-inputs">
-                                    <input
-                                        type="text"
-                                        placeholder="Назва завдання..."
-                                        value={task.title}
-                                        onChange={(e) => handleUpdateSubTask(task.id, 'title', e.target.value)}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Відповідальні (волонтер)..."
-                                        value={task.assignee}
-                                        onChange={(e) => handleUpdateSubTask(task.id, 'assignee', e.target.value)}
-                                    />
-                                    <textarea
-                                        placeholder="Опис підзавдання..."
-                                        value={task.desc}
-                                        onChange={(e) => handleUpdateSubTask(task.id, 'desc', e.target.value)}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Дедлайн (напр. 12.06)..."
-                                        value={task.deadline}
-                                        onChange={(e) => handleUpdateSubTask(task.id, 'deadline', e.target.value)}
-                                    />
-                                </div>
-                                <div className="coord-subtask-actions">
-                                    <button className="coord-btn-edit-inline" onClick={() => handleEditSubTask(task.id)} title="Редагувати">✏️</button>
-                                    <button className="coord-btn-delete-inline" onClick={() => handleDeleteSubTask(task.id)} title="Видалити">✕</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="coord-add-subtask-center">
-                        <button className="coord-circle-add-btn" onClick={handleAddSubTask}>+</button>
-                    </div>
-
-                    <div className="coord-action-right">
-                        <button className="coord-btn-save" onClick={handleSaveTasks}>ЗБЕРЕГТИ</button>
-                    </div>
-                </div>
-            )}
-
-            {/* Рівний фільтр зліва */}
-            <div style={{
-                marginTop: '24px',
-                marginBottom: '16px'
-            }}>
+            <div className="filter-zone" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ color: '#1e3a8a', fontSize: '14px', fontWeight: '700' }}>Фільтр за статусом:</span>
                 <select
                     className="coord-minimal-select"
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    style={{
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        border: '1px solid #cbd5e1',
-                        background: '#ffffff',
-                        fontSize: '14px',
-                        color: '#374151',
-                        cursor: 'pointer',
-                        outline: 'none',
-                        width: '130px'
-                    }}
+                    style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
                 >
-                    <option value="all">Усі</option>
-                    <option value="process">В процесі</option>
-                    <option value="done">Виконані</option>
+                    <option value="all">Усі заявки</option>
+                    <option value="PENDING">Очікують (PENDING)</option>
+                    <option value="IN_PROGRESS">В процесі (IN_PROGRESS)</option>
+                    <option value="APPROVED">Затверджено (APPROVED)</option>
+                    <option value="REJECTED">Відхилено (REJECTED)</option>
+                    <option value="FULFILLED">Виконані (FULFILLED)</option>
                 </select>
             </div>
 
-            <div className="coord-main-request-card archive-request">
-                <div className="coord-req-header">ЗАЯВКА №44</div>
-                <div className="coord-req-field"><strong>Назва:</strong> Transporting warm clothes for IDPs</div>
-                <div className="coord-archive-actions">
-                    <button className="coord-btn-details-outline" onClick={handleArchiveDetails}>ДЕТАЛЬНІШЕ</button>
-                    <div className="coord-conditional-edit">
-                        <small>тільки, якщо <u>не</u> виконана</small>
-                        <button className="coord-btn-edit-action" onClick={handleArchiveEdit}>РЕДАГУВАТИ</button>
-                    </div>
+            {requests.filter(req => filterStatus === 'all' || req.status === filterStatus).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b', backgroundColor: '#f8fafc', borderRadius: '12px', marginTop: '20px' }}>
+                    <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>📭 Заявок не знайдено</h3>
+                    <p>Для вашого відділу наразі немає призначених заявок, або вони не відповідають обраному фільтру.</p>
                 </div>
-            </div>
+            ) : (
+                requests
+                    .filter(req => filterStatus === 'all' || req.status === filterStatus)
+                    .map((request) => {
+                        const isExpanded = expandedRequests[request.id];
+                        const reqTasks = tasksByRequest[request.id] || [];
+
+                        return (
+                            <div className="coord-main-request-card fade-in" key={request.id} style={{ marginBottom: '20px' }}>
+                                <div className="coord-req-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>ЗАЯВКА №{request.id.toString().slice(0, 8).toUpperCase()}</span>
+                                    <button className="coord-btn-details-outline" onClick={() => toggleExpand(request.id)}>
+                                        {isExpanded ? 'Згорнути ▲' : 'Управління завданнями ▼'}
+                                    </button>
+                                </div>
+
+                                <div className="coord-req-field"><strong>Назва:</strong> {request.title}</div>
+                                <div className="coord-req-field"><strong>Опис:</strong> {request.description}</div>
+
+                                <div className="coord-req-field" style={{ marginTop: '10px' }}>
+                                    <strong>Статус заявки:</strong> <span style={{ marginLeft: '8px', fontWeight: 'bold' }}>{request.status}</span>
+                                </div>
+
+                                {isExpanded && (
+                                    <>
+                                        <div className="coord-subtasks-divider">
+                                            <span>РОЗПОДІЛ НА ЗАВДАННЯ ({reqTasks.length})</span>
+                                        </div>
+
+                                        <div className="coord-subtasks-list">
+                                            {reqTasks.map((task, index) => {
+                                                // Визначаємо, чи можна редагувати завдання
+                                                const isEditable = task.status === 'ASSIGNED' || task.isNew;
+
+                                                return (
+                                                    <div className="coord-subtask-row" key={task.id} style={{
+                                                        opacity: isEditable ? 1 : 0.85,
+                                                        backgroundColor: isEditable ? 'transparent' : '#f8fafc',
+                                                        border: isEditable ? '1px solid #e2e8f0' : '1px solid #cbd5e1',
+                                                        padding: '15px',
+                                                        borderRadius: '8px',
+                                                        marginBottom: '10px'
+                                                    }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                <span className="coord-subtask-number" style={{ margin: 0 }}>{index + 1}</span>
+                                                                {renderStatusBadge(task.status)}
+                                                            </div>
+                                                            {!isEditable && <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>🔒 Заблоковано для змін</span>}
+                                                        </div>
+
+                                                        <div className="coord-subtask-inputs">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Назва завдання..."
+                                                                value={task.title}
+                                                                onChange={(e) => handleUpdateSubTask(request.id, task.id, 'title', e.target.value)}
+                                                                disabled={!isEditable}
+                                                                style={{
+                                                                    cursor: isEditable ? 'text' : 'not-allowed',
+                                                                    backgroundColor: isEditable ? '#fff' : '#e2e8f0',
+                                                                    color: isEditable ? '#0f172a' : '#475569'
+                                                                }}
+                                                            />
+
+                                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                                <select
+                                                                    value={task.assigned_volunteer_id || ''}
+                                                                    onChange={(e) => handleUpdateSubTask(request.id, task.id, 'assigned_volunteer_id', e.target.value)}
+                                                                    disabled={!isEditable}
+                                                                    style={{
+                                                                        flex: 1,
+                                                                        padding: '8px',
+                                                                        borderRadius: '4px',
+                                                                        border: '1px solid #ccc',
+                                                                        cursor: isEditable ? 'pointer' : 'not-allowed',
+                                                                        backgroundColor: isEditable ? '#fff' : '#e2e8f0',
+                                                                        color: isEditable ? '#0f172a' : '#475569'
+                                                                    }}
+                                                                >
+                                                                    <option value="" disabled>Оберіть відповідального...</option>
+                                                                    {departmentVolunteers.map(vol => (
+                                                                        <option key={vol.id} value={vol.id}>
+                                                                            {vol.first_name} {vol.last_name} {vol.id === userId ? '(Я)' : ''}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+
+                                                            <textarea
+                                                                placeholder="Опис підзавдання..."
+                                                                value={task.description || ''}
+                                                                onChange={(e) => handleUpdateSubTask(request.id, task.id, 'description', e.target.value)}
+                                                                disabled={!isEditable}
+                                                                style={{
+                                                                    cursor: isEditable ? 'text' : 'not-allowed',
+                                                                    backgroundColor: isEditable ? '#fff' : '#e2e8f0',
+                                                                    color: isEditable ? '#0f172a' : '#475569'
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div className="coord-subtask-actions" style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end' }}>
+                                                            {isEditable && (
+                                                                <button className="coord-btn-delete-inline" onClick={() => handleDeleteSubTask(request.id, task.id, task.isNew)} title="Видалити завдання">✕ Видалити</button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="coord-add-subtask-center" style={{ marginTop: '15px' }}>
+                                            <button className="coord-circle-add-btn" onClick={() => handleAddSubTask(request.id)} title="Додати нове завдання">+</button>
+                                        </div>
+
+                                        <div className="coord-action-right" style={{ marginTop: '20px' }}>
+                                            <button className="coord-btn-save" onClick={() => handleSaveTasksTrigger(request.id)}>
+                                                ЗБЕРЕГТИ ЗМІНИ
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        );
+                    })
+            )}
         </div>
     );
 }

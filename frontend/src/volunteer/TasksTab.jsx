@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient('https://dxgywtqqzpyrueostjdy.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4Z3l3dHFxenB5cnVlb3N0amR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDkxMzQsImV4cCI6MjA5NTYyNTEzNH0.KByZtg1i6nGoHuVdLXAKkvJZmVeA7IqLNsur1xSu8bk');
+import { supabase } from '../supabaseClient';
 
 // Компонент тосту
 const Toast = ({ message, type, onClose }) => {
@@ -95,11 +95,13 @@ export default function TasksTab() {
     };
 
     const uploadToSupabase = async (file, taskId) => {
-        const fileName = `${taskId}/${file.name}`;
+        const fileExt = file.name.split('.').pop();
+        const safeFileName = `report_${Date.now()}.${fileExt}`;
+        const filePath = `${taskId}/${safeFileName}`;
 
         const { data, error } = await supabase.storage
             .from('task-reports')
-            .upload(fileName, file, {
+            .upload(filePath, file, {
                 upsert: true
             });
 
@@ -110,7 +112,7 @@ export default function TasksTab() {
 
         const { data: publicUrlData } = supabase.storage
             .from('task-reports')
-            .getPublicUrl(fileName);
+            .getPublicUrl(filePath);
 
         return publicUrlData.publicUrl;
     };
@@ -168,7 +170,7 @@ export default function TasksTab() {
             confirmText = "Так, почати";
         } else if (newStatus === 'CANCELLED') {
             title = "Скасування завдання";
-            message = "Ви впевнені, що хочете скасувати це завдання? Цю дію не можна скасувати.";
+            message = "Ви впевнені, що хочете скасувати це завдання? Його буде переміщено до архіву.";
             confirmText = "Так, скасувати";
         } else {
             title = "Зміна статусу";
@@ -201,7 +203,7 @@ export default function TasksTab() {
 
             if (response.ok) {
                 if (action === 'COMPLETED' || action === 'CANCELLED') {
-                    addToast(action === 'CANCELLED' ? "❌ Завдання скасовано" : "✅ Завдання виконано!", "success");
+                    addToast(action === 'CANCELLED' ? "📦 Завдання переміщено до архіву" : "✅ Завдання виконано!", "success");
                     setTasks(prev => prev.filter(t => t.id !== task.id));
                 } else if (action === 'IN_PROGRESS') {
                     addToast("⚙️ Статус змінено на 'В процесі'", "success");
@@ -231,7 +233,6 @@ export default function TasksTab() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-            {/* Контейнер для тостів */}
             <div className="toast-notifications-container">
                 {toasts.map(toast => (
                     <Toast
@@ -243,7 +244,6 @@ export default function TasksTab() {
                 ))}
             </div>
 
-            {/* Модальне вікно підтвердження */}
             <ConfirmModal
                 isOpen={confirmModal.isOpen}
                 onClose={closeConfirmModal}
@@ -262,7 +262,9 @@ export default function TasksTab() {
 
                         <div className="volunteer-task-header">
                             <h3>ЗАВДАННЯ №{task.id.toString().slice(-4)}</h3>
-                            <span className="volunteer-task-link">Прив'язано до ЗАЯВКИ №{task.request_id?.toString().slice(-4)}</span>
+                            <span className="volunteer-task-link">
+                                ЗАЯВКА: {task.requestTitle || `№${task.request_id?.toString().slice(-4)}`}
+                            </span>
                         </div>
 
                         <div className="volunteer-task-body">

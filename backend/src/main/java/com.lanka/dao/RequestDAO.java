@@ -21,18 +21,10 @@ public class RequestDAO {
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            if (request.getId() == null) {
-                request.setId(UUID.randomUUID());
-            }
-            if (request.getCreated_at() == null) {
-                request.setCreated_at(OffsetDateTime.now());
-            }
-            if (request.getUpdated_at() == null) {
-                request.setUpdated_at(OffsetDateTime.now());
-            }
-            if (request.getStatus() == null) {
-                request.setStatus(RequestStatus.PENDING);
-            }
+            if (request.getId() == null) request.setId(UUID.randomUUID());
+            if (request.getCreated_at() == null) request.setCreated_at(OffsetDateTime.now());
+            if (request.getUpdated_at() == null) request.setUpdated_at(OffsetDateTime.now());
+            if (request.getStatus() == null) request.setStatus(RequestStatus.PENDING);
 
             ps.setObject(1, request.getId());
             ps.setObject(2, request.getCustomer_id());
@@ -71,10 +63,8 @@ public class RequestDAO {
 
     public void deleteRequest(UUID id) throws SQLException {
         String sql = "DELETE FROM requests WHERE id = ?";
-
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setObject(1, id);
             ps.executeUpdate();
         }
@@ -85,9 +75,8 @@ public class RequestDAO {
                 "FROM requests WHERE customer_id = ? ORDER BY created_at DESC";
         List<Request> list = new ArrayList<>();
 
-        try (Connection conn = com.lanka.database.DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setObject(1, customerId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -136,26 +125,22 @@ public class RequestDAO {
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
+            if (rs.next()) return rs.getInt(1);
         }
         return 0;
     }
 
     public void updateStatus(String requestId, String status) throws SQLException {
         String sql = "UPDATE requests SET status = ?::request_status, updated_at = ? WHERE id = ?";
-
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setString(1, status);
             ps.setObject(2, OffsetDateTime.now());
             ps.setObject(3, UUID.fromString(requestId));
-
             ps.executeUpdate();
         }
     }
+
     public List<Request> getAllRequests() throws SQLException {
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests ORDER BY created_at DESC";
@@ -167,11 +152,7 @@ public class RequestDAO {
 
             while (rs.next()) {
                 Request request = mapRowToRequest(rs);
-
-                request.setDepartments(
-                        getDepartmentsByRequestId(request.getId())
-                );
-
+                request.setDepartments(getDepartmentsByRequestId(request.getId()));
                 list.add(request);
             }
         }
@@ -181,110 +162,92 @@ public class RequestDAO {
     public Request getRequestById(UUID id) throws SQLException {
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests WHERE id = ?";
-
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setObject(1, id);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Request request = mapRowToRequest(rs);
-
-                    request.setDepartments(
-                            getDepartmentsByRequestId(request.getId())
-                    );
-
+                    request.setDepartments(getDepartmentsByRequestId(request.getId()));
                     return request;
                 }
             }
         }
-
         return null;
     }
 
     public List<Request> searchByTitle(String titlePart) throws SQLException {
-        String sql = """
-        SELECT id, customer_id, title, description,
-               status::text, priority, created_at, updated_at, manager_id
-        FROM requests
-        WHERE title ILIKE ?
-        ORDER BY created_at DESC
-        """;
-
+        String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
+                "FROM requests WHERE title ILIKE ? ORDER BY created_at DESC";
         List<Request> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setString(1, titlePart + "%");
-
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Request request = mapRowToRequest(rs);
-
-                    request.setDepartments(
-                            getDepartmentsByRequestId(request.getId())
-                    );
-
+                    request.setDepartments(getDepartmentsByRequestId(request.getId()));
                     list.add(request);
                 }
             }
         }
-
         return list;
     }
 
     public List<Request> getRequestsByStatus(RequestStatus status) throws SQLException {
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests WHERE status::text = ? ORDER BY priority DESC, created_at DESC";
-
         List<Request> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setString(1, status.name());
-
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Request request = mapRowToRequest(rs);
-
-                    request.setDepartments(
-                            getDepartmentsByRequestId(request.getId())
-                    );
-
+                    request.setDepartments(getDepartmentsByRequestId(request.getId()));
                     list.add(request);
                 }
             }
         }
-
         return list;
     }
 
     public List<String> getDepartmentsByRequestId(UUID requestId) throws SQLException {
-        String sql = """
-        SELECT DISTINCT d.name
-        FROM tasks t
-        JOIN departments d ON d.id = t.department_id
-        WHERE t.request_id = ?
-    """;
-
+        String sql = "SELECT DISTINCT d.name FROM tasks t JOIN departments d ON d.id = t.department_id WHERE t.request_id = ?";
         List<String> departments = new ArrayList<>();
-
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setObject(1, requestId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) departments.add(rs.getString("name"));
+            }
+        }
+        return departments;
+    }
 
+    // --- NEW METHOD FOR COORDINATOR LOGIC ---
+    public List<Request> getRequestsByCoordinatorDepartment(UUID coordinatorId) throws SQLException {
+        String sql = "SELECT DISTINCT r.id, r.customer_id, r.title, r.description, r.status::text, r.priority, r.created_at, r.updated_at, r.manager_id " +
+                "FROM requests r " +
+                "JOIN tasks t ON r.id = t.request_id " +
+                "JOIN user_departments ud ON t.department_id = ud.department_id " +
+                "WHERE ud.user_id = ? ORDER BY r.created_at DESC";
+
+        List<Request> list = new ArrayList<>();
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, coordinatorId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    departments.add(rs.getString("name"));
+                    Request request = mapRowToRequest(rs);
+                    request.setDepartments(getDepartmentsByRequestId(request.getId()));
+                    list.add(request);
                 }
             }
         }
-
-        return departments;
+        return list;
     }
 
     public List<Request> getAllRequestsWithCustomerName() throws SQLException {

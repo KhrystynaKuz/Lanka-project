@@ -18,6 +18,7 @@ public class Task {
     private TaskStatus status;
     private OffsetDateTime created_at;
     private OffsetDateTime completed_at;
+    private String requestTitle;
 
     public Task() {}
 
@@ -113,4 +114,6 @@ public class Task {
     public void setCompleted_at(OffsetDateTime completed_at) {
         this.completed_at = completed_at;
     }
+    public String getRequestTitle() { return requestTitle; }
+    public void setRequestTitle(String requestTitle) { this.requestTitle = requestTitle; }
 }

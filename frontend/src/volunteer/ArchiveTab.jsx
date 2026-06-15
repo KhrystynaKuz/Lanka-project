@@ -66,7 +66,7 @@ export default function ArchiveTab() {
                 // Показуємо тост тільки один раз
                 if (data.length > 0 && !toastShownRef.current) {
                     toastShownRef.current = true;
-                    addToast(`📦 Завантажено ${data.length} виконаних завдань`, "success");
+                    addToast(`📦 Завантажено ${data.length} архівних завдань`, "success");
                 }
             })
             .catch(err => {
@@ -125,7 +125,7 @@ export default function ArchiveTab() {
             </div>
 
             <div className="tab-header-block">
-                <h2 className="tab-title">Виконані завдання</h2>
+                <h2 className="tab-title">Архів завдань</h2>
                 <div className="badge-counter">
                     Усього: <span className="counter-number">{archivedTasks.length}</span>
                 </div>
@@ -133,18 +133,27 @@ export default function ArchiveTab() {
 
             {archivedTasks.length === 0 ? (
                 <div className="volunteer-empty-state">
-                    <p>Ви ще не виконали жодного завдання. Ваші успіхи з'являться тут пізніше!</p>
+                    <p>Ви ще не виконали та не скасували жодного завдання. Ваш архів поки що порожній!</p>
                 </div>
             ) : (
                 <div className="volunteer-list-container">
                     {archivedTasks.map(task => (
-                        <div className="volunteer-archive-card" key={task.id}>
+                        <div className="volunteer-archive-card" key={task.id} style={{ opacity: task.status === 'CANCELLED' ? 0.8 : 1 }}>
 
                             <div className="volunteer-archive-header">
 
                                 <div className="volunteer-archive-info">
-                                    <div className="volunteer-archive-title">
+                                    <div className="volunteer-archive-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         {task.title}
+                                        {task.status === 'CANCELLED' ? (
+                                            <span style={{ fontSize: '0.75rem', padding: '3px 8px', backgroundColor: '#fee2e2', color: '#ef4444', borderRadius: '12px', fontWeight: 'bold', border: '1px solid #fca5a5' }}>
+                                                Скасовано ❌
+                                            </span>
+                                        ) : (
+                                            <span style={{ fontSize: '0.75rem', padding: '3px 8px', backgroundColor: '#dcfce7', color: '#22c55e', borderRadius: '12px', fontWeight: 'bold', border: '1px solid #86efac' }}>
+                                                Виконано ✅
+                                            </span>
+                                        )}
                                     </div>
 
                                     <div className="volunteer-archive-desc">
@@ -170,13 +179,15 @@ export default function ArchiveTab() {
                                     <p>
                                         <strong>Дата завершення:</strong>{' '}
                                         {task.completed_at
-                                            ? new Date(task.completed_at).toLocaleDateString()
+                                            ? new Date(task.completed_at).toLocaleDateString('uk-UA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
                                             : '—'}
                                     </p>
 
                                     <p><strong>Завантажені файли:</strong></p>
 
-                                    {taskReports[task.id] && taskReports[task.id].length > 0 ? (
+                                    {task.status === 'CANCELLED' ? (
+                                        <p className="volunteer-no-files" style={{ color: '#ef4444' }}>Завдання було скасовано. Файли відсутні.</p>
+                                    ) : taskReports[task.id] && taskReports[task.id].length > 0 ? (
                                         <ul className="volunteer-file-list">
                                             {taskReports[task.id].map(report =>
                                                 report.attached_files_urls.map((url, i) => (
@@ -187,7 +198,7 @@ export default function ArchiveTab() {
                                                             rel="noopener noreferrer"
                                                             className="volunteer-file-link"
                                                         >
-                                                            📄 Файл {i + 1}
+                                                            📄 Файл звіту {i + 1}
                                                         </a>
                                                     </li>
                                                 ))
