@@ -13,6 +13,29 @@ export default function GroupSettingsModal({ chatId, onClose }) {
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+
+    // Функція для відображення ролі
+    const getRoleLabel = (role) => {
+        const roles = {
+            'HEAD': { icon: '👑', label: 'Голова', color: '#8b5cf6' },
+            'COORDINATOR': { icon: '📋', label: 'Координатор', color: '#3b82f6' },
+            'VOLUNTEER': { icon: '🤝', label: 'Волонтер', color: '#10b981' },
+            'CUSTOMER': { icon: '🛍️', label: 'Замовник', color: '#f59e0b' }
+        };
+        return roles[role] || { icon: '👤', label: role || 'Користувач', color: '#64748b' };
+    };
+
+    // Анімація при відкритті
+    useEffect(() => {
+        setIsVisible(true);
+        return () => setIsVisible(false);
+    }, []);
+
+    const handleClose = () => {
+        setIsVisible(false);
+        setTimeout(onClose, 200);
+    };
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -75,21 +98,19 @@ export default function GroupSettingsModal({ chatId, onClose }) {
     const handleSaveAll = async () => {
         setSaving(true);
         try {
-            // 1. Save Name Change (if modified)
             if (chatName !== originalName && chatName.trim() !== '') {
                 await supabase.from('chats').update({ name: chatName }).eq('id', chatId);
                 await supabase.from('messages').insert({
                     chat_id: chatId,
                     content: `✏️ ${user.first_name} змінив(ла) назву групи на "${chatName}"`,
                     sender_id: user.id,
-                    is_system_message: true // Appears as a grey centered badge
+                    is_system_message: true
                 });
             }
 
             const addedMembers = members.filter(m => !originalMembers.some(om => om.id === m.id));
             const removedMembers = originalMembers.filter(om => !members.some(m => m.id === om.id));
 
-            // 2. Process Additions
             for (const added of addedMembers) {
                 const { error: insertError } = await supabase
                     .from('chat_members')
@@ -100,7 +121,7 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                         chat_id: chatId,
                         content: `👋 ${user.first_name} додав(ла) ${added.first_name} до чату`,
                         sender_id: user.id,
-                        is_system_message: true // Appears as a grey centered badge
+                        is_system_message: true
                     });
                 } else {
                     console.error("Помилка додавання користувача:", insertError);
@@ -108,7 +129,6 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                 }
             }
 
-            // 3. Process Removals
             for (const removed of removedMembers) {
                 const { error: deleteError } = await supabase
                     .from('chat_members')
@@ -120,7 +140,7 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                         chat_id: chatId,
                         content: `🚪 ${removed.first_name} видалено з чату`,
                         sender_id: user.id,
-                        is_system_message: true // Appears as a grey centered badge
+                        is_system_message: true
                     });
                 } else {
                     console.error("Помилка видалення користувача:", deleteError);
@@ -128,7 +148,7 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                 }
             }
 
-            onClose();
+            handleClose();
         } catch (error) {
             console.error("Помилка при збереженні:", error);
             alert("Сталася помилка при збереженні налаштувань. Перевірте консоль.");
@@ -140,76 +160,413 @@ export default function GroupSettingsModal({ chatId, onClose }) {
     if (loading) return null;
 
     return (
-        <div className="modal-overlay fade-in" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-            <div className="modal-content" style={{ background: 'white', padding: '24px', borderRadius: '8px', width: '400px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-                <h3 className="modal-title" style={{ marginTop: 0, marginBottom: '20px' }}>Налаштування групи</h3>
+        <>
+            <style>
+                {`
+                    @keyframes modalSlideIn {
+                        from {
+                            opacity: 0;
+                            transform: translateY(20px) scale(0.96);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0) scale(1);
+                        }
+                    }
+                    @keyframes modalSlideOut {
+                        from {
+                            opacity: 1;
+                            transform: translateY(0) scale(1);
+                        }
+                        to {
+                            opacity: 0;
+                            transform: translateY(20px) scale(0.96);
+                        }
+                    }
+                    @keyframes spin {
+                        to { transform: rotate(360deg); }
+                    }
+                `}
+            </style>
 
-                <div style={{ marginBottom: '15px' }}>
-                    <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>
-                        НАЗВА ГРУПИ
-                    </label>
-                    <input
-                        className="modal-input"
-                        value={chatName}
-                        onChange={(e) => setChatName(e.target.value)}
-                        placeholder="Введіть назву..."
-                        style={{ width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
-                    />
-                </div>
+            <div
+                style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: isVisible ? 'rgba(30, 58, 138, 0.4)' : 'rgba(30, 58, 138, 0)',
+                    backdropFilter: isVisible ? 'blur(6px)' : 'blur(0px)',
+                    transition: 'all 0.25s ease-out',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}
+                onClick={handleClose}
+            >
+                <div
+                    style={{
+                        background: 'white',
+                        padding: '28px',
+                        borderRadius: '28px',
+                        width: '480px',
+                        maxHeight: '85vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                        boxSizing: 'border-box',
+                        animation: isVisible ? 'modalSlideIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards' : 'modalSlideOut 0.2s ease-in forwards'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '24px',
+                        paddingBottom: '16px',
+                        borderBottom: '2px solid #eef2ff'
+                    }}>
+                        <h3 style={{
+                            margin: 0,
+                            fontSize: '22px',
+                            fontWeight: 800,
+                            background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)',
+                            WebkitBackgroundClip: 'text',
+                            backgroundClip: 'text',
+                            color: 'transparent'
+                        }}>
+                            ⚙️ Налаштування групи
+                        </h3>
+                        <button
+                            onClick={handleClose}
+                            style={{
+                                background: '#f1f5f9',
+                                border: 'none',
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '30px',
+                                cursor: 'pointer',
+                                fontSize: '18px',
+                                color: '#64748b',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#e2e8f0';
+                                e.currentTarget.style.color = '#1e293b';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#f1f5f9';
+                                e.currentTarget.style.color = '#64748b';
+                            }}
+                        >
+                            ✕
+                        </button>
+                    </div>
 
-                <div style={{ marginBottom: '15px' }}>
-                    <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>
-                        УЧАСНИКИ
-                    </label>
-                    <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #d1d5db', borderRadius: '4px', padding: '8px' }}>
-                        {members.map(m => (
-                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f3f4f6' }}>
-                                <span style={{ fontSize: '14px' }}>{m.first_name} {m.last_name} <small style={{color: '#888'}}>({m.role})</small></span>
-                                {m.id !== user.id && (
-                                    <button
-                                        onClick={() => handleRemoveUser(m.id)}
-                                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '18px' }}
+                    {/* Назва групи */}
+                    <div style={{ marginBottom: '24px' }}>
+                        <label style={{
+                            fontSize: '12px',
+                            color: '#64748b',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            fontWeight: 700,
+                            display: 'block',
+                            marginBottom: '8px'
+                        }}>
+                            🏷️ Назва групи
+                        </label>
+                        <input
+                            value={chatName}
+                            onChange={(e) => setChatName(e.target.value)}
+                            placeholder="Введіть назву групи..."
+                            style={{
+                                width: '100%',
+                                padding: '14px 16px',
+                                borderRadius: '16px',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '14px',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                                transition: 'all 0.2s',
+                                background: '#f8fafc'
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = '#3b82f6';
+                                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                                e.target.style.background = 'white';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = '#e2e8f0';
+                                e.target.style.boxShadow = 'none';
+                                e.target.style.background = '#f8fafc';
+                            }}
+                        />
+                    </div>
+
+                    {/* Учасники */}
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{
+                            fontSize: '12px',
+                            color: '#64748b',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            fontWeight: 700,
+                            display: 'block',
+                            marginBottom: '8px'
+                        }}>
+                            👥 Учасники ({members.length})
+                        </label>
+                        <div style={{
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            background: '#f8fafc',
+                            borderRadius: '16px',
+                            border: '1px solid #e2e8f0',
+                            padding: '8px'
+                        }}>
+                            {members.map(m => {
+                                const roleInfo = getRoleLabel(m.role);
+                                return (
+                                    <div
+                                        key={m.id}
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            padding: '12px',
+                                            borderBottom: '1px solid #e2e8f0',
+                                            transition: 'background 0.2s'
+                                        }}
                                     >
-                                        ×
-                                    </button>
-                                )}
+                                        <div>
+                                            <span style={{
+                                                fontWeight: 600,
+                                                color: '#1e293b',
+                                                fontSize: '14px'
+                                            }}>
+                                                {m.first_name} {m.last_name}
+                                            </span>
+                                            <span style={{
+                                                fontSize: '11px',
+                                                color: roleInfo.color,
+                                                marginLeft: '8px',
+                                                background: `${roleInfo.color}15`,
+                                                padding: '2px 8px',
+                                                borderRadius: '20px'
+                                            }}>
+                                                {roleInfo.icon} {roleInfo.label}
+                                            </span>
+                                        </div>
+                                        {m.id !== user.id && (
+                                            <button
+                                                onClick={() => handleRemoveUser(m.id)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: '#ef4444',
+                                                    cursor: 'pointer',
+                                                    fontSize: '20px',
+                                                    padding: '4px 8px',
+                                                    borderRadius: '30px',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.background = '#fee2e2';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.background = 'transparent';
+                                                }}
+                                            >
+                                                ×
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Пошук та додавання */}
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{
+                            fontSize: '12px',
+                            color: '#64748b',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            fontWeight: 700,
+                            display: 'block',
+                            marginBottom: '8px'
+                        }}>
+                            🔍 Додати учасника
+                        </label>
+                        <input
+                            placeholder="Введіть ім'я або прізвище..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '14px 16px',
+                                borderRadius: '16px',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '14px',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                                transition: 'all 0.2s',
+                                background: '#f8fafc'
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = '#3b82f6';
+                                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                                e.target.style.background = 'white';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = '#e2e8f0';
+                                e.target.style.boxShadow = 'none';
+                                e.target.style.background = '#f8fafc';
+                            }}
+                        />
+                        {searchResults.length > 0 && (
+                            <div style={{
+                                marginTop: '8px',
+                                background: '#f8fafc',
+                                borderRadius: '16px',
+                                border: '1px solid #e2e8f0',
+                                overflow: 'hidden'
+                            }}>
+                                {searchResults.map(u => {
+                                    const roleInfo = getRoleLabel(u.role);
+                                    return (
+                                        <div
+                                            key={u.id}
+                                            onClick={() => handleAddUser(u)}
+                                            style={{
+                                                padding: '12px 16px',
+                                                cursor: 'pointer',
+                                                borderBottom: '1px solid #e2e8f0',
+                                                transition: 'all 0.2s',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = '#eef2ff';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'transparent';
+                                            }}
+                                        >
+                                            <div>
+                                                <span style={{
+                                                    fontWeight: 600,
+                                                    color: '#1e293b',
+                                                    fontSize: '14px'
+                                                }}>
+                                                    {u.first_name} {u.last_name}
+                                                </span>
+                                                <span style={{
+                                                    fontSize: '11px',
+                                                    color: roleInfo.color,
+                                                    marginLeft: '8px',
+                                                    background: `${roleInfo.color}15`,
+                                                    padding: '2px 8px',
+                                                    borderRadius: '20px'
+                                                }}>
+                                                    {roleInfo.icon} {roleInfo.label}
+                                                </span>
+                                            </div>
+                                            <button style={{
+                                                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                                color: 'white',
+                                                border: 'none',
+                                                padding: '6px 14px',
+                                                borderRadius: '30px',
+                                                fontSize: '12px',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.transform = 'scale(1.02)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.transform = 'scale(1)';
+                                                    }}>
+                                                ➕ Додати
+                                            </button>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        ))}
+                        )}
+                    </div>
+
+                    {/* Кнопки дій */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '12px',
+                        justifyContent: 'flex-end',
+                        paddingTop: '16px',
+                        borderTop: '1px solid #eef2ff'
+                    }}>
+                        <button
+                            onClick={handleClose}
+                            disabled={saving}
+                            style={{
+                                padding: '12px 24px',
+                                background: '#f1f5f9',
+                                color: '#475569',
+                                border: 'none',
+                                borderRadius: '40px',
+                                cursor: saving ? 'not-allowed' : 'pointer',
+                                fontWeight: 600,
+                                fontSize: '14px',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!saving) e.currentTarget.style.background = '#e2e8f0';
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!saving) e.currentTarget.style.background = '#f1f5f9';
+                            }}
+                        >
+                            Скасувати
+                        </button>
+                        <button
+                            onClick={handleSaveAll}
+                            disabled={saving}
+                            style={{
+                                padding: '12px 28px',
+                                background: saving ? '#cbd5e1' : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '40px',
+                                cursor: saving ? 'not-allowed' : 'pointer',
+                                fontWeight: 700,
+                                fontSize: '14px',
+                                transition: 'all 0.2s',
+                                boxShadow: saving ? 'none' : '0 2px 8px rgba(37, 99, 235, 0.2)'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!saving) {
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(37, 99, 235, 0.3)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!saving) {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 99, 235, 0.2)';
+                                }
+                            }}
+                        >
+                            {saving ? 'Збереження...' : 'Зберегти зміни'}
+                        </button>
                     </div>
                 </div>
-
-                <div style={{ marginBottom: '15px' }}>
-                    <input
-                        className="modal-input"
-                        placeholder="Пошук та додавання користувача..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        style={{ width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
-                    />
-                    {searchResults.length > 0 && (
-                        <div style={{ border: '1px solid #d1d5db', borderRadius: '4px', marginTop: '5px', overflow: 'hidden' }}>
-                            {searchResults.map(u => (
-                                <div
-                                    key={u.id}
-                                    onClick={() => handleAddUser(u)}
-                                    style={{ padding: '10px', cursor: 'pointer', background: '#f9fafb', borderBottom: '1px solid #e5e7eb', fontSize: '14px' }}
-                                >
-                                    + Додати {u.first_name} {u.last_name}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <div className="modal-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                    <button onClick={onClose} disabled={saving} style={{ padding: '8px 16px', background: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                        Скасувати
-                    </button>
-                    <button onClick={handleSaveAll} disabled={saving} style={{ padding: '8px 16px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                        {saving ? 'Збереження...' : 'Зберегти зміни'}
-                    </button>
-                </div>
             </div>
-        </div>
+        </>
     );
 }
