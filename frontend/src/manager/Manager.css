@@ -2503,3 +2503,30 @@
     background: #fee2e2;
     transform: scale(1.05);
 }
+
+.doc-action-btn {
+    width: 95px;
+    height: 30px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    justify-self: end;
+}
+
+.doc-action-btn.approve {
+    background: #e4f2e6;
+    border: 1px solid #16a34a;
+    color: #16a34a;
+}
+
+.doc-action-btn.reject {
+    background: #f7e8e8;
+    border: 1px solid #dc2626;
+    color: #dc2626;
+}
+
+.doc-action-btn:hover {
+    opacity: 0.9;
+}
