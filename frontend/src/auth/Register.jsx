@@ -132,6 +132,15 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
             });
 
             const authData = await authResponse.json();
+
+            if (!authResponse.ok) {
+
+                if (authData.error_code === "user_already_exists") {
+                    throw new Error("Користувач з такою електронною поштою вже зареєстрований");
+                }
+
+                throw new Error(authData.msg || "Помилка реєстрації");
+            }
             if (!authResponse.ok) throw new Error(authData.message || "Помилка реєстрації");
 
             const userId = authData.user?.id;
