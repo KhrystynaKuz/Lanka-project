@@ -56,10 +56,17 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
     const handleFileChange = (e) => {
         if (e.target.files) {
             const newFiles = Array.from(e.target.files);
+            const MAX_FILE = 10 * 1024 * 1024;
+            const MAX_TOTAL = 20 * 1024 * 1024;
 
-            const validFiles = newFiles.filter(file => file.size <= 10 * 1024 * 1024);
-            if (validFiles.length !== newFiles.length) {
-                alert("Деякі файли завеликі (макс 10 МБ)");
+            const validFiles = newFiles.filter(f => f.size <= MAX_FILE);
+
+            const currentTotalSize = documents.reduce((acc, f) => acc + f.size, 0);
+            const newFilesSize = validFiles.reduce((acc, f) => acc + f.size, 0);
+
+            if (currentTotalSize + newFilesSize > MAX_TOTAL) {
+                showNotification("Сумарний розмір файлів перевищує ліміт (20 МБ)", "error");
+                return;
             }
 
             setDocuments(prev => [...prev, ...validFiles]);
@@ -102,6 +109,13 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
             setError("Будь ласка, завантажте хоча б один документ.");
             return;
         }
+
+        const hasOversized = documents.some(f => f.size > 10 * 1024 * 1024);
+        if (hasOversized) {
+            setError("Один з файлів завеликий. Видаліть його та оберіть менший.");
+            return;
+        }
+
         setError('');
         setLoading(true);
 
@@ -139,7 +153,7 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                     dob: dob || null,
                     phone_number: phoneNumber,
                     role,
-                    is_verified: false
+                    is_verified: null
                 })
             });
 
@@ -442,8 +456,12 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
                             </div>
                         )}
 
-                        <button type="submit" className="login-btn register-submit-btn" disabled={loading}>
-                            {loading ? 'Реєстрація...' : 'Зареєструватися'}
+                        <button
+                            type="submit"
+                            className="login-btn register-submit-btn"
+                            disabled={loading || documents.length === 0}
+                        >
+                            {loading ? 'Реєстрація...' : documents.length === 0 ? 'Завантажте документи' : 'Зареєструватися'}
                         </button>
                     </form>
                 )}
