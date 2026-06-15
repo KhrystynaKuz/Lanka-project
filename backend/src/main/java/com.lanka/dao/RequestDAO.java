@@ -80,9 +80,7 @@ public class RequestDAO {
         }
     }
 
-    // 1. UPDATE THE SQL IN THIS METHOD
     public List<Request> getRequestsByCustomerId(UUID customerId) throws SQLException {
-        // ADD manager_id to the SELECT statement here!
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests WHERE customer_id = ? ORDER BY created_at DESC";
         List<Request> list = new ArrayList<>();
@@ -100,7 +98,6 @@ public class RequestDAO {
         return list;
     }
 
-    // 2. UPDATE THE MAPPING METHOD
     private Request mapRowToRequest(ResultSet rs) throws SQLException {
         Request request = new Request();
         request.setId(rs.getObject("id", UUID.class));
@@ -116,9 +113,16 @@ public class RequestDAO {
         request.setPriority(rs.getInt("priority"));
         request.setCreated_at(rs.getObject("created_at", OffsetDateTime.class));
         request.setUpdated_at(rs.getObject("updated_at", OffsetDateTime.class));
-
-        // ADD THIS LINE TO GET THE MANAGER ID!
         request.setManager_id(rs.getObject("manager_id", UUID.class));
+
+        try {
+            String fName = rs.getString("first_name");
+            String lName = rs.getString("last_name");
+            if (fName != null || lName != null) {
+                request.setCustomerName((fName == null ? "" : fName) + " " + (lName == null ? "" : lName));
+            }
+        } catch (SQLException e) {
+        }
 
         return request;
     }
@@ -153,7 +157,6 @@ public class RequestDAO {
         }
     }
     public List<Request> getAllRequests() throws SQLException {
-        // ДОДАНО manager_id В SQL
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests ORDER BY created_at DESC";
         List<Request> list = new ArrayList<>();
@@ -282,5 +285,41 @@ public class RequestDAO {
         }
 
         return departments;
+    }
+
+    public List<Request> getAllRequestsWithCustomerName() throws SQLException {
+        List<Request> requests = new ArrayList<>();
+        String sql = "SELECT r.id, r.customer_id, r.title, r.description, r.status::text, r.priority, r.created_at, r.updated_at, r.manager_id, u.first_name, u.last_name " +
+                "FROM requests r " +
+                "LEFT JOIN users u ON r.customer_id = u.id " +
+                "ORDER BY r.created_at DESC";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                requests.add(mapRowToRequest(rs));
+            }
+        }
+        return requests;
+    }
+
+    public List<Request> getPendingRequestsWithCustomerName() throws SQLException {
+        String sql = "SELECT r.*, u.first_name, u.last_name " +
+                "FROM requests r " +
+                "LEFT JOIN users u ON r.customer_id = u.id " +
+                "WHERE r.status::text = 'PENDING' " +
+                "ORDER BY r.created_at DESC";
+
+        List<Request> list = new ArrayList<>();
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapRowToRequest(rs));
+            }
+        }
+        return list;
     }
 }

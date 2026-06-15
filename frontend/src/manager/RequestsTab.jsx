@@ -11,12 +11,9 @@ export default function RequestsTab() {
     const [loading, setLoading] = useState(false);
     const [loadingRequests, setLoadingRequests] = useState(true);
 
-    // Стейт для кастомного модального вікна видалення
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, requestId: null });
-    // Стейт для збереження стану чекбокса "Більше не показувати"
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
-    // --- СТЕЙТИ ДЛЯ ВІДДІЛІВ ---
     const [departments, setDepartments] = useState([]); // Список усіх відділів із БД
     const [selectedDepartmentsByRequest, setSelectedDepartmentsByRequest] = useState({}); // Обрані відділи для кожної заявки
 
@@ -47,7 +44,6 @@ export default function RequestsTab() {
             .then(data => setNewCount(data.newCount))
             .catch(err => console.error("Помилка завантаження лічильника:", err));
 
-        // Отримання списку відділів із БД
         fetch('http://localhost:8080/api/departments')
             .then(res => {
                 if (!res.ok) throw new Error();
@@ -240,7 +236,9 @@ export default function RequestsTab() {
                                     <div className="request-header-line" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div onClick={() => toggleExpand(request.id)} style={{ cursor: 'pointer', flexGrow: 1 }}>
                                             <h3 style={{ color: '#1e3a8a' }}>НОВА ЗАЯВКА №{request.id ? String(request.id).slice(0, 8).toUpperCase() : '---'}</h3>
-                                            <span className="applicant-pib" style={{ color: '#6b7280' }}>ID Замовника: {request.customer_id || 'Не вказано'}</span>
+                                            <span className="applicant-pib" style={{ color: '#6b7280' }}>
+                                                Замовник: {request.customerName || 'Не вказано'}
+                                            </span>
                                         </div>
                                         <button className="main-search-btn" style={{ padding: '5px 10px', fontSize: '12px' }} onClick={() => toggleExpand(request.id)}>
                                             {isExpanded ? 'Згорнути ▲' : 'Розгорнути ▼'}
@@ -431,7 +429,9 @@ export default function RequestsTab() {
                                 <div className="request-header-line" onClick={() => toggleExpand(request.id)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                         <h3 style={{ color: '#1e3a8a' }}>ЗАЯВКА №{request.id ? String(request.id).slice(0, 8).toUpperCase() : '---'}</h3>
-                                        <span className="applicant-pib" style={{ color: '#6b7280' }}>ID Замовника: {request.customer_id || 'Не вказано'}</span>
+                                        <span className="applicant-pib" style={{ color: '#6b7280' }}>
+                                            Замовник: {request.customerName || 'Не вказано'}
+                                        </span>
                                     </div>
                                     <button className="main-search-btn" style={{ padding: '5px 10px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); toggleExpand(request.id); }}>
                                         {isExpanded ? 'Згорнути ▲' : 'Розгорнути ▼'}
@@ -471,8 +471,8 @@ export default function RequestsTab() {
                                                             fontWeight: '600'
                                                         }}
                                                     >
-                {department}
-            </span>
+                                                        {department}
+                                                    </span>
                                                 ))}
                                             </p>
                                         )}

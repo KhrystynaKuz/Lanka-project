@@ -19,6 +19,7 @@ public class Request {
     private OffsetDateTime updated_at;
     private UUID manager_id;
     private List<String> departments;
+    private String customerName;
 
     public Request() {
     }
@@ -111,4 +112,12 @@ public class Request {
     public List<String> getDepartments() {return departments;}
 
     public void setDepartments(List<String> departments) {this.departments = departments;}
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
 }

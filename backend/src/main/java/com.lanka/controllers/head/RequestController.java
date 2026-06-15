@@ -43,10 +43,10 @@ public class RequestController {
     @GetMapping
     public ResponseEntity<List<Request>> getAll() {
         try {
-            List<Request> requests = requestDAO.getAllRequests();
-
+            List<Request> requests = requestDAO.getAllRequestsWithCustomerName();
             return ResponseEntity.ok(requests);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -63,7 +63,7 @@ public class RequestController {
     @GetMapping("/pending")
     public ResponseEntity<List<Request>> getPending() {
         try {
-            return ResponseEntity.ok(requestDAO.getPendingRequests());
+            return ResponseEntity.ok(requestDAO.getPendingRequestsWithCustomerName());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
