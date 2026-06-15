@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import './Manager.css';
 
-export default function ManagementTab({ showNotification }) {
+export default function ManagementTab({showNotification}) {
     const API_BASE_URL = 'http://localhost:8080';
 
     const [verificationList, setVerificationList] = useState([]);
@@ -160,7 +160,7 @@ export default function ManagementTab({ showNotification }) {
                 try {
                     const response = await fetch(`http://localhost:8080/api/management/documents/${userId}`);
                     const data = await response.json();
-                    setUserDocs(prev => ({ ...prev, [userId]: data }));
+                    setUserDocs(prev => ({...prev, [userId]: data}));
                 } catch (err) {
                     console.error("Помилка завантаження документів", err);
                 }
@@ -180,10 +180,10 @@ export default function ManagementTab({ showNotification }) {
         const success = await sendDocStatus(docId, 'APPROVED', null);
         if (success) {
             setUserDocs(prev => {
-                const newDocs = { ...prev };
+                const newDocs = {...prev};
                 for (const userId in newDocs) {
                     newDocs[userId] = newDocs[userId].map(doc =>
-                        doc.id === docId ? { ...doc, status: 'APPROVED' } : doc
+                        doc.id === docId ? {...doc, status: 'APPROVED'} : doc
                     );
                 }
                 return newDocs;
@@ -209,7 +209,7 @@ export default function ManagementTab({ showNotification }) {
         try {
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     docId: activeDocId,
                     userId: activeUserId,
@@ -237,8 +237,8 @@ export default function ManagementTab({ showNotification }) {
         try {
             const response = await fetch('http://localhost:8080/api/management/documents/status', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ docId, status, reason })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({docId, status, reason})
             });
             if (response.ok) {
                 showNotification("Статус оновлено!", "success");
@@ -262,7 +262,7 @@ export default function ManagementTab({ showNotification }) {
         try {
             const response = await fetch('http://localhost:8080/api/management/departments/add', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(newDeptData)
             });
 
@@ -324,7 +324,7 @@ export default function ManagementTab({ showNotification }) {
         try {
             const response = await fetch('http://localhost:8080/api/management/departments/update', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(editingDept)
             });
 
@@ -354,7 +354,7 @@ export default function ManagementTab({ showNotification }) {
         try {
             const response = await fetch(`http://localhost:8080/api/management/departments/${deptId}/set-coordinator`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(userId)
             });
 
@@ -403,7 +403,7 @@ export default function ManagementTab({ showNotification }) {
         try {
             const response = await fetch(`http://localhost:8080/api/management/departments/${selectedDept.id}/add-volunteer`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(selectedUserId)
             });
 
@@ -461,11 +461,11 @@ export default function ManagementTab({ showNotification }) {
                     coordId = text.replace(/"/g, '');
                 }
             }
-            setEditingDept({ ...dept, coordinatorId: coordId });
+            setEditingDept({...dept, coordinatorId: coordId});
             setIsEditModalOpen(true);
         } catch (e) {
             console.error("Помилка завантаження координатора:", e);
-            setEditingDept({ ...dept, coordinatorId: null });
+            setEditingDept({...dept, coordinatorId: null});
             setIsEditModalOpen(true);
         }
     };
@@ -517,25 +517,32 @@ export default function ManagementTab({ showNotification }) {
         <div className="admin-tab-content fade-in">
 
             {/* СЕКЦІЯ ВЕРИФІКАЦІЇ */}
-            <div className="glass-sub-section" style={{ marginBottom: '25px' }}>
-                <h3 className="tab-title" style={{ fontSize: '20px', marginBottom: '15px' }}>Верифікація</h3>
+            <div className="glass-sub-section" style={{marginBottom: '25px'}}>
+                <h3 className="tab-title" style={{fontSize: '20px', marginBottom: '15px'}}>Верифікація</h3>
 
-                <div className="verification-table-header" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr 1fr', padding: '10px 20px', color: '#1e40af', fontWeight: 'bold', fontSize: '14px' }}>
+                <div className="verification-table-header" style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 2fr 1fr 1fr',
+                    padding: '10px 20px',
+                    color: '#1e40af',
+                    fontWeight: 'bold',
+                    fontSize: '14px'
+                }}>
                     <span>Код та користувач</span>
                     <span>ПІБ / Додаткова інформація</span>
                     <span>Документи</span>
-                    <span style={{ textAlign: 'right' }}>Дата створення</span>
+                    <span style={{textAlign: 'right'}}>Дата створення</span>
                 </div>
 
                 <div className="verification-list-container">
                     {verificationList.length > 0 ? (
                         verificationList.map(item => {
-                            const { user, department_id } = item;
+                            const {user, department_id} = item;
                             const deptName = departments.find(d => d.id === department_id)?.name;
 
                             return (
                                 <div key={user.id} className="verif-row-wrapper"
-                                     style={{ borderBottom: '1px solid rgba(30, 58, 138, 0.1)', marginBottom: '10px' }}>
+                                     style={{borderBottom: '1px solid rgba(30, 58, 138, 0.1)', marginBottom: '10px'}}>
 
                                     <div className="verification-row" style={{
                                         display: 'grid',
@@ -545,17 +552,17 @@ export default function ManagementTab({ showNotification }) {
                                         background: 'rgba(255, 255, 255, 0.3)',
                                         borderRadius: '10px'
                                     }}>
-                                        <span style={{ fontWeight: '600', color: '#4b5563' }}>
+                                        <span style={{fontWeight: '600', color: '#4b5563'}}>
                                             {user.id.substring(0, 8)}...
                                         </span>
 
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <span style={{ fontWeight: '700', color: '#1e3a8a' }}>
+                                        <div style={{display: 'flex', flexDirection: 'column'}}>
+                                            <span style={{fontWeight: '700', color: '#1e3a8a'}}>
                                                 {user.last_name} {user.first_name}
                                             </span>
 
-                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '12px', color: '#6b7280' }}>{user.role}</span>
+                                            <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                                                <span style={{fontSize: '12px', color: '#6b7280'}}>{user.role}</span>
 
                                                 {user.role === 'VOLUNTEER' && deptName && (
                                                     <span style={{
@@ -590,7 +597,12 @@ export default function ManagementTab({ showNotification }) {
                                             </div>
                                         </div>
 
-                                        <div style={{ textAlign: 'right', fontSize: '12px', color: '#6b7280', fontWeight: '500' }}>
+                                        <div style={{
+                                            textAlign: 'right',
+                                            fontSize: '12px',
+                                            color: '#6b7280',
+                                            fontWeight: '500'
+                                        }}>
                                             {user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
                                         </div>
                                     </div>
@@ -611,36 +623,57 @@ export default function ManagementTab({ showNotification }) {
                                                         alignItems: 'center'
                                                     }}>
                                                         <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
-                                                           style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: '500' }}>
+                                                           style={{
+                                                               color: '#2563eb',
+                                                               textDecoration: 'underline',
+                                                               fontWeight: '500'
+                                                           }}>
                                                             📄 {getFileNameFromUrl(doc.file_url)}
                                                         </a>
 
                                                         {doc.status === 'PENDING' || !doc.status ? (
-                                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                            <div style={{display: 'flex', gap: '10px'}}>
                                                                 <button
-                                                                    style={{ background: 'none', border: 'none', color: '#16a34a', cursor: 'pointer', fontWeight: 'bold' }}
+                                                                    style={{
+                                                                        background: 'none',
+                                                                        border: 'none',
+                                                                        color: '#16a34a',
+                                                                        cursor: 'pointer',
+                                                                        fontWeight: 'bold'
+                                                                    }}
                                                                     onClick={() => handleApprove(doc.id)}
-                                                                >Затвердити</button>
+                                                                >Затвердити
+                                                                </button>
 
                                                                 <button
-                                                                    style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }}
+                                                                    style={{
+                                                                        background: 'none',
+                                                                        border: 'none',
+                                                                        color: '#dc2626',
+                                                                        cursor: 'pointer',
+                                                                        fontWeight: 'bold'
+                                                                    }}
                                                                     onClick={() => {
                                                                         setIsInitialVerification(true);
                                                                         setActiveDocId(doc.id);
                                                                         setActiveUserId(user.id);
                                                                         setShowRejectModal(true);
                                                                     }}
-                                                                >Відхилити</button>
+                                                                >Відхилити
+                                                                </button>
                                                             </div>
                                                         ) : (
-                                                            <span style={{ fontWeight: '600', color: doc.status === 'APPROVED' ? '#16a34a' : '#ef4444' }}>
+                                                            <span style={{
+                                                                fontWeight: '600',
+                                                                color: doc.status === 'APPROVED' ? '#16a34a' : '#ef4444'
+                                                            }}>
                                                                 {doc.status === 'APPROVED' ? '✅ Затверджено' : '❌ Відхилено'}
                                                             </span>
                                                         )}
                                                     </div>
                                                 ))
                                             ) : (
-                                                <p style={{ fontSize: '12px', color: '#9ca3af' }}>
+                                                <p style={{fontSize: '12px', color: '#9ca3af'}}>
                                                     {userDocs[user.id] ? 'Документів немає' : 'Завантаження документів...'}
                                                 </p>
                                             )}
@@ -650,22 +683,22 @@ export default function ManagementTab({ showNotification }) {
                             );
                         })
                     ) : (
-                        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+                        <div style={{padding: '40px', textAlign: 'center', color: '#6b7280'}}>
                             <p>На даний момент нових користувачів на верифікацію немає.</p>
                         </div>
                     )}
                 </div>
             </div>
 
-            <div className="glass-sub-section" style={{ marginBottom: '25px' }}>
-                <h3 className="tab-title" style={{ fontSize: '20px', marginBottom: '15px' }}>Нові документи</h3>
+            <div className="glass-sub-section" style={{marginBottom: '25px'}}>
+                <h3 className="tab-title" style={{fontSize: '20px', marginBottom: '15px'}}>Нові документи</h3>
 
                 <div className="verification-list-container">
                     {pendingDocs.length > 0 ? (
                         pendingDocs.map(doc => (
                             <div key={doc.id} className="verification-row" style={{
                                 display: 'grid',
-                                gridTemplateColumns: '2fr 1fr 1fr',
+                                gridTemplateColumns: '2fr auto auto',
                                 padding: '15px 20px',
                                 marginBottom: '10px',
                                 background: 'rgba(255, 255, 255, 0.4)',
@@ -673,39 +706,44 @@ export default function ManagementTab({ showNotification }) {
                                 alignItems: 'center'
                             }}>
                                 <div>
-                                    <span style={{ fontWeight: '700', color: '#1e3a8a' }}>{doc.user_name}</span>
-                                    <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                                        <a href={doc.file_url} target="_blank" rel="noopener noreferrer">📄 {doc.title}</a>
+                                    <span style={{fontWeight: '700', color: '#1e3a8a'}}>{doc.user_name}</span>
+                                    <div style={{fontSize: '13px', color: '#6b7280'}}>
+                                        <a href={doc.file_url} target="_blank"
+                                           rel="noopener noreferrer">📄 {doc.title}</a>
                                     </div>
                                 </div>
 
-                                <button
-                                    style={{ background: '#dcfce7', border: '1px solid #16a34a', color: '#16a34a', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer' }}
-                                    onClick={() => handleUpdateDocStatus(doc.id, 'APPROVED')}
-                                >Затвердити</button>
-
-                                <button
-                                    style={{ background: '#fee2e2', border: '1px solid #dc2626', color: '#dc2626', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer' }}
-                                    onClick={() => {
-                                        setIsInitialVerification(false);
-                                        setActiveDocId(doc.id);
-                                        setActiveUserId(doc.user_id);
-                                        setShowRejectModal(true);
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'flex-end',
+                                        gap: '12px',
+                                        paddingRight: '20px'
                                     }}
-                                >Відхилити</button>
+                                >
+                                    <button className="doc-action-btn approve">
+                                        Затвердити
+                                    </button>
+
+                                    <button className="doc-action-btn reject">
+                                        Відхилити
+                                    </button>
+                                </div>
                             </div>
                         ))
                     ) : (
-                        <p style={{ padding: '15px', color: '#6b7280' }}>Нових документів немає.</p>
+                        <p style={{padding: '15px', color: '#6b7280'}}>Нових документів немає.</p>
                     )}
                 </div>
             </div>
 
             {/* НИЖНІ СЕКЦІЇ */}
-            <div className="grid-split-sections" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
+            <div className="grid-split-sections"
+                 style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start'}}>
 
                 {/* Блок ВІДДІЛИ */}
-                <div className="glass-sub-section" style={{ display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
+                <div className="glass-sub-section"
+                     style={{display: 'flex', flexDirection: 'column', minHeight: '300px'}}>
                     <div className="sub-section-header">
                         <h3>ВІДДІЛИ</h3>
                         <div className="search-bar-mini">
@@ -718,7 +756,7 @@ export default function ManagementTab({ showNotification }) {
                         </div>
                     </div>
 
-                    <div className="list-items-box" style={{ flex: 1, padding: '10px 0' }}>
+                    <div className="list-items-box" style={{flex: 1, padding: '10px 0'}}>
                         {filteredDepartments.length > 0 ? (
                             filteredDepartments.map((dept) => (
                                 <div
@@ -735,12 +773,12 @@ export default function ManagementTab({ showNotification }) {
                                 </div>
                             ))
                         ) : (
-                            <div style={{ padding: '10px', color: '#6b7280' }}>Нічого не знайдено</div>
+                            <div style={{padding: '10px', color: '#6b7280'}}>Нічого не знайдено</div>
                         )}
                     </div>
                     <button
                         className="btn-add-new-item"
-                        style={{ marginTop: '15px' }}
+                        style={{marginTop: '15px'}}
                         onClick={() => setShowAddDeptModal(true)}
                     >
                         Додати відділ
@@ -748,33 +786,102 @@ export default function ManagementTab({ showNotification }) {
 
                     {/* Модальне вікно для додавання ВІДДІЛУ */}
                     {showAddDeptModal && (
-                        <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(4px)' }}>
-                            <div className="modal-content" style={{ width: '480px', padding: 0, background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', border: 'none' }}>
-                                <div className="modal-header" style={{ background: '#3b82f6', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: 'none' }}>
-                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div className="modal-overlay" style={{
+                            zIndex: 2000,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'rgba(0, 0, 0, 0.15)',
+                            backdropFilter: 'blur(4px)'
+                        }}>
+                            <div className="modal-content" style={{
+                                width: '480px',
+                                padding: 0,
+                                background: '#fff',
+                                borderRadius: '24px',
+                                overflow: 'hidden',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                                border: 'none'
+                            }}>
+                                <div className="modal-header" style={{
+                                    background: '#3b82f6',
+                                    padding: '20px 24px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    border: 'none'
+                                }}>
+                                    <h3 style={{
+                                        margin: 0,
+                                        color: '#fff',
+                                        fontSize: '20px',
+                                        fontWeight: '600',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px'
+                                    }}>
                                         📁 Створити відділ
                                     </h3>
-                                    <button className="modal-close" onClick={() => setShowAddDeptModal(false)} style={{ background: 'rgba(255,255,255,0.2)', width: '32px', height: '32px', borderRadius: '50%', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                                    <button className="modal-close" onClick={() => setShowAddDeptModal(false)} style={{
+                                        background: 'rgba(255,255,255,0.2)',
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        color: '#fff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        fontSize: '14px'
+                                    }}>✕
+                                    </button>
                                 </div>
 
-                                <div style={{ display: 'flex', flex: 1, flexDirection: 'column', gap: '18px', padding: '24px' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Назва відділу:</label>
+                                <div style={{
+                                    display: 'flex',
+                                    flex: 1,
+                                    flexDirection: 'column',
+                                    gap: '18px',
+                                    padding: '24px'
+                                }}>
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                                        <label style={{fontSize: '14px', fontWeight: '600', color: '#1e3a8a'}}>Назва
+                                            відділу:</label>
                                         <input
                                             type="text"
                                             className="main-search-input"
-                                            style={{ width: '100%', padding: '14px 16px', boxSizing: 'border-box', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px', fontSize: '15px' }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '14px 16px',
+                                                boxSizing: 'border-box',
+                                                background: '#f0f7ff',
+                                                border: '1px solid #cbd5e1',
+                                                borderRadius: '14px',
+                                                fontSize: '15px'
+                                            }}
                                             placeholder="Введіть назву..."
                                             value={newDeptName}
                                             onChange={(e) => setNewDeptName(e.target.value)}
                                         />
                                     </div>
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Короткий опис:</label>
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                                        <label style={{fontSize: '14px', fontWeight: '600', color: '#1e3a8a'}}>Короткий
+                                            опис:</label>
                                         <textarea
                                             className="main-search-input"
-                                            style={{ width: '100%', height: '120px', padding: '14px 16px', boxSizing: 'border-box', resize: 'none', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px', fontSize: '15px' }}
+                                            style={{
+                                                width: '100%',
+                                                height: '120px',
+                                                padding: '14px 16px',
+                                                boxSizing: 'border-box',
+                                                resize: 'none',
+                                                background: '#f0f7ff',
+                                                border: '1px solid #cbd5e1',
+                                                borderRadius: '14px',
+                                                fontSize: '15px'
+                                            }}
                                             placeholder="Опишіть діяльність відділу..."
                                             value={newDeptDescription}
                                             onChange={(e) => setNewDeptDescription(e.target.value)}
@@ -782,9 +889,34 @@ export default function ManagementTab({ showNotification }) {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', padding: '0 24px 24px 24px' }}>
-                                    <button style={{ background: '#3b82f6', padding: '12px 32px', cursor: 'pointer', border: 'none', color: '#fff', borderRadius: '14px', fontSize: '15px', fontWeight: '600' }} onClick={handleAddDepartment}>Зберегти</button>
-                                    <button style={{ background: '#eff6ff', padding: '12px 32px', cursor: 'pointer', border: '1px solid #bfdbfe', color: '#1e40af', borderRadius: '14px', fontSize: '15px', fontWeight: '600' }} onClick={() => setShowAddDeptModal(false)}>Скасувати</button>
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '12px',
+                                    justifyContent: 'center',
+                                    padding: '0 24px 24px 24px'
+                                }}>
+                                    <button style={{
+                                        background: '#3b82f6',
+                                        padding: '12px 32px',
+                                        cursor: 'pointer',
+                                        border: 'none',
+                                        color: '#fff',
+                                        borderRadius: '14px',
+                                        fontSize: '15px',
+                                        fontWeight: '600'
+                                    }} onClick={handleAddDepartment}>Зберегти
+                                    </button>
+                                    <button style={{
+                                        background: '#eff6ff',
+                                        padding: '12px 32px',
+                                        cursor: 'pointer',
+                                        border: '1px solid #bfdbfe',
+                                        color: '#1e40af',
+                                        borderRadius: '14px',
+                                        fontSize: '15px',
+                                        fontWeight: '600'
+                                    }} onClick={() => setShowAddDeptModal(false)}>Скасувати
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -792,26 +924,83 @@ export default function ManagementTab({ showNotification }) {
 
                     {/* Модальне вікно для редагування ВІДДІЛУ */}
                     {isEditModalOpen && editingDept && (
-                        <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(4px)' }}>
-                            <div className="modal-content" style={{ width: '480px', padding: 0, background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', border: 'none' }}>
-                                <div className="modal-header" style={{ background: '#3b82f6', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: 'none' }}>
-                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600' }}>✏️ Редагування відділу</h3>
-                                    <button className="modal-close" onClick={() => setIsEditModalOpen(false)} style={{ background: 'rgba(255,255,255,0.2)', width: '32px', height: '32px', borderRadius: '50%', border: 'none', color: '#fff', cursor: 'pointer' }}>✕</button>
+                        <div className="modal-overlay" style={{
+                            zIndex: 2000,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'rgba(0, 0, 0, 0.15)',
+                            backdropFilter: 'blur(4px)'
+                        }}>
+                            <div className="modal-content" style={{
+                                width: '480px',
+                                padding: 0,
+                                background: '#fff',
+                                borderRadius: '24px',
+                                overflow: 'hidden',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                                border: 'none'
+                            }}>
+                                <div className="modal-header" style={{
+                                    background: '#3b82f6',
+                                    padding: '20px 24px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    border: 'none'
+                                }}>
+                                    <h3 style={{margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600'}}>✏️
+                                        Редагування відділу</h3>
+                                    <button className="modal-close" onClick={() => setIsEditModalOpen(false)} style={{
+                                        background: 'rgba(255,255,255,0.2)',
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        color: '#fff',
+                                        cursor: 'pointer'
+                                    }}>✕
+                                    </button>
                                 </div>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', padding: '24px' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Назва відділу:</label>
-                                        <input type="text" className="main-search-input" style={{ width: '100%', padding: '14px 16px', boxSizing: 'border-box', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px' }} value={editingDept.name} onChange={(e) => setEditingDept({...editingDept, name: e.target.value})} />
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '18px', padding: '24px'}}>
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                                        <label style={{fontSize: '14px', fontWeight: '600', color: '#1e3a8a'}}>Назва
+                                            відділу:</label>
+                                        <input type="text" className="main-search-input" style={{
+                                            width: '100%',
+                                            padding: '14px 16px',
+                                            boxSizing: 'border-box',
+                                            background: '#f0f7ff',
+                                            border: '1px solid #cbd5e1',
+                                            borderRadius: '14px'
+                                        }} value={editingDept.name} onChange={(e) => setEditingDept({
+                                            ...editingDept,
+                                            name: e.target.value
+                                        })}/>
                                     </div>
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Короткий опис:</label>
-                                        <textarea className="main-search-input" style={{ width: '100%', height: '80px', padding: '14px 16px', boxSizing: 'border-box', resize: 'none', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px' }} value={editingDept.description} onChange={(e) => setEditingDept({...editingDept, description: e.target.value})} />
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                                        <label style={{fontSize: '14px', fontWeight: '600', color: '#1e3a8a'}}>Короткий
+                                            опис:</label>
+                                        <textarea className="main-search-input" style={{
+                                            width: '100%',
+                                            height: '80px',
+                                            padding: '14px 16px',
+                                            boxSizing: 'border-box',
+                                            resize: 'none',
+                                            background: '#f0f7ff',
+                                            border: '1px solid #cbd5e1',
+                                            borderRadius: '14px'
+                                        }} value={editingDept.description} onChange={(e) => setEditingDept({
+                                            ...editingDept,
+                                            description: e.target.value
+                                        })}/>
                                     </div>
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Призначити координатора:</label>
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                                        <label style={{fontSize: '14px', fontWeight: '600', color: '#1e3a8a'}}>Призначити
+                                            координатора:</label>
                                         <select
                                             className="main-search-input"
                                             style={{
@@ -839,11 +1028,46 @@ export default function ManagementTab({ showNotification }) {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between', padding: '0 24px 24px 24px' }}>
-                                    <button onClick={handleDeleteDepartmentClick} style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', padding: '12px 20px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Видалити</button>
-                                    <div style={{ display: 'flex', gap: '12px' }}>
-                                        <button onClick={() => setIsEditModalOpen(false)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Скасувати</button>
-                                        <button onClick={handleSaveDepartment} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Зберегти</button>
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '12px',
+                                    justifyContent: 'space-between',
+                                    padding: '0 24px 24px 24px'
+                                }}>
+                                    <button onClick={handleDeleteDepartmentClick} style={{
+                                        background: '#fef2f2',
+                                        color: '#dc2626',
+                                        border: '1px solid #fca5a5',
+                                        padding: '12px 20px',
+                                        borderRadius: '14px',
+                                        fontSize: '15px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}>Видалити
+                                    </button>
+                                    <div style={{display: 'flex', gap: '12px'}}>
+                                        <button onClick={() => setIsEditModalOpen(false)} style={{
+                                            background: '#eff6ff',
+                                            border: '1px solid #bfdbfe',
+                                            color: '#1e40af',
+                                            padding: '12px 28px',
+                                            borderRadius: '14px',
+                                            fontSize: '15px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer'
+                                        }}>Скасувати
+                                        </button>
+                                        <button onClick={handleSaveDepartment} style={{
+                                            background: '#3b82f6',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '12px 28px',
+                                            borderRadius: '14px',
+                                            fontSize: '15px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer'
+                                        }}>Зберегти
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -852,15 +1076,23 @@ export default function ManagementTab({ showNotification }) {
                 </div>
 
                 {/* Блок ВОЛОНТЕРИ */}
-                <div className="glass-sub-section" style={{ display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
+                <div className="glass-sub-section"
+                     style={{display: 'flex', flexDirection: 'column', minHeight: '300px'}}>
                     <div className="sub-section-header">
                         <h3>
                             {selectedDept ? `ВОЛОНТЕРИ: ${selectedDept.name}` : "ВСІ ВОЛОНТЕРИ"}
                         </h3>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
                             {selectedDept && (
-                                <button onClick={() => setSelectedDept(null)} style={{ background: 'none', border: 'none', color: '#1e3a8a', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline' }}>
+                                <button onClick={() => setSelectedDept(null)} style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#1e3a8a',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    textDecoration: 'underline'
+                                }}>
                                     [ Показати всіх ]
                                 </button>
                             )}
@@ -876,21 +1108,24 @@ export default function ManagementTab({ showNotification }) {
                         </div>
                     </div>
 
-                    <div className="list-items-box" style={{ flex: 1, padding: '10px 0' }}>
+                    <div className="list-items-box" style={{flex: 1, padding: '10px 0'}}>
                         {volunteersLoading ? (
-                            <div style={{ padding: '20px', textAlign: 'center' }}>Завантаження...</div>
+                            <div style={{padding: '20px', textAlign: 'center'}}>Завантаження...</div>
                         ) : (
                             filteredVolunteers.length > 0 ? (
                                 filteredVolunteers.map(vol => (
                                     <div key={vol.id} className="vol-list-item" onClick={() => handleOpenVolInfo(vol)}>
                                         <span>{vol.last_name} {vol.first_name}</span>
                                         {selectedDept && (
-                                            <button className="btn-delete-vol" onClick={(e) => { e.stopPropagation(); handleRemoveVolunteerClick(vol.id); }}>✕</button>
+                                            <button className="btn-delete-vol" onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRemoveVolunteerClick(vol.id);
+                                            }}>✕</button>
                                         )}
                                     </div>
                                 ))
                             ) : (
-                                <div style={{ padding: '20px', color: '#6b7280', textAlign: 'center' }}>
+                                <div style={{padding: '20px', color: '#6b7280', textAlign: 'center'}}>
                                     {volSearchTerm ? "Нічого не знайдено" : "У цьому відділі поки немає волонтерів"}
                                 </div>
                             )
@@ -905,20 +1140,59 @@ export default function ManagementTab({ showNotification }) {
 
                     {/* Модальне вікно: ДОДАТИ ВОЛОНТЕРА ДО ВІДДІЛУ (БЕЗ ПОШУКУ) */}
                     {showAddVolModal && (
-                        <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(4px)' }}>
-                            <div className="modal-content" style={{ width: '480px', padding: 0, background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
-                                <div className="modal-header" style={{ background: '#3b82f6', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '18px', fontWeight: '600' }}>➕ Додати волонтера до відділу</h3>
-                                    <button className="modal-close" onClick={() => setShowAddVolModal(false)} style={{ background: 'rgba(255,255,255,0.2)', width: '32px', height: '32px', borderRadius: '50%', border: 'none', color: '#fff', cursor: 'pointer' }}>✕</button>
+                        <div className="modal-overlay" style={{
+                            zIndex: 2000,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'rgba(0, 0, 0, 0.15)',
+                            backdropFilter: 'blur(4px)'
+                        }}>
+                            <div className="modal-content" style={{
+                                width: '480px',
+                                padding: 0,
+                                background: '#fff',
+                                borderRadius: '24px',
+                                overflow: 'hidden',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                            }}>
+                                <div className="modal-header" style={{
+                                    background: '#3b82f6',
+                                    padding: '20px 24px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between'
+                                }}>
+                                    <h3 style={{margin: 0, color: '#fff', fontSize: '18px', fontWeight: '600'}}>➕ Додати
+                                        волонтера до відділу</h3>
+                                    <button className="modal-close" onClick={() => setShowAddVolModal(false)} style={{
+                                        background: 'rgba(255,255,255,0.2)',
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        color: '#fff',
+                                        cursor: 'pointer'
+                                    }}>✕
+                                    </button>
                                 </div>
-                                <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a' }}>Оберіть волонтера зі списку:</label>
+                                <div style={{padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px'}}>
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                                        <label style={{fontSize: '14px', fontWeight: '600', color: '#1e3a8a'}}>Оберіть
+                                            волонтера зі списку:</label>
                                         <select
                                             className="main-search-input"
                                             value={selectedUserId}
                                             onChange={(e) => setSelectedUserId(e.target.value)}
-                                            style={{ width: '100%', padding: '14px 16px', background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '14px', cursor: 'pointer', fontSize: '15px' }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '14px 16px',
+                                                background: '#f0f7ff',
+                                                border: '1px solid #cbd5e1',
+                                                borderRadius: '14px',
+                                                cursor: 'pointer',
+                                                fontSize: '15px'
+                                            }}
                                         >
                                             <option value="">Виберіть волонтера</option>
                                             {allAvailableVolunteers.length === 0 ? (
@@ -932,15 +1206,46 @@ export default function ManagementTab({ showNotification }) {
                                             )}
                                         </select>
                                         {allAvailableVolunteers.length === 0 && (
-                                            <div style={{ fontSize: '13px', color: '#dc2626', marginTop: '8px', textAlign: 'center' }}>
+                                            <div style={{
+                                                fontSize: '13px',
+                                                color: '#dc2626',
+                                                marginTop: '8px',
+                                                textAlign: 'center'
+                                            }}>
                                                 ⚠️ Немає доступних волонтерів для додавання
                                             </div>
                                         )}
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', padding: '0 24px 24px 24px' }}>
-                                    <button onClick={handleAddVolunteerToDept} disabled={!selectedUserId || allAvailableVolunteers.length === 0} style={{ background: selectedUserId && allAvailableVolunteers.length > 0 ? '#3b82f6' : '#94a3b8', color: 'white', border: 'none', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: selectedUserId && allAvailableVolunteers.length > 0 ? 'pointer' : 'not-allowed' }}>Додати</button>
-                                    <button onClick={() => setShowAddVolModal(false)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '12px 28px', borderRadius: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>Скасувати</button>
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '12px',
+                                    justifyContent: 'center',
+                                    padding: '0 24px 24px 24px'
+                                }}>
+                                    <button onClick={handleAddVolunteerToDept}
+                                            disabled={!selectedUserId || allAvailableVolunteers.length === 0} style={{
+                                        background: selectedUserId && allAvailableVolunteers.length > 0 ? '#3b82f6' : '#94a3b8',
+                                        color: 'white',
+                                        border: 'none',
+                                        padding: '12px 28px',
+                                        borderRadius: '14px',
+                                        fontSize: '15px',
+                                        fontWeight: '600',
+                                        cursor: selectedUserId && allAvailableVolunteers.length > 0 ? 'pointer' : 'not-allowed'
+                                    }}>Додати
+                                    </button>
+                                    <button onClick={() => setShowAddVolModal(false)} style={{
+                                        background: '#eff6ff',
+                                        border: '1px solid #bfdbfe',
+                                        color: '#1e40af',
+                                        padding: '12px 28px',
+                                        borderRadius: '14px',
+                                        fontSize: '15px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}>Скасувати
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -948,43 +1253,123 @@ export default function ManagementTab({ showNotification }) {
 
                     {/* Модальне вікно: ПРОФІЛЬ ВОЛОНТЕРА */}
                     {viewingVol && (
-                        <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(4px)' }}>
-                            <div className="modal-content" style={{ width: '520px', padding: 0, background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
-                                <div className="modal-header" style={{ background: '#3b82f6', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600' }}>📄 Розширена інформація</h3>
-                                    <button onClick={() => setViewingVol(null)} style={{ background: 'rgba(255,255,255,0.2)', width: '32px', height: '32px', borderRadius: '50%', border: 'none', color: '#fff', cursor: 'pointer' }}>✕</button>
+                        <div className="modal-overlay" style={{
+                            zIndex: 2000,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'rgba(0, 0, 0, 0.15)',
+                            backdropFilter: 'blur(4px)'
+                        }}>
+                            <div className="modal-content" style={{
+                                width: '520px',
+                                padding: 0,
+                                background: '#fff',
+                                borderRadius: '24px',
+                                overflow: 'hidden',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                            }}>
+                                <div className="modal-header" style={{
+                                    background: '#3b82f6',
+                                    padding: '20px 24px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between'
+                                }}>
+                                    <h3 style={{margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600'}}>📄
+                                        Розширена інформація</h3>
+                                    <button onClick={() => setViewingVol(null)} style={{
+                                        background: 'rgba(255,255,255,0.2)',
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        color: '#fff',
+                                        cursor: 'pointer'
+                                    }}>✕
+                                    </button>
                                 </div>
 
-                                <div style={{ padding: '24px' }}>
-                                    <div style={{ background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '18px', padding: '8px 16px' }}>
-                                        <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>👤 ПІБ:</strong> {viewingVol.user.last_name} {viewingVol.user.first_name} {viewingVol.user.patronymic}</p>
-                                        <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>✉️ Email:</strong> {viewingVol.user.email}</p>
-                                        <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>📞 Телефон:</strong> {viewingVol.user.phone_number}</p>
-                                        <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>🎂 Д.Н.:</strong> {viewingVol.user.dob}</p>
-                                        <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>⭐ Роль:</strong> <span style={{ background: viewingVol.user.role === 'COORDINATOR' ? '#f59e0b' : '#3b82f6', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontSize: '12px' }}>{viewingVol.user.role === 'COORDINATOR' ? 'Координатор' : 'Волонтер'}</span></p>
+                                <div style={{padding: '24px'}}>
+                                    <div style={{
+                                        background: '#f0f7ff',
+                                        border: '1px solid #cbd5e1',
+                                        borderRadius: '18px',
+                                        padding: '8px 16px'
+                                    }}>
+                                        <p style={{margin: '10px 0', fontSize: '15px'}}><strong>👤
+                                            ПІБ:</strong> {viewingVol.user.last_name} {viewingVol.user.first_name} {viewingVol.user.patronymic}
+                                        </p>
+                                        <p style={{margin: '10px 0', fontSize: '15px'}}><strong>✉️
+                                            Email:</strong> {viewingVol.user.email}</p>
+                                        <p style={{margin: '10px 0', fontSize: '15px'}}><strong>📞
+                                            Телефон:</strong> {viewingVol.user.phone_number}</p>
+                                        <p style={{margin: '10px 0', fontSize: '15px'}}><strong>🎂
+                                            Д.Н.:</strong> {viewingVol.user.dob}</p>
+                                        <p style={{margin: '10px 0', fontSize: '15px'}}><strong>⭐ Роль:</strong> <span
+                                            style={{
+                                                background: viewingVol.user.role === 'COORDINATOR' ? '#f59e0b' : '#3b82f6',
+                                                color: '#fff',
+                                                padding: '2px 8px',
+                                                borderRadius: '6px',
+                                                fontSize: '12px'
+                                            }}>{viewingVol.user.role === 'COORDINATOR' ? 'Координатор' : 'Волонтер'}</span>
+                                        </p>
                                     </div>
 
-                                    <h4 style={{ margin: '20px 0 10px 0', color: '#1e3a8a' }}>📂 Документи волонтера</h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <h4 style={{margin: '20px 0 10px 0', color: '#1e3a8a'}}>📂 Документи волонтера</h4>
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
                                         {viewingVol.documents && viewingVol.documents.length > 0 ? (
                                             viewingVol.documents.map(doc => (
-                                                <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '12px', alignItems: 'center' }}>
+                                                <div key={doc.id} style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    background: '#f8fafc',
+                                                    border: '1px solid #e2e8f0',
+                                                    padding: '12px 16px',
+                                                    borderRadius: '12px',
+                                                    alignItems: 'center'
+                                                }}>
                                                     <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
-                                                       style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: '500', fontSize: '14px' }}>
+                                                       style={{
+                                                           color: '#2563eb',
+                                                           textDecoration: 'underline',
+                                                           fontWeight: '500',
+                                                           fontSize: '14px'
+                                                       }}>
                                                         📄 {getFileNameFromUrl(doc.file_url)}
                                                     </a>
-                                                    <span style={{ fontWeight: '700', fontSize: '12px', color: doc.status === 'APPROVED' ? 'green' : (doc.status === 'REJECTED' ? 'red' : 'orange') }}>
+                                                    <span style={{
+                                                        fontWeight: '700',
+                                                        fontSize: '12px',
+                                                        color: doc.status === 'APPROVED' ? 'green' : (doc.status === 'REJECTED' ? 'red' : 'orange')
+                                                    }}>
                                                         {doc.status}
                                                     </span>
                                                 </div>
                                             ))
                                         ) : (
-                                            <div style={{ padding: '12px', border: '1px dashed #cbd5e1', textAlign: 'center', borderRadius: '12px', color: '#64748b' }}>Документи відсутні</div>
+                                            <div style={{
+                                                padding: '12px',
+                                                border: '1px dashed #cbd5e1',
+                                                textAlign: 'center',
+                                                borderRadius: '12px',
+                                                color: '#64748b'
+                                            }}>Документи відсутні</div>
                                         )}
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'center', padding: '0 24px 24px 24px' }}>
-                                    <button onClick={() => setViewingVol(null)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '12px 40px', borderRadius: '14px', fontWeight: '600', cursor: 'pointer' }}>Закрити</button>
+                                <div style={{display: 'flex', justifyContent: 'center', padding: '0 24px 24px 24px'}}>
+                                    <button onClick={() => setViewingVol(null)} style={{
+                                        background: '#eff6ff',
+                                        border: '1px solid #bfdbfe',
+                                        color: '#1e40af',
+                                        padding: '12px 40px',
+                                        borderRadius: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}>Закрити
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1009,7 +1394,8 @@ export default function ManagementTab({ showNotification }) {
                         </div>
                         <div className="custom-reject-actions">
                             <button className="btn-reject-submit" onClick={handleSendRejectReason}>Відправити</button>
-                            <button className="btn-reject-cancel" onClick={() => setShowRejectModal(false)}>Скасувати</button>
+                            <button className="btn-reject-cancel" onClick={() => setShowRejectModal(false)}>Скасувати
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1035,28 +1421,34 @@ export default function ManagementTab({ showNotification }) {
             )}
 
             {/* Секція Замовників */}
-            <div className="glass-sub-section" style={{ marginTop: '40px', marginBottom: '25px', padding: '20px' }}>
-                <div className="sub-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <h3>ЗАМОВНИКИ ({customers.filter(c => c.last_name?.toLowerCase().startsWith(customerSearch.toLowerCase())).length})</h3>
+            <div className="glass-sub-section" style={{marginTop: '40px', marginBottom: '25px', padding: '20px'}}>
+                <div className="sub-section-header" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '15px'
+                }}>
+                    <h3>ЗАМОВНИКИ
+                        ({customers.filter(c => c.last_name?.toLowerCase().startsWith(customerSearch.toLowerCase())).length})</h3>
 
                     <div className="search-bar-mini">
-                    <input
-                        type="text"
-                        placeholder="Пошук (за прізвищем)..."
-                        value={customerSearch}
-                        onChange={(e) => setCustomerSearch(e.target.value)}
-                        style={{
-                            padding: '8px 12px',
-                            borderRadius: '8px',
-                            border: '1px solid #cbd5e1',
-                            outline: 'none',
-                            width: '200px'
-                        }}
-                    /> 🔍
+                        <input
+                            type="text"
+                            placeholder="Пошук (за прізвищем)..."
+                            value={customerSearch}
+                            onChange={(e) => setCustomerSearch(e.target.value)}
+                            style={{
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid #cbd5e1',
+                                outline: 'none',
+                                width: '200px'
+                            }}
+                        /> 🔍
                     </div>
                 </div>
 
-                <div className="list-items-box" style={{ padding: '10px 0', maxHeight: '300px', overflowY: 'auto' }}>
+                <div className="list-items-box" style={{padding: '10px 0', maxHeight: '300px', overflowY: 'auto'}}>
                     {customers
                         .filter(c => c.last_name?.toLowerCase().startsWith(customerSearch.toLowerCase()))
                         .map(customer => (
@@ -1064,7 +1456,7 @@ export default function ManagementTab({ showNotification }) {
                                 key={customer.id}
                                 className="list-item"
                                 onClick={() => handleOpenCustomerInfo(customer)}
-                                style={{ cursor: 'pointer', padding: '10px', borderBottom: '1px solid #f1f5f9' }}
+                                style={{cursor: 'pointer', padding: '10px', borderBottom: '1px solid #f1f5f9'}}
                             >
                                 {customer.last_name} {customer.first_name}
                             </div>
@@ -1073,44 +1465,116 @@ export default function ManagementTab({ showNotification }) {
                 </div>
 
                 {viewingCustomer && (
-                    <div className="modal-overlay" style={{ zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(4px)' }}>
-                        <div className="modal-content" style={{ width: '520px', padding: 0, background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
-                            <div className="modal-header" style={{ background: '#3b82f6', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <h3 style={{ margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600' }}>👤 Профіль замовника</h3>
-                                <button onClick={() => setViewingCustomer(null)} style={{ background: 'rgba(255,255,255,0.2)', width: '32px', height: '32px', borderRadius: '50%', border: 'none', color: '#fff', cursor: 'pointer' }}>✕</button>
+                    <div className="modal-overlay" style={{
+                        zIndex: 2000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'rgba(0, 0, 0, 0.15)',
+                        backdropFilter: 'blur(4px)'
+                    }}>
+                        <div className="modal-content" style={{
+                            width: '520px',
+                            padding: 0,
+                            background: '#fff',
+                            borderRadius: '24px',
+                            overflow: 'hidden',
+                            boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                        }}>
+                            <div className="modal-header" style={{
+                                background: '#3b82f6',
+                                padding: '20px 24px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                            }}>
+                                <h3 style={{margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600'}}>👤 Профіль
+                                    замовника</h3>
+                                <button onClick={() => setViewingCustomer(null)} style={{
+                                    background: 'rgba(255,255,255,0.2)',
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    color: '#fff',
+                                    cursor: 'pointer'
+                                }}>✕
+                                </button>
                             </div>
 
-                            <div style={{ padding: '24px' }}>
+                            <div style={{padding: '24px'}}>
                                 {/* Тепер використовуємо viewingCustomer.user */}
-                                <div style={{ background: '#f0f7ff', border: '1px solid #cbd5e1', borderRadius: '18px', padding: '16px' }}>
-                                    <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>👤 ПІБ:</strong> {viewingCustomer.user.last_name} {viewingCustomer.user.first_name} {viewingCustomer.user.patronymic}</p>
-                                    <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>📞 Телефон:</strong> {viewingCustomer.user.phone_number || 'Не вказано'}</p>
-                                    <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>🎂 Дата народження:</strong> {viewingCustomer.user.dob || 'Не вказано'}</p>
-                                    <p style={{ margin: '10px 0', fontSize: '15px' }}><strong>✉️ Email:</strong> {viewingCustomer.user.email}</p>
+                                <div style={{
+                                    background: '#f0f7ff',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '18px',
+                                    padding: '16px'
+                                }}>
+                                    <p style={{margin: '10px 0', fontSize: '15px'}}><strong>👤
+                                        ПІБ:</strong> {viewingCustomer.user.last_name} {viewingCustomer.user.first_name} {viewingCustomer.user.patronymic}
+                                    </p>
+                                    <p style={{margin: '10px 0', fontSize: '15px'}}><strong>📞
+                                        Телефон:</strong> {viewingCustomer.user.phone_number || 'Не вказано'}</p>
+                                    <p style={{margin: '10px 0', fontSize: '15px'}}><strong>🎂 Дата
+                                        народження:</strong> {viewingCustomer.user.dob || 'Не вказано'}</p>
+                                    <p style={{margin: '10px 0', fontSize: '15px'}}><strong>✉️
+                                        Email:</strong> {viewingCustomer.user.email}</p>
                                 </div>
 
-                                <h4 style={{ margin: '20px 0 10px 0', color: '#1e3a8a' }}>📂 Документи замовника</h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <h4 style={{margin: '20px 0 10px 0', color: '#1e3a8a'}}>📂 Документи замовника</h4>
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
                                     {viewingCustomer.documents && viewingCustomer.documents.length > 0 ? (
                                         viewingCustomer.documents.map(doc => (
-                                            <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '12px', alignItems: 'center' }}>
+                                            <div key={doc.id} style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                background: '#f8fafc',
+                                                border: '1px solid #e2e8f0',
+                                                padding: '12px 16px',
+                                                borderRadius: '12px',
+                                                alignItems: 'center'
+                                            }}>
                                                 <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
-                                                   style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: '500', fontSize: '14px' }}>
+                                                   style={{
+                                                       color: '#2563eb',
+                                                       textDecoration: 'underline',
+                                                       fontWeight: '500',
+                                                       fontSize: '14px'
+                                                   }}>
                                                     📄 {getFileNameFromUrl(doc.file_url)}
                                                 </a>
-                                                <span style={{ fontWeight: '700', fontSize: '12px', color: doc.status === 'APPROVED' ? 'green' : (doc.status === 'REJECTED' ? 'red' : 'orange') }}>
+                                                <span style={{
+                                                    fontWeight: '700',
+                                                    fontSize: '12px',
+                                                    color: doc.status === 'APPROVED' ? 'green' : (doc.status === 'REJECTED' ? 'red' : 'orange')
+                                                }}>
                                                     {doc.status}
                                                 </span>
                                             </div>
                                         ))
                                     ) : (
-                                        <div style={{ padding: '12px', border: '1px dashed #cbd5e1', textAlign: 'center', borderRadius: '12px', color: '#64748b' }}>Документи відсутні</div>
+                                        <div style={{
+                                            padding: '12px',
+                                            border: '1px dashed #cbd5e1',
+                                            textAlign: 'center',
+                                            borderRadius: '12px',
+                                            color: '#64748b'
+                                        }}>Документи відсутні</div>
                                     )}
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'center', padding: '0 24px 24px 24px' }}>
-                                <button onClick={() => setViewingCustomer(null)} style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '12px 40px', borderRadius: '14px', fontWeight: '600', cursor: 'pointer' }}>Закрити</button>
+                            <div style={{display: 'flex', justifyContent: 'center', padding: '0 24px 24px 24px'}}>
+                                <button onClick={() => setViewingCustomer(null)} style={{
+                                    background: '#eff6ff',
+                                    border: '1px solid #bfdbfe',
+                                    color: '#1e40af',
+                                    padding: '12px 40px',
+                                    borderRadius: '14px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer'
+                                }}>Закрити
+                                </button>
                             </div>
                         </div>
                     </div>
