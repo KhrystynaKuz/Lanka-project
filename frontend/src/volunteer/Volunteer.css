@@ -1119,3 +1119,552 @@
     filter: grayscale(1);
     background: #f4f4f4;
 }
+/* ===== ДОДАТКОВІ СТИЛІ ДЛЯ ВИПАДАЮЧОГО МЕНЮ ТА МОДАЛЬНИХ ВІКОН ===== */
+
+/* Стилі для випадаючого меню (оновлені, як у Manager) */
+.volunteer-dropdown-menu {
+    position: absolute;
+    top: 45px;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    padding: 10px;
+    min-width: 210px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dropdown-info {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e3a8a;
+    text-align: center;
+    padding: 8px 12px;
+    background: #eff6ff;
+    border-radius: 8px;
+    margin: 0;
+}
+
+.dropdown-info-btn {
+    width: 100%;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin: 0;
+}
+
+.dropdown-info-btn:hover {
+    background: #2563eb;
+}
+
+.dropdown-info-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.dropdown-logout-btn {
+    width: 100%;
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin: 0;
+}
+
+.dropdown-logout-btn:hover {
+    background: #dc2626;
+}
+
+/* Стрілка профілю */
+.volunteer-profile-arrow {
+    font-size: 10px;
+    color: #1e40af;
+}
+
+/* ===== СТИЛІ ДЛЯ ТОСТ-СПОВІЩЕНЬ ===== */
+.toast-notifications-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast-item {
+    pointer-events: auto;
+    min-width: 300px;
+    max-width: 450px;
+    color: #ffffff;
+    padding: 14px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    animation: toastSlideIn 0.3s ease-out forwards;
+}
+
+.toast-item.toast-success {
+    background: rgba(30, 142, 62, 0.95);
+}
+
+.toast-item.toast-warning {
+    background: rgba(230, 126, 34, 0.95);
+}
+
+.toast-item.toast-error {
+    background: rgba(211, 47, 47, 0.95);
+}
+
+.toast-item.toast-info {
+    background: rgba(30, 58, 138, 0.95);
+}
+
+.toast-close-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+    font-weight: bold;
+    transition: color 0.2s ease;
+}
+
+.toast-close-btn:hover {
+    color: #ffffff;
+}
+
+@keyframes toastSlideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ===== МОДАЛЬНІ ВІКНА ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    width: 500px;
+    max-width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-content.profile-modal {
+    max-width: 650px;
+    width: 90%;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content.small-modal {
+    max-width: 450px;
+    border-radius: 24px;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 28px;
+    background: #3b82f6;
+    color: white;
+    flex-shrink: 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: white;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+}
+
+.modal-scrollable-content {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 0 4px;
+}
+
+.modal-scrollable-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-scrollable-content::-webkit-scrollbar-track {
+    background: #bfdbfe;
+    border-radius: 10px;
+}
+
+.modal-scrollable-content::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 10px;
+}
+
+.modal-scrollable-content::-webkit-scrollbar-thumb:hover {
+    background: #2563eb;
+}
+
+/* Інформаційний блок */
+.info-content {
+    padding: 20px 24px;
+    background: #eff6ff;
+    border-radius: 16px;
+    margin: 10px;
+    border: 1px solid #bfdbfe;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid #dbeafe;
+    transition: all 0.2s ease;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row:hover {
+    background: #dbeafe;
+    margin: 0 -8px;
+    padding: 14px 8px;
+    border-radius: 12px;
+}
+
+.info-label {
+    width: 140px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #1e40af;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-value {
+    color: #1e3a8a;
+    font-size: 15px;
+    flex: 1;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.edit-phone-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.edit-phone-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+/* Документи */
+.documents-section {
+    padding: 0 24px 20px 24px;
+}
+
+.documents-section h4 {
+    margin: 20px 0 16px 0;
+    color: #1e40af;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-upload-area {
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.file-upload-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #eff6ff;
+    border: 2px dashed #3b82f6;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e40af;
+    transition: all 0.2s ease;
+}
+
+.file-upload-label:hover {
+    background: #dbeafe;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+}
+
+.upload-spinner {
+    font-size: 14px;
+    color: #3b82f6;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.no-docs {
+    text-align: center;
+    color: #94a3b8;
+    padding: 40px;
+    font-style: italic;
+    background: #eff6ff;
+    border-radius: 16px;
+}
+
+.documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 16px 0;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.document-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: #eff6ff;
+    border-radius: 14px;
+    border: 1px solid #bfdbfe;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.document-card:hover {
+    transform: translateX(4px);
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.doc-icon {
+    font-size: 32px;
+}
+
+.doc-info {
+    flex: 1;
+}
+
+.doc-title {
+    font-weight: 700;
+    color: #1e40af;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.doc-preview {
+    font-size: 12px;
+    color: #475569;
+}
+
+.doc-file {
+    font-size: 12px;
+    color: #3b82f6;
+    text-decoration: none;
+    margin-top: 4px;
+    display: inline-block;
+}
+
+.doc-delete {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    color: #dc2626;
+}
+
+.doc-delete:hover {
+    background: #fee2e2;
+    transform: scale(1.05);
+}
+
+/* Форма телефону */
+.phone-form {
+    padding: 24px;
+}
+
+.phone-form label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 700;
+    color: #1e40af;
+    font-size: 14px;
+}
+
+.phone-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    background: #eff6ff;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+
+.phone-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.phone-form-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.save-phone-btn {
+    flex: 1;
+    padding: 12px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.save-phone-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.cancel-phone-btn {
+    flex: 1;
+    padding: 12px;
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.cancel-phone-btn:hover {
+    background: #dbeafe;
+}
+
+.modal-content hr {
+    margin: 0 24px;
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #bfdbfe, #bfdbfe, transparent);
+}
