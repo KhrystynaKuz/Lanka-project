@@ -24,11 +24,6 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
 
     if (!isOpen) return null;
 
-    const handleConfirm = () => {
-        onConfirm();
-        onClose(); // Закриваємо вікно підтвердження
-    };
-
     return (
         <div className="custom-confirm-overlay" onClick={onClose} style={{ zIndex: 10001 }}>
             <div className="custom-confirm-card" onClick={(e) => e.stopPropagation()}>
@@ -37,7 +32,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
                 <p className="custom-confirm-text">{message}</p>
                 <div className="custom-confirm-actions">
                     <button className="btn-confirm-cancel" onClick={onClose}>{cancelText}</button>
-                    <button className={`btn-confirm-execute ${isDanger ? 'danger-action' : ''}`} onClick={handleConfirm}>{confirmText}</button>
+                    <button className={`btn-confirm-execute ${isDanger ? 'danger-action' : ''}`} onClick={onConfirm}>{confirmText}</button>
                 </div>
             </div>
         </div>
@@ -246,14 +241,21 @@ export default function InventoryTab() {
         setIsProcessing(true);
 
         try {
-            await fetch(`/api/warehouse/${itemToDelete.id}`, { method: 'DELETE' });
-            await loadInventory();
-            addToast("🗑️ Товар видалено", "success");
+            const response = await fetch(`/api/warehouse/${itemToDelete.id}`, { method: 'DELETE' });
+            if (response.ok) {
+                await loadInventory();
+                addToast("🗑️ Товар видалено", "success");
+                // Закриваємо інформаційне вікно тільки після успішного DELETE запиту
+                setModalMode('');
+                setEditingItem(null);
+            } else {
+                addToast("🚨 Не вдалося видалити", "error");
+            }
         } catch (err) {
             addToast("🚨 Не вдалося видалити", "error");
         } finally {
             setItemToDelete(null);
-            setModalMode('');
+            setShowDeleteConfirm(false); // Закриваємо вікно підтвердження в самому кінці
             setIsProcessing(false);
         }
     };
@@ -399,7 +401,7 @@ export default function InventoryTab() {
                                             }}
                                             value={editingItem.item_name}
                                             onChange={e => setEditingItem({...editingItem, item_name: e.target.value})}
-                                            placeholder="Введіть назву товару"
+                                            placeholder="Введіть назву товара"
                                             autoFocus
                                         />
                                     </div>
@@ -649,6 +651,7 @@ export default function InventoryTab() {
                                             onClick={() => {
                                                 setItemToDelete(editingItem);
                                                 setShowDeleteConfirm(true);
+                                                // ТЕПЕР МИ НЕ ЗАКРИВАЄМО інформаційне вікно тут, воно залишається на фоні
                                             }}
                                         >
                                             ВИДАЛИТИ ТИП
