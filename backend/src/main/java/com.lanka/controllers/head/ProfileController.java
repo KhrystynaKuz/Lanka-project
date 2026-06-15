@@ -30,7 +30,6 @@ public class ProfileController {
         this.documentDAO = new DocumentDAO();
     }
 
-    // Отримати повну інформацію по userId
     @GetMapping("/full-info-by-id")
     public ResponseEntity<?> getFullUserInfoById(@RequestParam UUID userId) {
         try {
@@ -54,7 +53,6 @@ public class ProfileController {
             response.put("dob", user.getDob() != null ? user.getDob().toString() : null);
             response.put("created_at", user.getCreated_at());
 
-            // Отримуємо документи
             try {
                 List<Map<String, String>> docs = documentDAO.getUserDocuments(user.getId());
                 response.put("documents", docs);
@@ -76,8 +74,7 @@ public class ProfileController {
             List<Map<String, String>> docs = documentDAO.getUserDocuments(userId);
             return ResponseEntity.ok(docs);
         } catch (SQLException e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(Map.of("error", "Помилка: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -141,7 +138,6 @@ public class ProfileController {
 
             User user = userOpt.get();
 
-            // Оновлюємо поля
             if (newPhone != null && !newPhone.trim().isEmpty()) {
                 user.setPhone_number(newPhone);
             } else {
@@ -154,7 +150,6 @@ public class ProfileController {
                 user.setPatronymic(null);
             }
 
-            // Обробка дати
             if (newDobStr != null && !newDobStr.trim().isEmpty()) {
                 try {
                     java.time.LocalDate dob = java.time.LocalDate.parse(newDobStr);
@@ -166,7 +161,6 @@ public class ProfileController {
                 user.setDob(null);
             }
 
-            // Зберігаємо оновлення
             boolean updated = userDAO.updateUser(user);
 
             if (updated) {
@@ -184,4 +178,21 @@ public class ProfileController {
             return ResponseEntity.internalServerError().body(Map.of("error", "Помилка БД: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/registration/documents/upload")
+    public ResponseEntity<?> uploadDocument(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam("userId") UUID userId,
+            @RequestParam("title") String title) {
+        try {
+            String fileUrl = "http://storage.lanka.com/" + file.getOriginalFilename();
+
+            documentDAO.addDocument(userId, title, fileUrl);
+
+            return ResponseEntity.ok(Map.of("message", "Файл успішно завантажено", "url", fileUrl));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
 }

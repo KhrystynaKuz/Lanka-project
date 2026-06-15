@@ -129,11 +129,29 @@ export default function Header({ onLogOut, onBackToHome }) {
         if (!file) return;
 
         setUploadingFile(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('userId', userId);
+        formData.append('title', file.name);
 
-        setTimeout(() => {
-            showNotification(`📎 Файл "${file.name}" готовий до завантаження. Потрібен ендпоінт для збереження файлів.`, 'info');
+        try {
+            const res = await fetch(`http://localhost:8080/api/profile/registration/documents/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                showNotification('✅ Документ успішно завантажено', 'success');
+                fetchFullProfile();
+            } else {
+                showNotification('🚨 Помилка при завантаженні', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification('🚨 Сталася помилка мережі', 'error');
+        } finally {
             setUploadingFile(false);
-        }, 1000);
+        }
     };
 
     return (
@@ -253,29 +271,27 @@ export default function Header({ onLogOut, onBackToHome }) {
                             <div className="documents-section">
                                 <h4>📁 Мої документи</h4>
 
-                                <div className="file-upload-area">
-                                    <label className="file-upload-label">
-                                        📎 Завантажити файл (фото/PDF)
+                                <div className="file-upload-area" style={{ marginBottom: '15px' }}>
+                                    <label className="file-upload-label" style={{ cursor: 'pointer', padding: '10px', background: '#f0f9ff', border: '1px dashed #bae6fd', borderRadius: '8px', display: 'block' }}>
+                                        📎 Натисніть, щоб обрати файл для завантаження
                                         <input type="file" accept="image/*,application/pdf" onChange={handleFileUpload} disabled={uploadingFile} style={{ display: 'none' }} />
                                     </label>
                                     {uploadingFile && <span className="upload-spinner">⏳ Завантаження...</span>}
                                 </div>
 
                                 {documents.length === 0 ? (
-                                    <p className="no-docs">Немає документів</p>
+                                    <p className="no-docs" style={{ color: '#64748b' }}>Немає завантажених документів</p>
                                 ) : (
-                                    <div className="documents-list">
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {documents.map(doc => (
-                                            <div key={doc.id} className="document-card">
-                                                <div className="doc-icon">📄</div>
-                                                <div className="doc-info">
-                                                    <div className="doc-title">{doc.title}</div>
-                                                    {doc.content && <div className="doc-preview">{doc.content.substring(0, 50)}...</div>}
-                                                    {doc.file_url && <div className="doc-file">📎 {doc.file_url}</div>}
-                                                </div>
-                                                <div className="doc-actions">
-                                                    <button onClick={() => deleteDocument(doc.id)} className="doc-delete">🗑️</button>
-                                                </div>
+                                            <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '10px 14px', borderRadius: '8px', alignItems: 'center' }}>
+                                                <a href={doc.file_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none' }}>
+                                                    📄 {doc.type || 'Документ'}
+                                                </a>
+                                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: doc.status === 'APPROVED' ? 'green' : 'orange' }}>
+                                                    {doc.status || 'PENDING'}
+                                                </span>
+                                                <button onClick={() => deleteDocument(doc.id)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>🗑️</button>
                                             </div>
                                         ))}
                                     </div>
