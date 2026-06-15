@@ -366,4 +366,60 @@ public class ManagementController {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
+
+    @PostMapping("/documents/reject-verified")
+    public ResponseEntity<?> rejectDocumentForVerifiedUser(@RequestBody Map<String, String> payload) {
+        try {
+            UUID docId = UUID.fromString(payload.get("docId"));
+            String reason = payload.get("reason");
+            UUID userId = UUID.fromString(payload.get("userId"));
+
+            User user = userDAO.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Користувача не знайдено"));
+            String targetEmail = getTargetEmail(user.getEmail());
+
+            emailService.sendRejectionEmail(targetEmail, reason);
+
+            documentDAO.updateDocumentStatus(docId, "REJECTED", reason);
+
+            documentDAO.deleteRejectedDocuments(userId);
+
+            return ResponseEntity.ok("Документ відхилено, статус верифікації збережено.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/documents/pending-all")
+    public ResponseEntity<?> getAllPendingDocuments() {
+        try {
+            String sql = "SELECT d.id, d.type, d.file_url, d.user_id, u.first_name, u.last_name " +
+                    "FROM user_documents d " +
+                    "JOIN users u ON d.user_id = u.id " +
+                    "WHERE d.status = 'PENDING' AND u.is_verified = true";
+
+            List<Map<String, Object>> pendingDocs = new ArrayList<>();
+
+            try (Connection conn = DatabaseConfig.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+                    Map<String, Object> doc = new HashMap<>();
+                    doc.put("id", rs.getObject("id"));
+                    doc.put("title", rs.getString("type"));
+                    doc.put("file_url", rs.getString("file_url"));
+                    doc.put("user_id", rs.getObject("user_id"));
+                    doc.put("user_name", (rs.getString("first_name") != null ? rs.getString("first_name") : "") + " " +
+                            (rs.getString("last_name") != null ? rs.getString("last_name") : ""));
+                    pendingDocs.add(doc);
+                }
+            }
+            return ResponseEntity.ok(pendingDocs);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Помилка БД: " + e.getMessage());
+        }
+    }
 }

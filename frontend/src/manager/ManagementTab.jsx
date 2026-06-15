@@ -37,6 +37,9 @@ export default function ManagementTab({ showNotification }) {
     const [customers, setCustomers] = useState([]);
     const [viewingCustomer, setViewingCustomer] = useState(null);
 
+    const [pendingDocs, setPendingDocs] = useState([]);
+    const [isInitialVerification, setIsInitialVerification] = useState(false);
+
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
         title: '',
@@ -58,6 +61,21 @@ export default function ManagementTab({ showNotification }) {
 
     useEffect(() => {
         fetchPendingUsers();
+    }, []);
+
+    const fetchPendingDocuments = async () => {
+        try {
+            const response = await fetch('http://localhost:8080/api/management/documents/pending-all');
+            if (!response.ok) throw new Error("Помилка завантаження документів");
+            const data = await response.json();
+            setPendingDocs(data);
+        } catch (err) {
+            console.error("Помилка:", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchPendingDocuments();
     }, []);
 
     const closeConfirmModal = () => {
@@ -184,42 +202,34 @@ export default function ManagementTab({ showNotification }) {
     };
 
     const handleSendRejectReason = async () => {
-        if (!activeDocId || !activeUserId) return;
+        const endpoint = isInitialVerification
+            ? `${API_BASE_URL}/api/management/documents/reject`
+            : `${API_BASE_URL}/api/management/documents/reject-verified`;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/management/documents/reject`, {
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     docId: activeDocId,
-                    reason: rejectReason,
-                    userId: activeUserId
+                    userId: activeUserId,
+                    reason: rejectReason
                 })
             });
 
             if (response.ok) {
-                setUserDocs(prev => {
-                    const newDocs = { ...prev };
-                    if (newDocs[activeUserId]) {
-                        newDocs[activeUserId] = newDocs[activeUserId].map(doc =>
-                            doc.id === activeDocId ? { ...doc, status: 'REJECTED' } : doc
-                        );
-                    }
-                    return newDocs;
-                });
-
+                showNotification("Документ відхилено", "success");
                 setShowRejectModal(false);
                 setRejectReason("");
 
-                await fetchPendingUsers();
-
-                if (showNotification) showNotification("🛑 Документ відхилено", "info");
-            } else {
-                throw new Error("Не вдалося відхилити документ");
+                if (isInitialVerification) {
+                    fetchPendingUsers();
+                } else {
+                    fetchPendingDocuments();
+                }
             }
         } catch (err) {
-            console.error("Помилка:", err);
-            if (showNotification) showNotification("🚨 Помилка при відхиленні", "error");
+            showNotification("Помилка", "error");
         }
     };
 
@@ -470,6 +480,13 @@ export default function ManagementTab({ showNotification }) {
         });
     };
 
+    const handleUpdateDocStatus = async (docId, status) => {
+        const success = await sendDocStatus(docId, status, null);
+        if (success) {
+            setPendingDocs(prev => prev.filter(d => d.id !== docId));
+        }
+    };
+
     const executeRemoveVolunteer = async (userId) => {
         try {
             const response = await fetch(`http://localhost:8080/api/management/departments/${selectedDept.id}/remove-volunteer?userId=${userId}`, {
@@ -608,6 +625,7 @@ export default function ManagementTab({ showNotification }) {
                                                                 <button
                                                                     style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }}
                                                                     onClick={() => {
+                                                                        setIsInitialVerification(true);
                                                                         setActiveDocId(doc.id);
                                                                         setActiveUserId(user.id);
                                                                         setShowRejectModal(true);
@@ -635,6 +653,50 @@ export default function ManagementTab({ showNotification }) {
                         <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
                             <p>На даний момент нових користувачів на верифікацію немає.</p>
                         </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="glass-sub-section" style={{ marginBottom: '25px' }}>
+                <h3 className="tab-title" style={{ fontSize: '20px', marginBottom: '15px' }}>Нові документи</h3>
+
+                <div className="verification-list-container">
+                    {pendingDocs.length > 0 ? (
+                        pendingDocs.map(doc => (
+                            <div key={doc.id} className="verification-row" style={{
+                                display: 'grid',
+                                gridTemplateColumns: '2fr 1fr 1fr',
+                                padding: '15px 20px',
+                                marginBottom: '10px',
+                                background: 'rgba(255, 255, 255, 0.4)',
+                                borderRadius: '10px',
+                                alignItems: 'center'
+                            }}>
+                                <div>
+                                    <span style={{ fontWeight: '700', color: '#1e3a8a' }}>{doc.user_name}</span>
+                                    <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                                        <a href={doc.file_url} target="_blank" rel="noopener noreferrer">📄 {doc.title}</a>
+                                    </div>
+                                </div>
+
+                                <button
+                                    style={{ background: '#dcfce7', border: '1px solid #16a34a', color: '#16a34a', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer' }}
+                                    onClick={() => handleUpdateDocStatus(doc.id, 'APPROVED')}
+                                >Затвердити</button>
+
+                                <button
+                                    style={{ background: '#fee2e2', border: '1px solid #dc2626', color: '#dc2626', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer' }}
+                                    onClick={() => {
+                                        setIsInitialVerification(false);
+                                        setActiveDocId(doc.id);
+                                        setActiveUserId(doc.user_id);
+                                        setShowRejectModal(true);
+                                    }}
+                                >Відхилити</button>
+                            </div>
+                        ))
+                    ) : (
+                        <p style={{ padding: '15px', color: '#6b7280' }}>Нових документів немає.</p>
                     )}
                 </div>
             </div>
