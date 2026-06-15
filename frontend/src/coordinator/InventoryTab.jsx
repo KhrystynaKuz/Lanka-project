@@ -54,7 +54,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
 export default function InventoryTab() {
     const [warehouseItems, setWarehouseItems] = useState([]);
     const [editingItem, setEditingItem] = useState(null);
-    const [modalMode, setModalMode] = useState(''); // 'create', 'info', 'add_stock', 'sign_off', 'history'
+    const [modalMode, setModalMode] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
 
     // Transaction specific state
@@ -63,6 +63,9 @@ export default function InventoryTab() {
     const [selectedRequestId, setSelectedRequestId] = useState('');
     const [transportCost, setTransportCost] = useState('');
     const [itemHistory, setItemHistory] = useState([]);
+
+    // NEW: Processing state to prevent double-clicks
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const [toasts, setToasts] = useState([]);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -104,12 +107,15 @@ export default function InventoryTab() {
         item.item_name?.toLowerCase().includes(searchQuery.toLowerCase().trim())
     );
 
-    // Creates a completely new item type (defined by name + unit_price)
     const createNewItemType = async () => {
         if (!editingItem.item_name?.trim() || editingItem.unit_price < 0) {
             addToast("⚠️ Заповніть коректно всі поля.", "warning");
             return;
         }
+
+        if (isProcessing) return;
+        setIsProcessing(true);
+
         try {
             const response = await fetch('/api/warehouse', {
                 method: 'POST',
@@ -126,14 +132,20 @@ export default function InventoryTab() {
             }
         } catch (err) {
             addToast("🚨 Критична помилка", "error");
+        } finally {
+            setIsProcessing(false);
         }
     };
 
-    // Adds stock to an existing item type
     const handleAddStock = async () => {
         if (!transactionQty || transactionQty <= 0) {
-            addToast("⚠️ Введіть коректну кількість", "warning"); return;
+            addToast("⚠️ Введіть коректну кількість", "warning");
+            return;
         }
+
+        if (isProcessing) return;
+        setIsProcessing(true);
+
         try {
             const response = await fetch(`/api/warehouse/transaction/${editingItem.id}`, {
                 method: 'POST',
@@ -147,13 +159,16 @@ export default function InventoryTab() {
                 await loadInventory();
                 resetTransactionState();
                 addToast("✅ Надходження зафіксовано!", "success");
+            } else {
+                addToast("🚨 Помилка при додаванні", "error");
             }
         } catch (err) {
-            addToast("🚨 Помилка при додаванні", "error");
+            addToast("🚨 Критична помилка при додаванні", "error");
+        } finally {
+            setIsProcessing(false);
         }
     };
 
-    // Signs off stock for a request
     const handleSignOff = async () => {
         if (!selectedRequestId) {
             addToast("⚠️ Оберіть заявку", "warning"); return;
@@ -162,13 +177,16 @@ export default function InventoryTab() {
             addToast("⚠️ Введіть коректну кількість для списання", "warning"); return;
         }
 
+        if (isProcessing) return;
+        setIsProcessing(true);
+
         try {
             const response = await fetch(`/api/warehouse/book/${editingItem.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     request_id: selectedRequestId,
-                    quantity_changed: -Math.abs(transactionQty), // Always negative for deduction
+                    quantity_changed: -Math.abs(transactionQty),
                     transportation_cost: transportCost ? parseFloat(transportCost) : null
                 })
             });
@@ -177,9 +195,13 @@ export default function InventoryTab() {
                 await loadInventory();
                 resetTransactionState();
                 addToast("✅ Товар успішно списано на заявку!", "success");
+            } else {
+                addToast("🚨 Помилка при списанні", "error");
             }
         } catch (err) {
-            addToast("🚨 Помилка при списанні", "error");
+            addToast("🚨 Критична помилка при списанні", "error");
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -218,6 +240,10 @@ export default function InventoryTab() {
 
     const performDelete = async () => {
         if (!itemToDelete) return;
+
+        if (isProcessing) return;
+        setIsProcessing(true);
+
         try {
             await fetch(`/api/warehouse/${itemToDelete.id}`, { method: 'DELETE' });
             await loadInventory();
@@ -227,6 +253,7 @@ export default function InventoryTab() {
         } finally {
             setItemToDelete(null);
             setModalMode('');
+            setIsProcessing(false);
         }
     };
 
@@ -271,27 +298,27 @@ export default function InventoryTab() {
                 </tbody>
             </table>
 
-            {/* MODAL WORKFLOWS */}
             {modalMode && editingItem && (
                 <div className="modal-overlay" style={{ zIndex: 10000 }}>
                     <div className="coord-modal-content">
 
-                        {/* MODE: CREATE NEW ITEM TYPE */}
                         {modalMode === 'create' && (
                             <>
                                 <h3 className="coord-modal-title">НОВИЙ ТИП ТОВАРУ</h3>
                                 <input className="coord-modal-input" value={editingItem.item_name} onChange={e => setEditingItem({...editingItem, item_name: e.target.value})} placeholder="Назва товару" />
                                 <input className="coord-modal-input" value={editingItem.unit_of_measure} onChange={e => setEditingItem({...editingItem, unit_of_measure: e.target.value})} placeholder="Од. виміру (шт, кг, ящики...)" />
+                                <label>Ціна за одиницю (₴):</label>
                                 <input type="number" className="coord-modal-input" value={editingItem.unit_price} onChange={e => setEditingItem({...editingItem, unit_price: parseFloat(e.target.value) || 0})} placeholder="Ціна за одиницю (₴)" />
 
                                 <div className="coord-modal-actions">
-                                    <button className="btn-save" onClick={createNewItemType}>СТВОРИТИ</button>
-                                    <button className="btn-cancel" onClick={resetTransactionState}>СКАСУВАТИ</button>
+                                    <button className="btn-save" onClick={createNewItemType} disabled={isProcessing}>
+                                        {isProcessing ? 'ОБРОБКА...' : 'СТВОРИТИ'}
+                                    </button>
+                                    <button className="btn-cancel" onClick={resetTransactionState} disabled={isProcessing}>СКАСУВАТИ</button>
                                 </div>
                             </>
                         )}
 
-                        {/* MODE: ITEM INFO & ACTIONS */}
                         {modalMode === 'info' && (
                             <>
                                 <h3 className="coord-modal-title">{editingItem.item_name}</h3>
@@ -311,19 +338,19 @@ export default function InventoryTab() {
                             </>
                         )}
 
-                        {/* MODE: ADD STOCK */}
                         {modalMode === 'add_stock' && (
                             <>
                                 <h3 className="coord-modal-title">ДОДАТИ: {editingItem.item_name}</h3>
                                 <input type="number" className="coord-modal-input" placeholder="Кількість надходження" value={transactionQty} onChange={(e) => setTransactionQty(Math.max(0, parseInt(e.target.value) || 0))} />
                                 <div className="coord-modal-actions">
-                                    <button className="btn-save" onClick={handleAddStock}>ПІДТВЕРДИТИ</button>
-                                    <button className="btn-cancel" onClick={() => setModalMode('info')}>НАЗАД</button>
+                                    <button className="btn-save" onClick={handleAddStock} disabled={isProcessing}>
+                                        {isProcessing ? 'ОБРОБКА...' : 'ПІДТВЕРДИТИ'}
+                                    </button>
+                                    <button className="btn-cancel" onClick={() => setModalMode('info')} disabled={isProcessing}>НАЗАД</button>
                                 </div>
                             </>
                         )}
 
-                        {/* MODE: SIGN OFF (BOOKING) */}
                         {modalMode === 'sign_off' && (
                             <>
                                 <h3 className="coord-modal-title">СПИСАННЯ: {editingItem.item_name}</h3>
@@ -343,13 +370,14 @@ export default function InventoryTab() {
                                 </div>
 
                                 <div className="coord-modal-actions">
-                                    <button className="btn-save" onClick={handleSignOff}>СПИСАТИ</button>
-                                    <button className="btn-cancel" onClick={() => setModalMode('info')}>НАЗАД</button>
+                                    <button className="btn-save" onClick={handleSignOff} disabled={isProcessing}>
+                                        {isProcessing ? 'ОБРОБКА...' : 'СПИСАТИ'}
+                                    </button>
+                                    <button className="btn-cancel" onClick={() => setModalMode('info')} disabled={isProcessing}>НАЗАД</button>
                                 </div>
                             </>
                         )}
 
-                        {/* MODE: HISTORY */}
                         {modalMode === 'history' && (
                             <>
                                 <h3 className="coord-modal-title">ІСТОРІЯ: {editingItem.item_name}</h3>
