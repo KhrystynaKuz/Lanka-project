@@ -2530,3 +2530,210 @@
 .doc-action-btn:hover {
     opacity: 0.9;
 }
+
+/* Контейнер вкладки звітів із ефектом матового скла */
+.reports-container {
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 8px 32px 0 rgba(30, 64, 175, 0.04);
+    margin: 16px 0;
+}
+
+/* Заголовки */
+.reports-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.02em;
+}
+
+.reports-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Панель фільтрів */
+.reports-filter-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 20px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    margin-bottom: 28px;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e40af;
+}
+
+/* Поля вводу та селекти */
+.reports-input,
+.reports-select {
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.reports-input:focus,
+.reports-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Головна кнопка (Сформувати звіт) */
+.btn-primary-gradient {
+    padding: 11px 20px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-primary-gradient:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+}
+
+.btn-primary-gradient:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Вторинна кнопка (Експорт) */
+.btn-secondary-outline {
+    padding: 10px 18px;
+    background: #ffffff;
+    color: #1e40af;
+    border: 1px solid #3b82f6;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-secondary-outline:hover {
+    background: #f0f7ff;
+    border-color: #1d4ed8;
+}
+
+/* Контейнер таблиці */
+.table-glass-wrapper {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.01);
+}
+
+.reports-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13px;
+}
+
+/* Шапка таблиці */
+.reports-table thead tr {
+    background: rgba(219, 234, 254, 0.6);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.reports-table th {
+    padding: 14px 16px;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+/* Рядки таблиці */
+.reports-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    background: rgba(255, 255, 255, 0.3);
+    transition: background 0.2s ease;
+}
+
+.reports-table tbody tr:hover {
+    background: rgba(219, 234, 254, 0.2);
+}
+
+.reports-table td {
+    padding: 14px 16px;
+    color: #334155;
+}
+
+/* Бейдж департаменту */
+.badge-department {
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+/* Статуси */
+.status-pill {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-fulfilled {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-rejected {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.status-pending {
+    background: #fef9c3;
+    color: #a16207;
+}
+
+/* Футер таблиці з підсумком */
+.reports-table tfoot tr {
+    background-color: rgba(241, 245, 249, 0.6);
+    border-top: 2px solid #cbd5e1;
+}

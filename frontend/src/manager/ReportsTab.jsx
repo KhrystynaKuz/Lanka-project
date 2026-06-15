@@ -79,7 +79,6 @@ export default function ReportsTab({ showNotification }) {
     const grandTotalTransport = reportData.reduce((sum, req) => sum + Number(req.totalTransportCost || 0), 0);
     const grandTotal = grandTotalItems + grandTotalTransport;
 
-    // Оновлена логіка вивантаження в Excel з шириною колонок
     const handleDownloadExcel = () => {
         if (!reportData || reportData.length === 0) {
             showNotification("Немає даних для завантаження", "error");
@@ -104,7 +103,6 @@ export default function ReportsTab({ showNotification }) {
             };
         });
 
-        // Додаємо підсумковий рядок
         exportData.push({
             "№": "",
             "Дата запиту": "",
@@ -119,17 +117,16 @@ export default function ReportsTab({ showNotification }) {
 
         const worksheet = XLSX.utils.json_to_sheet(exportData);
 
-        // Встановлюємо комфортну ширину колонок для Excel
         worksheet['!cols'] = [
-            { wch: 5 },   // №
-            { wch: 12 },  // Дата
-            { wch: 25 },  // Для кого
-            { wch: 35 },  // Запит
-            { wch: 45 },  // Речі
-            { wch: 18 },  // Вартість
-            { wch: 20 },  // Доставка
-            { wch: 15 },  // Статус
-            { wch: 12 }   // Дата сплати
+            { wch: 5 },
+            { wch: 12 },
+            { wch: 25 },
+            { wch: 35 },
+            { wch: 45 },
+            { wch: 18 },
+            { wch: 20 },
+            { wch: 15 },
+            { wch: 12 }
         ];
 
         const workbook = XLSX.utils.book_new();
@@ -143,15 +140,21 @@ export default function ReportsTab({ showNotification }) {
     };
 
     return (
-        <div className="admin-tab-content fade-in">
-            <div className="reports-selectors-card" style={{ marginBottom: '24px' }}>
-                <h3 className="analytics-title" style={{ marginTop: 0 }}>Параметри звіту</h3>
+        <div className="admin-tab-content fade-in reports-container">
+            {/* Блок заголовку */}
+            <div className="reports-header-block">
+                <h2 className="reports-title">Фінансові звіти</h2>
+                <p className="reports-subtitle">
+                    Формування аналітики витрат та експорт даних у формат Excel
+                </p>
+            </div>
 
-                <div className="selector-row">
-                    <span className="selector-bullet">•</span>
-                    <label>Відділ: </label>
+            {/* Панель параметрів та фільтрації */}
+            <div className="reports-filter-panel">
+                <div className="filter-group">
+                    <label className="filter-label">Відділ</label>
                     <select
-                        className="admin-select"
+                        className="reports-select"
                         value={department}
                         onChange={(e) => setDepartment(e.target.value)}
                     >
@@ -164,100 +167,114 @@ export default function ReportsTab({ showNotification }) {
                     </select>
                 </div>
 
-                <div className="selector-row" style={{ marginTop: '16px' }}>
-                    <span className="selector-bullet">•</span>
-                    <label>Період: </label>
-                    <span className="date-span">з</span>
+                <div className="filter-group">
+                    <label className="filter-label">Дата початку</label>
                     <input
                         type="date"
-                        className="admin-date-input"
+                        className="reports-input"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                     />
-                    <span className="date-span">по</span>
+                </div>
+
+                <div className="filter-group">
+                    <label className="filter-label">Дата кінця</label>
                     <input
                         type="date"
-                        className="admin-date-input"
+                        className="reports-input"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                     />
-                    <button
-                        className="btn-primary"
-                        style={{ marginLeft: '16px' }}
-                        onClick={handleGenerateReport}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? "Завантаження..." : "Згенерувати звіт"}
-                    </button>
-
-                    <button
-                        className="btn-download-icon"
-                        title="Завантажити у форматі Excel"
-                        onClick={handleDownloadExcel}
-                        disabled={!isReportGenerated || reportData.length === 0}
-                    >
-                        📥
-                    </button>
                 </div>
+
+                <button
+                    className="btn-primary-gradient"
+                    onClick={handleGenerateReport}
+                    disabled={isLoading}
+                >
+                    {isLoading ? "Завантаження..." : "Згенерувати звіт"}
+                </button>
             </div>
 
+            {/* Панель додаткових дій (Експорт) */}
+            {isReportGenerated && reportData.length > 0 && (
+                <div className="export-btn-wrapper">
+                    <button
+                        className="btn-secondary-outline"
+                        title="Завантажити у форматі Excel"
+                        onClick={handleDownloadExcel}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Експорт в Excel
+                    </button>
+                </div>
+            )}
+
+            {/* Таблиця звітів */}
             {isReportGenerated && (
-                <div className="report-table-container" style={{ overflowX: 'auto', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', padding: '16px' }}>
-                    <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
+                <div className="table-glass-wrapper">
+                    <table className="reports-table">
                         <thead>
-                        <tr style={{ borderBottom: '2px solid #e2e8f0', backgroundColor: '#f8fafc', color: '#475569' }}>
-                            <th style={{ padding: '12px 8px', textAlign: 'center' }}>№</th>
-                            <th style={{ padding: '12px 8px', textAlign: 'center' }}>Дата запиту</th>
-                            <th style={{ padding: '12px 8px', textAlign: 'left' }}>Для кого</th>
-                            <th style={{ padding: '12px 8px', textAlign: 'left' }}>Запит</th>
-                            <th style={{ padding: '12px 8px', textAlign: 'left' }}>Речі (Назва, К-ть, Ціна)</th>
-                            <th style={{ padding: '12px 8px', textAlign: 'right' }}>Вартість (разом)</th>
-                            <th style={{ padding: '12px 8px', textAlign: 'right' }}>Доставка</th>
-                            <th style={{ padding: '12px 8px', textAlign: 'center' }}>Статус</th>
-                            <th style={{ padding: '12px 8px', textAlign: 'center' }}>Дата сплати</th>
+                        <tr>
+                            <th className="text-center">№</th>
+                            <th className="text-center">Дата запиту</th>
+                            <th>Для кого</th>
+                            <th>Запит</th>
+                            <th>Речі (Назва, К-ть, Ціна)</th>
+                            <th className="text-right">Вартість (разом)</th>
+                            <th className="text-right">Доставка</th>
+                            <th className="text-center">Статус</th>
+                            <th className="text-center">Дата сплати</th>
                         </tr>
                         </thead>
                         <tbody>
                         {reportData.length > 0 ? (
                             reportData.map((req, index) => (
-                                <tr key={req.requestId} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                    <td style={{ padding: '12px 8px', textAlign: 'center', color: '#64748b' }}>{index + 1}</td>
-                                    <td style={{ padding: '12px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>{req.requestDate}</td>
-                                    <td style={{ padding: '12px 8px', fontWeight: '500' }}>{req.customerName}</td>
-                                    <td style={{ padding: '12px 8px', maxWidth: '200px' }}>
-                                        <div style={{ fontWeight: '600', marginBottom: '4px' }}>{req.title}</div>
+                                <tr key={req.requestId}>
+                                    <td className="text-center text-bold-slate">{index + 1}</td>
+                                    <td className="text-center" style={{ whiteSpace: 'nowrap' }}>{req.requestDate}</td>
+                                    <td className="text-medium">{req.customerName}</td>
+                                    <td className="text-ellipsis">
+                                        <div className="text-medium" style={{ marginBottom: '2px' }}>{req.title}</div>
                                         <div style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: '1.4' }}>{req.description}</div>
                                     </td>
-                                    <td style={{ padding: '12px 8px' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <td>
+                                        <div className="dates-stack" style={{ gap: '6px' }}>
                                             {req.items.map((item, i) => (
                                                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #e2e8f0', paddingBottom: '4px' }}>
-                                                    <span>{item.name} <span style={{ color: '#64748b' }}>x{item.qty}</span></span>
-                                                    <span style={{ fontWeight: '500' }}>{formatMoney(item.price)}</span>
+                                                    <span>{item.name} <span className="text-bold-slate">x{item.qty}</span></span>
+                                                    <span className="text-medium">{formatMoney(item.price)}</span>
                                                 </div>
                                             ))}
                                         </div>
                                     </td>
-                                    <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '600', color: '#0f172a' }}>
+                                    <td className="text-right text-bold-dark">
                                         {formatMoney(req.totalItemsCost)}
                                     </td>
-                                    <td style={{ padding: '12px 8px', textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.9rem', color: '#64748b', marginBottom: '6px' }}>
+                                    <td className="text-right">
+                                        <div className="dates-stack" style={{ gap: '4px', marginBottom: '6px', textAlign: 'right' }}>
                                             {req.items.map((item, i) => (
                                                 <span key={i}>{formatMoney(item.transportCost)}</span>
                                             ))}
                                         </div>
-                                        <div style={{ fontWeight: '600', color: '#0f172a', borderTop: '1px solid #e2e8f0', paddingTop: '4px' }}>
+                                        <div className="text-bold-dark" style={{ borderTop: '1px solid #e2e8f0', paddingTop: '4px' }}>
                                             {formatMoney(req.totalTransportCost)}
                                         </div>
                                     </td>
-                                    <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                                        <span className={`status-badge status-${req.status?.toLowerCase() || 'pending'}`} style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600' }}>
+                                    <td className="text-center">
+                                        <span className={`status-pill ${
+                                            req.status === 'FULFILLED' ? 'status-fulfilled' :
+                                                req.status === 'REJECTED' ? 'status-rejected' : 'status-pending'
+                                        }`}>
                                             {translateStatus(req.status)}
                                         </span>
                                     </td>
-                                    <td style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.9rem', color: '#64748b' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <td className="text-center">
+                                        <div className="dates-stack" style={{ gap: '4px' }}>
                                             {req.items.map((item, i) => (
                                                 <span key={i}>{item.date}</span>
                                             ))}
@@ -267,18 +284,18 @@ export default function ReportsTab({ showNotification }) {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="9" style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>
+                                <td colSpan="9" className="no-data-cell">
                                     За обраний період даних не знайдено.
                                 </td>
                             </tr>
                         )}
                         </tbody>
                         <tfoot>
-                        <tr style={{ backgroundColor: '#f8fafc', borderTop: '2px solid #cbd5e1' }}>
-                            <td colSpan="5" style={{ textAlign: 'right', padding: '16px', fontWeight: '700', fontSize: '1.05rem', color: '#334155' }}>
+                        <tr>
+                            <td colSpan="5" className="foot-total-label">
                                 Всього витрачено (речі + доставка):
                             </td>
-                            <td colSpan="4" style={{ padding: '16px 8px', fontWeight: '800', fontSize: '1.15rem', color: '#dc2626' }}>
+                            <td colSpan="4" className="foot-total-amount">
                                 {formatMoney(grandTotal)}
                             </td>
                         </tr>
