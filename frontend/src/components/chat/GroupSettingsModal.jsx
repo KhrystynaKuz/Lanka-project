@@ -494,7 +494,7 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                                                     onMouseLeave={(e) => {
                                                         e.currentTarget.style.transform = 'scale(1)';
                                                     }}>
-                                                ➕ Додати
+                                                Додати
                                             </button>
                                         </div>
                                     );
