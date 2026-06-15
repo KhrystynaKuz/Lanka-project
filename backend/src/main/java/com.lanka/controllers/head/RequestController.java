@@ -43,7 +43,9 @@ public class RequestController {
     @GetMapping
     public ResponseEntity<List<Request>> getAll() {
         try {
-            return ResponseEntity.ok(requestDAO.getAllRequests());
+            List<Request> requests = requestDAO.getAllRequests();
+
+            return ResponseEntity.ok(requests);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

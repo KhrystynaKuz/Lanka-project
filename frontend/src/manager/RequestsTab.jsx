@@ -9,6 +9,7 @@ export default function RequestsTab() {
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(false);
+    const [loadingRequests, setLoadingRequests] = useState(true);
 
     // Стейт для кастомного модального вікна видалення
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, requestId: null });
@@ -20,13 +21,21 @@ export default function RequestsTab() {
     const [selectedDepartmentsByRequest, setSelectedDepartmentsByRequest] = useState({}); // Обрані відділи для кожної заявки
 
     const loadCoreData = () => {
+
+        setLoadingRequests(true);
+
         fetch('/api/requests')
             .then(res => {
                 if (!res.ok) throw new Error();
                 return res.json();
             })
             .then(setRequests)
-            .catch(err => console.error("Помилка завантаження історії заявок:", err));
+            .catch(err =>
+                console.error("Помилка завантаження історії заявок:", err)
+            )
+            .finally(() => {
+                setLoadingRequests(false);
+            });
     };
 
     useEffect(() => {
@@ -239,7 +248,13 @@ export default function RequestsTab() {
                                     </div>
 
                                     {isExpanded && (
-                                        <div className="request-body-fields" style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(30, 58, 138, 0.1)' }}>
+                                        <div
+                                            className="request-body-fields"
+                                            style={{
+                                                marginTop: '15px',
+                                                paddingTop: '15px'
+                                            }}
+                                        >
                                             <p style={{ color: '#374151' }}><strong>Назва:</strong> {request.title}</p>
                                             <p style={{ color: '#374151' }}><strong>Опис:</strong> {request.description || "Опис відсутній"}</p>
                                             <p style={{ color: '#374151' }}><strong>Статус:</strong> <span className="status-badge pending request-pending-badge">{request.status}</span></p>
@@ -380,8 +395,33 @@ export default function RequestsTab() {
                         return true;
                     });
 
+                    if (loadingRequests) {
+                        return (
+                            <p
+                                style={{
+                                    textAlign: 'center',
+                                    color: '#1e3a8a',
+                                    padding: '20px',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                Завантаження заявок...
+                            </p>
+                        );
+                    }
+
                     if (filteredRequests.length === 0) {
-                        return <p style={{ textAlign: 'center', color: '#1e3a8a', padding: '20px' }}>Оброблених заявок не знайдено.</p>;
+                        return (
+                            <p
+                                style={{
+                                    textAlign: 'center',
+                                    color: '#1e3a8a',
+                                    padding: '20px'
+                                }}
+                            >
+                                Оброблених заявок не знайдено.
+                            </p>
+                        );
                     }
 
                     return filteredRequests.map((request) => {
@@ -399,8 +439,43 @@ export default function RequestsTab() {
                                 </div>
 
                                 {isExpanded && (
-                                    <div className="request-body-fields" style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(30, 58, 138, 0.1)' }}>
+                                    <div
+                                        className="request-body-fields"
+                                        style={{
+                                            marginTop: '15px',
+                                            paddingTop: '15px'
+                                        }}
+                                    >
                                         <p style={{ color: '#374151' }}><strong>Назва:</strong> {request.title}</p>
+                                        {request.departments?.length > 0 && (
+                                            <p
+                                                style={{
+                                                    color: '#374151',
+                                                    marginTop: '12px',
+                                                    marginBottom: '12px'
+                                                }}
+                                            >
+                                                <strong>🏢 Передано у відділи:</strong>
+
+                                                {request.departments.map((department, index) => (
+                                                    <span
+                                                        key={index}
+                                                        style={{
+                                                            display: 'inline-block',
+                                                            marginLeft: '8px',
+                                                            background: '#2563eb',
+                                                            color: '#fff',
+                                                            padding: '4px 10px',
+                                                            borderRadius: '999px',
+                                                            fontSize: '12px',
+                                                            fontWeight: '600'
+                                                        }}
+                                                    >
+                {department}
+            </span>
+                                                ))}
+                                            </p>
+                                        )}
                                         <p style={{ color: '#374151' }}><strong>Опис:</strong> {request.description || "Опис відсутній"}</p>
                                         <p style={{ color: '#374151' }}><strong>Статус:</strong> <span className={`status-badge ${request.status ? request.status.toLowerCase() : ''}`} style={{ fontWeight: '600' }}>{request.status}</span></p>
                                         {request.priority && <p style={{ color: '#374151' }}><strong>Пріоритет:</strong> {request.priority}</p>}

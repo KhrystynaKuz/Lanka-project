@@ -2,6 +2,7 @@ package com.lanka.models;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.List;
 
 public class Request {
     public enum RequestStatus {
@@ -17,8 +18,10 @@ public class Request {
     private OffsetDateTime created_at;
     private OffsetDateTime updated_at;
     private UUID manager_id;
+    private List<String> departments;
 
-    public Request() {}
+    public Request() {
+    }
 
     public Request(UUID id, UUID customer_id, String title, String description, RequestStatus status, int priority, OffsetDateTime created_at, OffsetDateTime updated_at, UUID manager_id) {
         this.id = id;
@@ -30,6 +33,7 @@ public class Request {
         this.created_at = created_at;
         this.updated_at = updated_at;
         this.manager_id = manager_id;
+        this.departments = departments;
     }
 
     public UUID getId() {
@@ -104,4 +108,7 @@ public class Request {
         this.manager_id = manager_id;
     }
 
+    public List<String> getDepartments() {return departments;}
+
+    public void setDepartments(List<String> departments) {this.departments = departments;}
 }

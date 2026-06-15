@@ -16,7 +16,7 @@ public class RequestDAO {
 
     public void addRequest(Request request) throws SQLException {
         String sql = "INSERT INTO requests (id, customer_id, title, description, status, priority, created_at, updated_at, manager_id) " +
-                "VALUES (?, ?, ?, ?, ?::request_status, ?, ?, ?)";
+                "VALUES (?, ?, ?, ?, ?::request_status, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -42,6 +42,7 @@ public class RequestDAO {
             ps.setInt(6, request.getPriority());
             ps.setObject(7, request.getCreated_at());
             ps.setObject(8, request.getUpdated_at());
+            ps.setObject(9, request.getManager_id());
 
             ps.executeUpdate();
         }
@@ -162,14 +163,19 @@ public class RequestDAO {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                list.add(mapRowToRequest(rs));
+                Request request = mapRowToRequest(rs);
+
+                request.setDepartments(
+                        getDepartmentsByRequestId(request.getId())
+                );
+
+                list.add(request);
             }
         }
         return list;
     }
 
     public Request getRequestById(UUID id) throws SQLException {
-        // ДОДАНО manager_id В SQL
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests WHERE id = ?";
 
@@ -177,17 +183,24 @@ public class RequestDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setObject(1, id);
+
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return mapRowToRequest(rs);
+                    Request request = mapRowToRequest(rs);
+
+                    request.setDepartments(
+                            getDepartmentsByRequestId(request.getId())
+                    );
+
+                    return request;
                 }
             }
         }
+
         return null;
     }
 
     public List<Request> searchByTitle(String titlePart) throws SQLException {
-        // ДОДАНО manager_id В SQL
         String sql = """
         SELECT id, customer_id, title, description,
                status::text, priority, created_at, updated_at, manager_id
@@ -205,7 +218,13 @@ public class RequestDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(mapRowToRequest(rs));
+                    Request request = mapRowToRequest(rs);
+
+                    request.setDepartments(
+                            getDepartmentsByRequestId(request.getId())
+                    );
+
+                    list.add(request);
                 }
             }
         }
@@ -214,21 +233,54 @@ public class RequestDAO {
     }
 
     public List<Request> getRequestsByStatus(RequestStatus status) throws SQLException {
-        // ДОДАНО manager_id В SQL
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests WHERE status::text = ? ORDER BY priority DESC, created_at DESC";
+
         List<Request> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, status.name());
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(mapRowToRequest(rs));
+                    Request request = mapRowToRequest(rs);
+
+                    request.setDepartments(
+                            getDepartmentsByRequestId(request.getId())
+                    );
+
+                    list.add(request);
                 }
             }
         }
+
         return list;
+    }
+
+    public List<String> getDepartmentsByRequestId(UUID requestId) throws SQLException {
+        String sql = """
+        SELECT DISTINCT d.name
+        FROM tasks t
+        JOIN departments d ON d.id = t.department_id
+        WHERE t.request_id = ?
+    """;
+
+        List<String> departments = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setObject(1, requestId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    departments.add(rs.getString("name"));
+                }
+            }
+        }
+
+        return departments;
     }
 }
