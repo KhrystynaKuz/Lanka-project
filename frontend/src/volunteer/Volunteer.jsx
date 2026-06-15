@@ -9,13 +9,11 @@ export default function Volunteer({ onLogout, onBackToHome }) {
     const [activeTab, setActiveTab] = useState('tasks');
     const [showDropdown, setShowDropdown] = useState(false);
 
-    // Стейти для розширеної інформації
     const [showFullProfileModal, setShowFullProfileModal] = useState(false);
     const [fullUserData, setFullUserData] = useState(null);
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Стейт для редагування додаткових полів профілю
     const [showEditProfileModal, setShowEditProfileModal] = useState(false);
     const [editForm, setEditForm] = useState({
         phone_number: '',
@@ -25,7 +23,6 @@ export default function Volunteer({ onLogout, onBackToHome }) {
 
     const [uploadingFile, setUploadingFile] = useState(false);
 
-    // Стейт для тост-сповіщень
     const [toasts, setToasts] = useState([]);
 
     const volunteerId = localStorage.getItem('userId');
@@ -124,10 +121,30 @@ export default function Volunteer({ onLogout, onBackToHome }) {
         if (!file) return;
 
         setUploadingFile(true);
-        setTimeout(() => {
-            showNotification(`📎 Файл "${file.name}" готовий до завантаження. Потрібен ендпоінт для збереження файлів.`, 'info');
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('userId', volunteerId);
+        formData.append('title', file.name);
+
+        try {
+            const res = await fetch(`http://localhost:8080/api/profile/registration/documents/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                showNotification('✅ Документ успішно завантажено', 'success');
+                fetchFullProfile();
+            } else {
+                const errData = await res.json();
+                showNotification(`🚨 Помилка: ${errData.error || 'Не вдалося завантажити файл'}`, 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification('🚨 Сталася помилка при завантаженні файлу', 'error');
+        } finally {
             setUploadingFile(false);
-        }, 1000);
+        }
     };
 
     useEffect(() => {
@@ -249,29 +266,27 @@ export default function Volunteer({ onLogout, onBackToHome }) {
                             <div className="documents-section">
                                 <h4>📁 Мої документи</h4>
 
-                                <div className="file-upload-area">
-                                    <label className="file-upload-label">
-                                        📎 Завантажити файл (фото/PDF)
+                                <div className="file-upload-area" style={{ marginBottom: '15px' }}>
+                                    <label className="file-upload-label" style={{ cursor: 'pointer', padding: '10px', background: '#f0f9ff', border: '1px dashed #bae6fd', borderRadius: '8px', display: 'block' }}>
+                                        📎 Натисніть, щоб обрати файл (JPG, PNG, PDF)
                                         <input type="file" accept="image/*,application/pdf" onChange={handleFileUpload} disabled={uploadingFile} style={{ display: 'none' }} />
                                     </label>
                                     {uploadingFile && <span className="upload-spinner">⏳ Завантаження...</span>}
                                 </div>
 
                                 {documents.length === 0 ? (
-                                    <p className="no-docs">Немає документів</p>
+                                    <p className="no-docs" style={{ color: '#64748b' }}>Немає завантажених документів</p>
                                 ) : (
-                                    <div className="documents-list">
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {documents.map(doc => (
-                                            <div key={doc.id} className="document-card">
-                                                <div className="doc-icon">📄</div>
-                                                <div className="doc-info">
-                                                    <div className="doc-title">{doc.title}</div>
-                                                    {doc.content && <div className="doc-preview">{doc.content.substring(0, 50)}...</div>}
-                                                    {doc.file_url && <div className="doc-file">📎 {doc.file_url}</div>}
-                                                </div>
-                                                <div className="doc-actions">
-                                                    <button onClick={() => deleteDocument(doc.id)} className="doc-delete">🗑️</button>
-                                                </div>
+                                            <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '10px 14px', borderRadius: '8px', alignItems: 'center' }}>
+                                                <a href={doc.file_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none' }}>
+                                                    📄 {doc.title || 'Документ'}
+                                                </a>
+                                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: doc.status === 'APPROVED' ? 'green' : 'orange' }}>
+                                                    {doc.status || 'PENDING'}
+                                                </span>
+                                                <button onClick={() => deleteDocument(doc.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', marginLeft: '10px' }}>🗑️</button>
                                             </div>
                                         ))}
                                     </div>
