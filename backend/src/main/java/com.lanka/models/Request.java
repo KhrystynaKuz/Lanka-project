@@ -6,7 +6,7 @@ import java.util.List;
 
 public class Request {
     public enum RequestStatus {
-        PENDING, APPROVED, REJECTED, IN_PROGRESS, COMPLETED
+        PENDING, APPROVED, REJECTED, IN_PROGRESS, FULFILLED
     }
 
     private UUID id;

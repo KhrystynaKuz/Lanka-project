@@ -89,6 +89,27 @@ public class RequestController {
         }
     }
 
+    @GetMapping("/{requestId}")
+    public ResponseEntity<?> getRequestById(@PathVariable String requestId) {
+        try {
+            UUID uuid = UUID.fromString(requestId);
+            // Assuming your requestDAO has a method like getRequestById()
+            Request request = requestDAO.getRequestById(uuid);
+
+            if (request != null) {
+                return ResponseEntity.ok(request);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Заявку не знайдено.");
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Некоректний формат UUID заявки.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Помилка сервера: " + e.getMessage());
+        }
+    }
+
     public static class RequestDTO {
         private String customerId;
         private String title;

@@ -28,7 +28,6 @@ export default function ArchiveTab() {
 
     const userId = localStorage.getItem('userId');
 
-    // Додаємо ref для запобігання дублюванню тостів
     const hasLoadedRef = useRef(false);
     const toastShownRef = useRef(false);
 
@@ -42,7 +41,6 @@ export default function ArchiveTab() {
     };
 
     useEffect(() => {
-        // Запобігаємо подвійному виконанню в StrictMode
         if (hasLoadedRef.current) return;
         hasLoadedRef.current = true;
 
@@ -53,23 +51,70 @@ export default function ArchiveTab() {
             return;
         }
 
-        setLoading(true);
+        const fetchAllArchiveData = async () => {
+            setLoading(true);
+            try {
+                // 1. Отримуємо "офіційний" архів від бекенду (COMPLETED, CANCELLED)
+                const archiveRes = await fetch(`http://localhost:8080/api/archive/volunteer/${userId}`);
+                const officialArchive = archiveRes.ok ? await archiveRes.json() : [];
 
-        fetch(`http://localhost:8080/api/archive/volunteer/${userId}`)
-            .then(res => {
-                if (!res.ok) throw new Error('Помилка сервера');
-                return res.json();
-            })
-            .then(data => {
-                setArchivedTasks(data);
+                // 2. Отримуємо "активні" завдання
+                const activeRes = await fetch(`http://localhost:8080/api/tasks/volunteer/${userId}`);
+                const activeTasksRaw = activeRes.ok ? await activeRes.json() : [];
+
+                // Відсіюємо завдання, які вже є в офіційному архіві (щоб не робити зайвих запитів)
+                const officialArchiveIds = new Set(officialArchive.map(t => t.id));
+                const activeTasks = activeTasksRaw.filter(t => !officialArchiveIds.has(t.id));
+
+                // 3. Знаходимо унікальні ID заявок серед активних завдань
+                const uniqueRequestIds = [...new Set(activeTasks.map(t => t.request_id))];
+
+                // 4. Отримуємо статуси цих заявок
+                const requestStatuses = {};
+                await Promise.all(
+                    uniqueRequestIds.map(async (reqId) => {
+                        if (!reqId) return;
+                        try {
+                            const reqRes = await fetch(`http://localhost:8080/api/requests/${reqId}`);
+                            if (reqRes.ok) {
+                                const reqData = await reqRes.json();
+                                requestStatuses[reqId] = reqData.status;
+                            }
+                        } catch (e) {
+                            console.error(`Помилка отримання статусу заявки ${reqId}`);
+                        }
+                    })
+                );
+
+                // 5. Відбираємо "авто-архівовані" завдання (ASSIGNED/IN_PROGRESS, але заявка закрита)
+                const autoArchivedTasks = activeTasks
+                    .filter(t => {
+                        const reqStatus = t.request_status || t.requestStatus || requestStatuses[t.request_id];
+                        return reqStatus === 'FULFILLED' || reqStatus === 'REJECTED';
+                    })
+                    .map(t => ({
+                        ...t,
+                        request_status: t.request_status || t.requestStatus || requestStatuses[t.request_id]
+                    }));
+
+                // 6. Об'єднуємо обидва списки та видаляємо можливі дублікати за ID (на всякий випадок)
+                const combinedArchive = [...officialArchive, ...autoArchivedTasks];
+                const uniqueArchiveMap = new Map();
+
+                combinedArchive.forEach(task => {
+                    uniqueArchiveMap.set(task.id, task);
+                });
+
+                const finalArchive = Array.from(uniqueArchiveMap.values());
+
+                setArchivedTasks(finalArchive);
                 setLoading(false);
-                // Показуємо тост тільки один раз
-                if (data.length > 0 && !toastShownRef.current) {
+
+                if (finalArchive.length > 0 && !toastShownRef.current) {
                     toastShownRef.current = true;
-                    addToast(`📦 Завантажено ${data.length} архівних завдань`, "success");
+                    addToast(`📦 Завантажено ${finalArchive.length} архівних завдань`, "success");
                 }
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error(err);
                 setError('Не вдалося завантажити архів завдань.');
                 setLoading(false);
@@ -77,7 +122,10 @@ export default function ArchiveTab() {
                     toastShownRef.current = true;
                     addToast("🚨 Не вдалося завантажити архів завдань.", "error");
                 }
-            });
+            }
+        };
+
+        fetchAllArchiveData();
     }, [userId]);
 
     const fetchReports = async (taskId) => {
@@ -98,6 +146,22 @@ export default function ArchiveTab() {
         setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
     };
 
+    const renderArchiveBadge = (task) => {
+        if (task.status === 'CANCELLED') {
+            return <span style={{ fontSize: '0.75rem', padding: '3px 8px', backgroundColor: '#fee2e2', color: '#ef4444', borderRadius: '12px', fontWeight: 'bold', border: '1px solid #fca5a5' }}>Скасовано ❌</span>;
+        }
+        if (task.status === 'COMPLETED') {
+            return <span style={{ fontSize: '0.75rem', padding: '3px 8px', backgroundColor: '#dcfce7', color: '#22c55e', borderRadius: '12px', fontWeight: 'bold', border: '1px solid #86efac' }}>Виконано ✅</span>;
+        }
+
+        const reqStatus = task.request_status || task.requestStatus;
+        if (reqStatus === 'REJECTED') {
+            return <span style={{ fontSize: '0.75rem', padding: '3px 8px', backgroundColor: '#f1f5f9', color: '#475569', borderRadius: '12px', fontWeight: 'bold', border: '1px solid #cbd5e1' }}>Заявку відхилено 🚫</span>;
+        }
+
+        return <span style={{ fontSize: '0.75rem', padding: '3px 8px', backgroundColor: '#e0e7ff', color: '#4338ca', borderRadius: '12px', fontWeight: 'bold', border: '1px solid #a5b4fc' }}>Заявку закрито 🔒</span>;
+    };
+
     if (loading) return (
         <div className="volunteer-archive-loading">
             Завантаження завдань...
@@ -112,7 +176,6 @@ export default function ArchiveTab() {
 
     return (
         <div className="volunteer-archive-page">
-            {/* Контейнер для тостів */}
             <div className="toast-notifications-container">
                 {toasts.map(toast => (
                     <Toast
@@ -137,82 +200,73 @@ export default function ArchiveTab() {
                 </div>
             ) : (
                 <div className="volunteer-list-container">
-                    {archivedTasks.map(task => (
-                        <div className="volunteer-archive-card" key={task.id} style={{ opacity: task.status === 'CANCELLED' ? 0.8 : 1 }}>
+                    {archivedTasks.map(task => {
+                        const reqStatus = task.request_status || task.requestStatus;
+                        const isDimmed = task.status === 'CANCELLED' || reqStatus === 'REJECTED';
 
-                            <div className="volunteer-archive-header">
+                        return (
+                            <div className="volunteer-archive-card" key={task.id} style={{ opacity: isDimmed ? 0.8 : 1 }}>
+                                <div className="volunteer-archive-header">
+                                    <div className="volunteer-archive-info">
+                                        <div className="volunteer-archive-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            {task.title}
+                                            {renderArchiveBadge(task)}
+                                        </div>
 
-                                <div className="volunteer-archive-info">
-                                    <div className="volunteer-archive-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        {task.title}
-                                        {task.status === 'CANCELLED' ? (
-                                            <span style={{ fontSize: '0.75rem', padding: '3px 8px', backgroundColor: '#fee2e2', color: '#ef4444', borderRadius: '12px', fontWeight: 'bold', border: '1px solid #fca5a5' }}>
-                                                Скасовано ❌
-                                            </span>
+                                        <div className="volunteer-archive-desc">
+                                            <strong>Опис:</strong>{' '}
+                                            {task.description
+                                                ? task.description.substring(0, 60) + '...'
+                                                : 'Опис відсутній'}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        className="volunteer-detail-btn"
+                                        onClick={() => toggleExpand(task.id)}
+                                    >
+                                        {expandedTaskId === task.id ? 'Згорнути ▲' : 'Розгорнути ▾'}
+                                    </button>
+                                </div>
+
+                                {expandedTaskId === task.id && (
+                                    <div className="volunteer-expanded-details">
+                                        <p>
+                                            <strong>Дата завершення/закриття:</strong>{' '}
+                                            {task.completed_at
+                                                ? new Date(task.completed_at).toLocaleDateString('uk-UA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                                : <span style={{ color: '#64748b', fontStyle: 'italic' }}>Закрито разом із заявкою</span>}
+                                        </p>
+
+                                        <p><strong>Завантажені файли:</strong></p>
+
+                                        {isDimmed ? (
+                                            <p className="volunteer-no-files" style={{ color: '#ef4444' }}>Завдання було скасовано або заявку відхилено. Файли відсутні.</p>
+                                        ) : taskReports[task.id] && taskReports[task.id].length > 0 ? (
+                                            <ul className="volunteer-file-list">
+                                                {taskReports[task.id].map(report =>
+                                                    report.attached_files_urls.map((url, i) => (
+                                                        <li key={i}>
+                                                            <a
+                                                                href={url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="volunteer-file-link"
+                                                            >
+                                                                📄 Файл звіту {i + 1}
+                                                            </a>
+                                                        </li>
+                                                    ))
+                                                )}
+                                            </ul>
                                         ) : (
-                                            <span style={{ fontSize: '0.75rem', padding: '3px 8px', backgroundColor: '#dcfce7', color: '#22c55e', borderRadius: '12px', fontWeight: 'bold', border: '1px solid #86efac' }}>
-                                                Виконано ✅
-                                            </span>
+                                            <p className="volunteer-no-files">Файлів немає</p>
                                         )}
                                     </div>
-
-                                    <div className="volunteer-archive-desc">
-                                        <strong>Опис:</strong>{' '}
-                                        {task.description
-                                            ? task.description.substring(0, 60) + '...'
-                                            : 'Опис відсутній'}
-                                    </div>
-                                </div>
-
-                                <button
-                                    className="volunteer-detail-btn"
-                                    onClick={() => toggleExpand(task.id)}
-                                >
-                                    {expandedTaskId === task.id ? 'Згорнути ▲' : 'Розгорнути ▾'}
-                                </button>
-
+                                )}
                             </div>
-
-                            {expandedTaskId === task.id && (
-                                <div className="volunteer-expanded-details">
-
-                                    <p>
-                                        <strong>Дата завершення:</strong>{' '}
-                                        {task.completed_at
-                                            ? new Date(task.completed_at).toLocaleDateString('uk-UA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-                                            : '—'}
-                                    </p>
-
-                                    <p><strong>Завантажені файли:</strong></p>
-
-                                    {task.status === 'CANCELLED' ? (
-                                        <p className="volunteer-no-files" style={{ color: '#ef4444' }}>Завдання було скасовано. Файли відсутні.</p>
-                                    ) : taskReports[task.id] && taskReports[task.id].length > 0 ? (
-                                        <ul className="volunteer-file-list">
-                                            {taskReports[task.id].map(report =>
-                                                report.attached_files_urls.map((url, i) => (
-                                                    <li key={i}>
-                                                        <a
-                                                            href={url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="volunteer-file-link"
-                                                        >
-                                                            📄 Файл звіту {i + 1}
-                                                        </a>
-                                                    </li>
-                                                ))
-                                            )}
-                                        </ul>
-                                    ) : (
-                                        <p className="volunteer-no-files">Файлів немає</p>
-                                    )}
-
-                                </div>
-                            )}
-
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

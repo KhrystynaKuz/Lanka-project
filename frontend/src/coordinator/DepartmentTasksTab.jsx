@@ -79,7 +79,7 @@ export default function DepartmentTasksTab() {
                     setDepartmentVolunteers(await volsRes.json());
                 } else {
                     console.error("Помилка 500: бекенд не зміг обробити запит на отримання волонтерів");
-                    addToast("🚨 Помилка отримання списку волонтерів (Помилка сервера)", "error");
+                    addToast("🚨 Помилка отримання списку волонтерів", "error");
                 }
 
                 const reqsRes = await fetch(`http://localhost:8080/api/departments/coordinator/${userId}/requests`);
@@ -142,7 +142,6 @@ export default function DepartmentTasksTab() {
     const handleDeleteSubTask = async (reqId, taskId, isNew) => {
         const reqTasks = tasksByRequest[reqId] || [];
 
-        // Delete from backend if it isn't temporary
         if (!isNew) {
             try {
                 const res = await fetch(`http://localhost:8080/api/tasks/${taskId}`, { method: 'DELETE' });
@@ -153,7 +152,6 @@ export default function DepartmentTasksTab() {
             }
         }
 
-        // If it was the last task, replace it with a new blank one
         if (reqTasks.length === 1) {
             const blankTask = {
                 id: `temp-${Date.now()}`,
@@ -199,15 +197,8 @@ export default function DepartmentTasksTab() {
 
         const tasksToSave = rawTasks.map(task => {
             const cleanedTask = { ...task };
-
-            if (cleanedTask.isNew) {
-                cleanedTask.id = null;
-            }
-
-            if (cleanedTask.assigned_volunteer_id === '') {
-                cleanedTask.assigned_volunteer_id = null;
-            }
-
+            if (cleanedTask.isNew) cleanedTask.id = null;
+            if (cleanedTask.assigned_volunteer_id === '') cleanedTask.assigned_volunteer_id = null;
             return cleanedTask;
         });
 
@@ -238,7 +229,7 @@ export default function DepartmentTasksTab() {
     };
 
     // Візуальний мапінг статусів завдань
-    const renderStatusBadge = (status) => {
+    const renderTaskStatusBadge = (status) => {
         switch (status) {
             case 'ASSIGNED': return <span style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: '#fef08a', color: '#854d0e', borderRadius: '12px', fontWeight: 'bold' }}>⏳ Призначено</span>;
             case 'IN_PROGRESS': return <span style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: '#bfdbfe', color: '#1e3a8a', borderRadius: '12px', fontWeight: 'bold' }}>⚙️ В процесі</span>;
@@ -246,6 +237,28 @@ export default function DepartmentTasksTab() {
             case 'CANCELLED': return <span style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '12px', fontWeight: 'bold' }}>❌ Скасовано</span>;
             default: return null;
         }
+    };
+
+    // Оновлений, виразний мапінг статусів самої заявки
+    const renderRequestStatusBadge = (status) => {
+        let config = { bg: '#f1f5f9', color: '#475569', icon: '📝', text: status };
+        switch (status) {
+            case 'IN_PROGRESS': config = { bg: '#fef3c7', color: '#b45309', icon: '⚙️', text: 'В ПРОЦЕСІ' }; break;
+            case 'APPROVED': config = { bg: '#e0e7ff', color: '#4338ca', icon: '👍', text: 'ЗАТВЕРДЖЕНО' }; break;
+            case 'REJECTED': config = { bg: '#fee2e2', color: '#b91c1c', icon: '❌', text: 'ВІДХИЛЕНО' }; break;
+            case 'FULFILLED': config = { bg: '#d1fae5', color: '#047857', icon: '✅', text: 'ВИКОНАНО' }; break;
+            default: break;
+        }
+        return (
+            <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '6px 14px', borderRadius: '99px',
+                backgroundColor: config.bg, color: config.color,
+                fontWeight: 'bold', fontSize: '0.85rem', border: `1px solid ${config.color}40`
+            }}>
+                {config.icon} {config.text}
+            </span>
+        );
     };
 
     if (loading) return <div className="coord-tasks-section"><p>Завантаження даних координатора...</p></div>;
@@ -276,7 +289,7 @@ export default function DepartmentTasksTab() {
                     style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
                 >
                     <option value="all">Усі заявки</option>
-                    <option value="PENDING">Очікують (PENDING)</option>
+                    {/* Видалено фільтр PENDING */}
                     <option value="IN_PROGRESS">В процесі (IN_PROGRESS)</option>
                     <option value="APPROVED">Затверджено (APPROVED)</option>
                     <option value="REJECTED">Відхилено (REJECTED)</option>
@@ -296,21 +309,28 @@ export default function DepartmentTasksTab() {
                         const isExpanded = expandedRequests[request.id];
                         const reqTasks = tasksByRequest[request.id] || [];
 
+                        // Перевіряємо, чи заблокована вся заявка
+                        const isRequestLocked = request.status === 'FULFILLED' || request.status === 'REJECTED';
+
                         return (
-                            <div className="coord-main-request-card fade-in" key={request.id} style={{ marginBottom: '20px' }}>
+                            <div className="coord-main-request-card fade-in" key={request.id} style={{
+                                marginBottom: '20px',
+                                borderLeft: `4px solid ${request.status === 'REJECTED' ? '#ef4444' : request.status === 'FULFILLED' ? '#10b981' : '#3b82f6'}`
+                            }}>
                                 <div className="coord-req-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>ЗАЯВКА №{request.id.toString().slice(0, 8).toUpperCase()}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                        <span style={{ fontWeight: 'bold', color: '#1e3a8a' }}>
+                                            ЗАЯВКА №{request.id.toString().slice(0, 8).toUpperCase()}
+                                        </span>
+                                        {renderRequestStatusBadge(request.status)}
+                                    </div>
                                     <button className="coord-btn-details-outline" onClick={() => toggleExpand(request.id)}>
                                         {isExpanded ? 'Згорнути ▲' : 'Управління завданнями ▼'}
                                     </button>
                                 </div>
 
-                                <div className="coord-req-field"><strong>Назва:</strong> {request.title}</div>
+                                <div className="coord-req-field" style={{ marginTop: '10px' }}><strong>Назва:</strong> {request.title}</div>
                                 <div className="coord-req-field"><strong>Опис:</strong> {request.description}</div>
-
-                                <div className="coord-req-field" style={{ marginTop: '10px' }}>
-                                    <strong>Статус заявки:</strong> <span style={{ marginLeft: '8px', fontWeight: 'bold' }}>{request.status}</span>
-                                </div>
 
                                 {isExpanded && (
                                     <>
@@ -318,10 +338,16 @@ export default function DepartmentTasksTab() {
                                             <span>РОЗПОДІЛ НА ЗАВДАННЯ ({reqTasks.length})</span>
                                         </div>
 
+                                        {isRequestLocked && (
+                                            <div style={{ padding: '12px', backgroundColor: '#f8fafc', color: '#64748b', borderRadius: '8px', textAlign: 'center', margin: '15px 0', border: '1px dashed #cbd5e1', fontWeight: '500' }}>
+                                                🔒 Заявка перейшла у фінальний статус ({request.status}). Додавання та редагування завдань повністю заблоковано.
+                                            </div>
+                                        )}
+
                                         <div className="coord-subtasks-list">
                                             {reqTasks.map((task, index) => {
-                                                // Визначаємо, чи можна редагувати завдання
-                                                const isEditable = task.status === 'ASSIGNED' || task.isNew;
+                                                // Завдання можна редагувати, якщо ЗАЯВКА не заблокована І (завдання нове або має статус ASSIGNED)
+                                                const isEditable = !isRequestLocked && (task.status === 'ASSIGNED' || task.isNew);
 
                                                 return (
                                                     <div className="coord-subtask-row" key={task.id} style={{
@@ -335,7 +361,7 @@ export default function DepartmentTasksTab() {
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                                 <span className="coord-subtask-number" style={{ margin: 0 }}>{index + 1}</span>
-                                                                {renderStatusBadge(task.status)}
+                                                                {renderTaskStatusBadge(task.status)}
                                                             </div>
                                                             {!isEditable && <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>🔒 Заблоковано для змін</span>}
                                                         </div>
@@ -400,15 +426,20 @@ export default function DepartmentTasksTab() {
                                             })}
                                         </div>
 
-                                        <div className="coord-add-subtask-center" style={{ marginTop: '15px' }}>
-                                            <button className="coord-circle-add-btn" onClick={() => handleAddSubTask(request.id)} title="Додати нове завдання">+</button>
-                                        </div>
+                                        {/* Приховуємо кнопки додавання та збереження, якщо заявка заблокована */}
+                                        {!isRequestLocked && (
+                                            <>
+                                                <div className="coord-add-subtask-center" style={{ marginTop: '15px' }}>
+                                                    <button className="coord-circle-add-btn" onClick={() => handleAddSubTask(request.id)} title="Додати нове завдання">+</button>
+                                                </div>
 
-                                        <div className="coord-action-right" style={{ marginTop: '20px' }}>
-                                            <button className="coord-btn-save" onClick={() => handleSaveTasksTrigger(request.id)}>
-                                                ЗБЕРЕГТИ ЗМІНИ
-                                            </button>
-                                        </div>
+                                                <div className="coord-action-right" style={{ marginTop: '20px' }}>
+                                                    <button className="coord-btn-save" onClick={() => handleSaveTasksTrigger(request.id)}>
+                                                        ЗБЕРЕГТИ ЗМІНИ
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </div>

@@ -78,9 +78,44 @@ export default function TasksTab() {
 
     const fetchTasks = async () => {
         try {
+            // 1. Отримуємо всі завдання волонтера
             const res = await fetch(`http://localhost:8080/api/tasks/volunteer/${userId}`);
             const data = await res.json();
-            setTasks(data.filter(t => t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS'));
+
+            // 2. Відфільтровуємо лише ті завдання, які самі по собі ще не закриті
+            const activeTasks = data.filter(t => t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS');
+
+            // 3. Збираємо унікальні ID заявок для цих завдань
+            const uniqueRequestIds = [...new Set(activeTasks.map(t => t.request_id))];
+
+            // 4. Завантажуємо реальні статуси цих заявок
+            const requestStatuses = {};
+            await Promise.all(
+                uniqueRequestIds.map(async (reqId) => {
+                    if (!reqId) return;
+                    try {
+                        const reqRes = await fetch(`http://localhost:8080/api/requests/${reqId}`);
+                        if (reqRes.ok) {
+                            const reqData = await reqRes.json();
+                            requestStatuses[reqId] = reqData.status;
+                        }
+                    } catch (e) {
+                        console.error(`Не вдалося перевірити статус заявки ${reqId}`);
+                    }
+                })
+            );
+
+            // 5. Остаточна фільтрація: відкидаємо завдання, чиї заявки закриті
+            const finalFilteredTasks = activeTasks.filter(t => {
+                // Беремо статус із DTO (якщо бекенд його колись додасть) АБО з нашого окремого запиту
+                const reqStatus = t.request_status || t.requestStatus || requestStatuses[t.request_id];
+
+                const isRequestClosed = reqStatus === 'FULFILLED' || reqStatus === 'REJECTED';
+
+                return !isRequestClosed; // Залишаємо лише ті, де заявка не закрита
+            });
+
+            setTasks(finalFilteredTasks);
             setLoading(false);
         } catch (err) {
             console.error("Помилка завантаження:", err);
@@ -88,7 +123,6 @@ export default function TasksTab() {
             setLoading(false);
         }
     };
-
     const handleFileChange = (taskId, file) => {
         setFiles(prev => ({ ...prev, [taskId]: file }));
         addToast(`📎 Файл "${file.name}" додано до завдання`, "info");
@@ -262,8 +296,10 @@ export default function TasksTab() {
 
                         <div className="volunteer-task-header">
                             <h3>ЗАВДАННЯ №{task.id.toString().slice(-4)}</h3>
-                            <span className="volunteer-task-link">
+                            <span className="volunteer-task-link" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 ЗАЯВКА: {task.requestTitle || `№${task.request_id?.toString().slice(-4)}`}
+                                {/* Візуальний індикатор активної заявки */}
+                                <span style={{ padding: '2px 8px', background: '#dbeafe', color: '#1e40af', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 'bold' }}>Активна</span>
                             </span>
                         </div>
 
