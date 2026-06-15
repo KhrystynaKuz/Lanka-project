@@ -1,6 +1,7 @@
 package com.lanka.controllers;
 
 import com.lanka.dao.DocumentDAO;
+import com.lanka.dao.UserDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,9 @@ public class EditDocumentsController {
     @Autowired
     private DocumentDAO documentDAO;
 
+    @Autowired
+    private UserDAO userDAO;
+
     @GetMapping("/rejection-info/{userId}")
     public ResponseEntity<?> getRejectionInfo(@PathVariable UUID userId) throws SQLException {
         System.out.println("Запит до БД для користувача: " + userId);
@@ -30,12 +34,17 @@ public class EditDocumentsController {
 
     @PostMapping("/upload-retry")
     public ResponseEntity<?> retryUpload(@RequestBody Map<String, Object> payload) {
-        UUID userId = UUID.fromString(payload.get("userId").toString());
         try {
-            documentDAO.resetDocumentsToPending(userId);
-            return ResponseEntity.ok("Документи успішно відправлені!");
-        } catch (SQLException e) {
-            return ResponseEntity.internalServerError().body("Помилка БД");
+            UUID userId = UUID.fromString(payload.get("userId").toString());
+
+            documentDAO.deleteRejectedDocuments(userId);
+
+            userDAO.updateVerificationStatus(userId, null);
+
+            return ResponseEntity.ok("Нові документи надіслано на повторну перевірку!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Помилка: " + e.getMessage());
         }
     }
 }

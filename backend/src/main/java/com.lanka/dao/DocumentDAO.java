@@ -125,4 +125,13 @@ public class DocumentDAO {
         }
         return false;
     }
+
+    public void deleteRejectedDocuments(UUID userId) throws SQLException {
+        String sql = "DELETE FROM user_documents WHERE user_id = ? AND status = 'REJECTED'";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, userId);
+            ps.executeUpdate();
+        }
+    }
 }

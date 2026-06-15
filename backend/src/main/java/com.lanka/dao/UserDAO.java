@@ -65,12 +65,19 @@ public class UserDAO {
         return list;
     }
 
-    public void updateVerificationStatus(UUID id, Boolean isVerified) throws SQLException {
+    public void updateVerificationStatus(UUID userId, Boolean isVerified) throws SQLException {
         String sql = "UPDATE users SET is_verified = ? WHERE id = ?";
+
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setBoolean(1, isVerified);
-            ps.setObject(2, id);
+
+            if (isVerified == null) {
+                ps.setNull(1, java.sql.Types.BOOLEAN);
+            } else {
+                ps.setBoolean(1, isVerified);
+            }
+
+            ps.setObject(2, userId);
             ps.executeUpdate();
         }
     }
