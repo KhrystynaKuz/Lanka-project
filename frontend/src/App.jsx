@@ -87,7 +87,8 @@ function App() {
             {currentPage === 'edit_documents' && (
                 <EditDocuments
                     userId={localStorage.getItem('userId')}
-                    onBackToDashboard={() => navigateTo('customer_dashboard')}
+                    token={localStorage.getItem('token')}
+                    onBackToDashboard={() => navigateTo('home')}
                 />
             )}
             
