@@ -12,6 +12,10 @@ import com.lanka.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.lanka.dao.ReportDAO;
+import com.lanka.models.ReportDTO;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -32,6 +36,7 @@ public class ManagementController {
     private final UserDAO userDAO = new UserDAO();
     private final UserDepartmentDAO userDepartmentDAO = new UserDepartmentDAO();
     private final DocumentDAO documentDAO = new DocumentDAO();
+    private final ReportDAO reportDAO = new ReportDAO();
 
     @GetMapping("/departments")
     public ResponseEntity<?> getDepartments() {
@@ -364,6 +369,19 @@ public class ManagementController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+    @GetMapping("/reports")
+    public ResponseEntity<?> getGeneratedReports(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) UUID departmentId) {
+        try {
+            List<ReportDTO> reports = reportDAO.getGeneratedReportsData(startDate, endDate, departmentId);
+            return ResponseEntity.ok(reports);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Помилка генерації звіту: " + e.getMessage());
         }
     }
 
