@@ -55,7 +55,7 @@ public class UserDAO {
 
     public List<User> getUnverifiedUsers() throws SQLException {
         String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at, is_verified " +
-                "FROM users WHERE is_verified = false ORDER BY created_at ASC";
+                "FROM users WHERE is_verified IS NULL ORDER BY created_at ASC";
         List<User> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -65,7 +65,7 @@ public class UserDAO {
         return list;
     }
 
-    public void updateVerificationStatus(UUID id, boolean isVerified) throws SQLException {
+    public void updateVerificationStatus(UUID id, Boolean isVerified) throws SQLException {
         String sql = "UPDATE users SET is_verified = ? WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -200,7 +200,8 @@ public class UserDAO {
         user.setLast_name(rs.getString("last_name"));
         user.setPatronymic(rs.getString("patronymic"));
 
-        user.setIs_verified(rs.getBoolean("is_verified"));
+        Boolean isVerified = rs.getObject("is_verified", Boolean.class);
+        user.setIs_verified(isVerified);
 
         Date dobDate = rs.getDate("dob");
         if (dobDate != null) user.setDob(dobDate.toLocalDate());

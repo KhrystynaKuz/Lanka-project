@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.HashMap;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -16,7 +17,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000"})
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final UserDAO userDAO;
@@ -70,6 +71,28 @@ public class AuthController {
         String userId = payload.get("userId");
         if (userId != null) {
             session.setAttribute("userId", UUID.fromString(userId));
+        }
+    }
+
+    @GetMapping("/status/{userId}")
+    public ResponseEntity<?> getUserStatus(@PathVariable UUID userId) {
+        try {
+            Optional<User> userOpt = userDAO.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Користувача не знайдено"));
+            }
+
+            User user = userOpt.get();
+
+            HashMap<String, Object> response = new HashMap<>();
+            response.put("is_verified", user.isIs_verified());
+
+            return ResponseEntity.ok(response);
+
+        } catch (SQLException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Помилка бази даних"));
         }
     }
 }

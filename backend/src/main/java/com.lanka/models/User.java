@@ -18,7 +18,7 @@ public class User {
     private UserRole role;
     private String phone_number;
     private OffsetDateTime created_at;
-    private boolean is_verified;
+    private Boolean is_verified;
 
     public User() {}
 
@@ -107,11 +107,11 @@ public class User {
         this.created_at = created_at;
     }
 
-    public boolean isIs_verified() {
+    public Boolean isIs_verified() {
         return is_verified;
     }
 
-    public void setIs_verified(boolean is_verified) {
+    public void setIs_verified(Boolean is_verified) {
         this.is_verified = is_verified;
     }
 }

@@ -6,6 +6,7 @@ import Header from './manager/Manager.jsx';
 import Customer from './customer/Customer.jsx';
 import Volunteer from "./volunteer/Volunteer.jsx";
 import Coordinator from './coordinator/Coordinator.jsx';
+import EditDocuments from './auth/EditDocuments.jsx';
 
 function App() {
 
@@ -21,31 +22,47 @@ function App() {
         return localStorage.getItem('userRole') || null;
     });
 
-    const handleLoginSuccess = (userRole, userId) => {
+    const handleLoginSuccess = async (userRole, userId) => {
+        const API_BASE_URL = 'http://localhost:8080';
+        const isProtectedRole = (userRole === 'CUSTOMER' || userRole === 'VOLUNTEER');
+
+        if (isProtectedRole) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/status/${userId}`);
+                const data = await response.json();
+
+                console.log("Отриманий JSON з сервера:", data);
+
+                if (data.is_verified === true) {
+                    const dashboard = userRole === 'CUSTOMER' ? 'customer_dashboard' : 'volunteer_dashboard';
+                    proceedLogin(userRole, userId, dashboard);
+                }
+                else if (data.is_verified === false) {
+                    proceedLogin(userRole, userId, 'edit_documents');
+                }
+                else {
+                    alert("Ваш акаунт ще не верифіковано адміністратором. Будь ласка, зачекайте.");
+                    return;
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Помилка зв'язку з сервером.");
+                return;
+            }
+        } else {
+            const dashboard = userRole === 'COORDINATOR' ? 'coordinator_dashboard' : 'head_dashboard';
+            proceedLogin(userRole, userId, dashboard);
+        }
+    };
+
+    const proceedLogin = (role, id, page) => {
         setIsLoggedIn(true);
-        setRole(userRole);
-
-        let targetPage = 'home';
-
-        if (userRole === 'CUSTOMER') {
-            targetPage = 'customer_dashboard';
-        } else if (userRole === 'VOLUNTEER') {
-            targetPage = 'volunteer_dashboard';
-        } else if (userRole === 'COORDINATOR') {
-            targetPage = 'coordinator_dashboard';
-        } else if (userRole === 'HEAD') {
-            targetPage = 'head_dashboard';
-        }
-
-        setCurrentPage(targetPage);
-
+        setRole(role);
+        setCurrentPage(page);
         localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userRole', userRole);
-        localStorage.setItem('currentPage', targetPage);
-
-        if (userId) {
-            localStorage.setItem('userId', userId);
-        }
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('userId', id);
+        localStorage.setItem('currentPage', page);
     };
 
     const handleLogOut = () => {
@@ -67,6 +84,13 @@ function App() {
 
     return (
         <>
+            {currentPage === 'edit_documents' && (
+                <EditDocuments
+                    userId={localStorage.getItem('userId')}
+                    onBackToDashboard={() => navigateTo('customer_dashboard')}
+                />
+            )}
+            
             {currentPage === 'login' && (
                 <Login
                     onLoginSuccess={handleLoginSuccess}
