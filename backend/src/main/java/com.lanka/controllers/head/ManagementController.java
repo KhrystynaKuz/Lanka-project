@@ -4,12 +4,18 @@ import com.lanka.dao.DepartmentDAO;
 import com.lanka.dao.DocumentDAO;
 import com.lanka.dao.UserDAO;
 import com.lanka.dao.UserDepartmentDAO;
+import com.lanka.database.DatabaseConfig;
 import com.lanka.models.Department;
 import com.lanka.models.User;
 import com.lanka.models.UserDepartment;
+import com.lanka.service.EmailService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,13 +25,14 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "http://localhost:5173", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class ManagementController {
 
+    @Autowired
+    private EmailService emailService;
+
     private final DepartmentDAO departmentDAO = new DepartmentDAO();
     private final UserDAO userDAO = new UserDAO();
     private final UserDepartmentDAO userDepartmentDAO = new UserDepartmentDAO();
     private final DocumentDAO documentDAO = new DocumentDAO();
 
-
-    // Отримати всі відділи
     @GetMapping("/departments")
     public ResponseEntity<?> getDepartments() {
         try {
@@ -35,7 +42,6 @@ public class ManagementController {
         }
     }
 
-    // Створити новий відділ
     @PostMapping("/departments/add")
     public ResponseEntity<?> addDepartment(@RequestBody Department dept) {
         try {
@@ -128,7 +134,6 @@ public class ManagementController {
         }
     }
 
-    // Видалення відділу
     @DeleteMapping("/departments/{id}")
     public ResponseEntity<?> deleteDepartment(@PathVariable UUID id) {
         try {
@@ -145,7 +150,7 @@ public class ManagementController {
             List<User> allVolunteers = userDAO.getVolunteersAndCoordinators();
 
             List<User> verifiedVolunteers = allVolunteers.stream()
-                    .filter(User::isIs_verified)
+                    .filter(user -> Boolean.TRUE.equals(user.isIs_verified()))
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(verifiedVolunteers);
@@ -154,7 +159,6 @@ public class ManagementController {
         }
     }
 
-    // Видалення волонтера
     @DeleteMapping("/volunteers/{id}")
     public ResponseEntity<?> deleteVolunteer(@PathVariable UUID id) {
         try {
@@ -165,7 +169,6 @@ public class ManagementController {
         }
     }
 
-    // Оновлення волонтера
     @PostMapping("/volunteers/update")
     public ResponseEntity<?> updateVolunteer(@RequestBody User user) {
         try {
@@ -229,7 +232,7 @@ public class ManagementController {
             List<User> allCustomers = userDAO.getCustomers();
 
             List<User> verifiedCustomers = allCustomers.stream()
-                    .filter(User::isIs_verified)
+                    .filter(user -> Boolean.TRUE.equals(user.isIs_verified()))
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(verifiedCustomers);
@@ -253,6 +256,114 @@ public class ManagementController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Помилка: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/volunteers/pending")
+    public ResponseEntity<?> getPendingUsers() {
+        try {
+            List<User> pendingUsers = userDAO.getUnverifiedUsers();
+
+            List<Map<String, Object>> result = pendingUsers.stream().map(user -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("user", user);
+
+                if (User.UserRole.VOLUNTEER.equals(user.getRole())) {
+                    String sql = "SELECT department_id FROM user_details WHERE id = ?";
+                    try (Connection conn = DatabaseConfig.getConnection();
+                         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                        ps.setObject(1, user.getId());
+                        try (ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) {
+                                map.put("department_id", (UUID) rs.getObject("department_id"));
+                            } else {
+                                map.put("department_id", null);
+                            }
+                        }
+                    } catch (Exception e) {
+                        map.put("department_id", null);
+                    }
+                }
+                return map;
+            }).collect(Collectors.toList());
+
+            return ResponseEntity.ok(result);
+        } catch (SQLException e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/documents/{userId}")
+    public ResponseEntity<?> getDocuments(@PathVariable UUID userId) {
+        try {
+            return ResponseEntity.ok(documentDAO.getUserDocuments(userId));
+        } catch (SQLException e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/documents/status")
+    public ResponseEntity<?> updateDocStatus(@RequestBody Map<String, String> payload) {
+        try {
+            UUID docId = UUID.fromString(payload.get("docId"));
+            String status = payload.get("status");
+            String reason = payload.get("reason");
+
+            documentDAO.updateDocumentStatus(docId, status, reason);
+
+            if ("APPROVED".equals(status)) {
+                UUID userId = documentDAO.getUserIdByDocId(docId);
+                boolean allApproved = documentDAO.areAllDocumentsApproved(userId);
+
+                if (allApproved) {
+                    userDAO.updateVerificationStatus(userId, true);
+
+                    User user = userDAO.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("Користувача не знайдено"));
+
+                    String targetEmail = getTargetEmail(user.getEmail());
+
+                    emailService.sendWelcomeEmail(targetEmail);
+                }
+            }
+
+            return ResponseEntity.ok("Статус оновлено");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    private String getTargetEmail(String originalEmail) {
+        if (originalEmail != null && originalEmail.endsWith("@lanka.com")) {
+            return "christinakuz14@gmail.com";
+        }
+        return originalEmail;
+    }
+
+    @PostMapping("/documents/reject")
+    public ResponseEntity<?> rejectDocument(@RequestBody Map<String, String> payload) {
+        try {
+            System.out.println("Отримано запит на відхилення: " + payload);
+            UUID docId = UUID.fromString(payload.get("docId"));
+            String reason = payload.get("reason");
+            UUID userId = UUID.fromString(payload.get("userId"));
+
+            User user = userDAO.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Користувача не знайдено"));
+
+            String targetEmail = getTargetEmail(user.getEmail());
+            emailService.sendRejectionEmail(targetEmail, reason);
+
+            documentDAO.updateDocumentStatus(docId, "REJECTED", reason);
+
+            userDAO.updateVerificationStatus(userId, false);
+
+            return ResponseEntity.ok("Повідомлення відправлено на: " + targetEmail + ", статус користувача оновлено.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 }

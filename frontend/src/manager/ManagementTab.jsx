@@ -2,11 +2,18 @@ import React, { useState, useEffect } from 'react';
 import './Manager.css';
 
 export default function ManagementTab({ showNotification }) {
+    const API_BASE_URL = 'http://localhost:8080';
+
+    const [verificationList, setVerificationList] = useState([]);
+    const [userDocs, setUserDocs] = useState({});
+
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectReason, setRejectReason] = useState("");
+    const [activeDocId, setActiveDocId] = useState(null);
+    const [activeUserId, setActiveUserId] = useState(null);
 
     const [customerSearch, setCustomerSearch] = useState('');
     const [expandedUser, setExpandedUser] = useState(null);
-    const [showRejectModal, setShowRejectModal] = useState(false);
-    const [rejectReason, setRejectReason] = useState('');
 
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -37,6 +44,21 @@ export default function ManagementTab({ showNotification }) {
         icon: '⚠️',
         onConfirm: null
     });
+
+    const fetchPendingUsers = async () => {
+        try {
+            const response = await fetch('http://localhost:8080/api/management/volunteers/pending');
+            if (!response.ok) throw new Error("Помилка завантаження черги");
+            const data = await response.json();
+            setVerificationList(data);
+        } catch (err) {
+            console.error("Помилка завантаження черги верифікації:", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchPendingUsers();
+    }, []);
 
     const closeConfirmModal = () => {
         setConfirmModal({
@@ -112,24 +134,111 @@ export default function ManagementTab({ showNotification }) {
         fetchVolunteers();
     }, [selectedDept]);
 
-    const verificationList = [
-        { id: 'USR-7721', name: 'Олександр Ковальчук', info: 'Заявка на волонтерство (водій)', docs: ['Паспорт.jpg', 'Посвідчення.pdf'] },
-        { id: 'ORG-0042', name: 'БФ "Світло Надії"', info: 'Організація (Замовник)', docs: ['Витяг_ЄДР.pdf', 'Статут.pdf'] }
-    ];
-
-    const toggleDocs = (id) => {
-        setExpandedUser(expandedUser === id ? null : id);
+    const toggleDocs = async (userId) => {
+        if (expandedUser === userId) {
+            setExpandedUser(null);
+        } else {
+            if (!userDocs[userId]) {
+                try {
+                    const response = await fetch(`http://localhost:8080/api/management/documents/${userId}`);
+                    const data = await response.json();
+                    setUserDocs(prev => ({ ...prev, [userId]: data }));
+                } catch (err) {
+                    console.error("Помилка завантаження документів", err);
+                }
+            }
+            setExpandedUser(userId);
+        }
     };
 
-    const handleReject = () => {
-        setRejectReason('');
+    const getFileNameFromUrl = (url) => {
+        if (!url) return "Без назви";
+        const decodedUrl = decodeURIComponent(url);
+        const fileName = decodedUrl.substring(decodedUrl.lastIndexOf('/') + 1);
+        return fileName;
+    };
+
+    const handleApprove = async (docId) => {
+        const success = await sendDocStatus(docId, 'APPROVED', null);
+        if (success) {
+            setUserDocs(prev => {
+                const newDocs = { ...prev };
+                for (const userId in newDocs) {
+                    newDocs[userId] = newDocs[userId].map(doc =>
+                        doc.id === docId ? { ...doc, status: 'APPROVED' } : doc
+                    );
+                }
+                return newDocs;
+            });
+        }
+    };
+
+    const handleReject = (docId) => {
+        setActiveDocId(docId);
         setShowRejectModal(true);
     };
 
-    const handleSendRejectReason = () => {
-        if (!rejectReason.trim()) return;
-        setShowRejectModal(false);
-        if (showNotification) showNotification("🛑 Відмову надіслано успішно", "info");
+    const handleRejectClick = (docId) => {
+        setActiveDocId(docId);
+        setShowRejectModal(true);
+    };
+
+    const handleSendRejectReason = async () => {
+        if (!activeDocId || !activeUserId) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/management/documents/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    docId: activeDocId,
+                    reason: rejectReason,
+                    userId: activeUserId
+                })
+            });
+
+            if (response.ok) {
+                setUserDocs(prev => {
+                    const newDocs = { ...prev };
+                    if (newDocs[activeUserId]) {
+                        newDocs[activeUserId] = newDocs[activeUserId].map(doc =>
+                            doc.id === activeDocId ? { ...doc, status: 'REJECTED' } : doc
+                        );
+                    }
+                    return newDocs;
+                });
+
+                setShowRejectModal(false);
+                setRejectReason("");
+
+                await fetchPendingUsers();
+
+                if (showNotification) showNotification("🛑 Документ відхилено", "info");
+            } else {
+                throw new Error("Не вдалося відхилити документ");
+            }
+        } catch (err) {
+            console.error("Помилка:", err);
+            if (showNotification) showNotification("🚨 Помилка при відхиленні", "error");
+        }
+    };
+
+    const sendDocStatus = async (docId, status, reason) => {
+        try {
+            const response = await fetch('http://localhost:8080/api/management/documents/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ docId, status, reason })
+            });
+            if (response.ok) {
+                showNotification("Статус оновлено!", "success");
+                return true;
+            }
+            return false;
+        } catch (err) {
+            showNotification("Помилка оновлення", "error");
+            return false;
+        }
     };
 
     const handleAddDepartment = async () => {
@@ -398,53 +507,135 @@ export default function ManagementTab({ showNotification }) {
                     <span>Код та користувач</span>
                     <span>ПІБ / Додаткова інформація</span>
                     <span>Документи</span>
-                    <span style={{ textAlign: 'right' }}>Дії</span>
+                    <span style={{ textAlign: 'right' }}>Дата створення</span>
                 </div>
 
                 <div className="verification-list-container">
-                    {verificationList.map(user => (
-                        <div key={user.id} className="verif-row-wrapper" style={{ borderBottom: '1px solid rgba(30, 58, 138, 0.1)', marginBottom: '10px' }}>
-                            <div className="verification-row" style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 2fr 1fr 1fr',
-                                padding: '15px 20px',
-                                alignItems: 'center',
-                                background: 'rgba(255, 255, 255, 0.3)',
-                                borderRadius: '10px'
-                            }}>
-                                <span style={{ fontWeight: '600', color: '#4b5563' }}>{user.id}</span>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <span style={{ fontWeight: '700', color: '#1e3a8a' }}>{user.name}</span>
-                                    <span style={{ fontSize: '12px', color: '#6b7280' }}>{user.info}</span>
-                                </div>
+                    {verificationList.length > 0 ? (
+                        verificationList.map(item => {
+                            const { user, department_id } = item;
+                            const deptName = departments.find(d => d.id === department_id)?.name;
 
-                                <div onClick={() => toggleDocs(user.id)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                    <div style={{ border: '1px solid #1e3a8a', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', fontWeight: '600', color: '#1e3a8a' }}>
-                                        {user.docs.length} Документи ⌄
-                                    </div>
-                                </div>
+                            return (
+                                <div key={user.id} className="verif-row-wrapper"
+                                     style={{ borderBottom: '1px solid rgba(30, 58, 138, 0.1)', marginBottom: '10px' }}>
 
-                                <div className="action-buttons-side" style={{ justifyContent: 'flex-end' }}>
-                                    <button className="btn-action-circle approve" title="Підтвердити">✓</button>
-                                    <button className="btn-action-circle reject" onClick={handleReject} title="Відхилити">✕</button>
-                                </div>
-                            </div>
+                                    <div className="verification-row" style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr 2fr 1fr 1fr',
+                                        padding: '15px 20px',
+                                        alignItems: 'center',
+                                        background: 'rgba(255, 255, 255, 0.3)',
+                                        borderRadius: '10px'
+                                    }}>
+                                        <span style={{ fontWeight: '600', color: '#4b5563' }}>
+                                            {user.id.substring(0, 8)}...
+                                        </span>
 
-                            {expandedUser === user.id && (
-                                <div className="docs-dropdown fade-in" style={{ padding: '10px 40px', background: 'rgba(30, 58, 138, 0.05)', borderRadius: '0 0 10px 10px' }}>
-                                    {user.docs.map((doc, index) => (
-                                        <div key={index} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: '13px', color: '#2563eb', alignItems: 'center' }}>
-                                            <span>📄 {doc}</span>
-                                            <div style={{ display: 'flex', gap: '10px' }}>
-                                                <button style={{ background: 'none', border: 'none', color: '#16a34a', cursor: 'pointer', fontWeight: 'bold' }} title="Затвердити цей документ">Затвердити</button>
-                                                <button style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }} onClick={handleReject} title="Відхилити цей документ">Відхилити</button>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontWeight: '700', color: '#1e3a8a' }}>
+                                                {user.last_name} {user.first_name}
+                                            </span>
+
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '12px', color: '#6b7280' }}>{user.role}</span>
+
+                                                {user.role === 'VOLUNTEER' && deptName && (
+                                                    <span style={{
+                                                        fontSize: '10px',
+                                                        color: '#1d4ed8',
+                                                        background: '#eff6ff',
+                                                        padding: '1px 6px',
+                                                        borderRadius: '4px',
+                                                        fontWeight: '600',
+                                                        border: '1px solid #dbeafe'
+                                                    }}>Бажаний відділ: {deptName}</span>
+                                                )}
                                             </div>
                                         </div>
-                                    ))}
+
+                                        {/* Важливо: передаємо user.id */}
+                                        <div onClick={() => toggleDocs(user.id)} style={{
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px'
+                                        }}>
+                                            <div style={{
+                                                border: '1px solid #1e3a8a',
+                                                borderRadius: '4px',
+                                                padding: '2px 8px',
+                                                fontSize: '12px',
+                                                fontWeight: '600',
+                                                color: '#1e3a8a'
+                                            }}>
+                                                Переглянути документи {expandedUser === user.id ? '˄' : '⌄'}
+                                            </div>
+                                        </div>
+
+                                        <div style={{ textAlign: 'right', fontSize: '12px', color: '#6b7280', fontWeight: '500' }}>
+                                            {user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
+                                        </div>
+                                    </div>
+
+                                    {expandedUser === user.id && (
+                                        <div className="docs-dropdown fade-in" style={{
+                                            padding: '10px 40px',
+                                            background: 'rgba(30, 58, 138, 0.05)',
+                                            borderRadius: '0 0 10px 10px'
+                                        }}>
+                                            {userDocs[user.id] && userDocs[user.id].length > 0 ? (
+                                                userDocs[user.id].map((doc, index) => (
+                                                    <div key={index} style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        padding: '5px 0',
+                                                        fontSize: '13px',
+                                                        alignItems: 'center'
+                                                    }}>
+                                                        <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                                                           style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: '500' }}>
+                                                            📄 {getFileNameFromUrl(doc.file_url)}
+                                                        </a>
+
+                                                        {doc.status === 'PENDING' || !doc.status ? (
+                                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                                <button
+                                                                    style={{ background: 'none', border: 'none', color: '#16a34a', cursor: 'pointer', fontWeight: 'bold' }}
+                                                                    onClick={() => handleApprove(doc.id)}
+                                                                >Затвердити</button>
+
+                                                                <button
+                                                                    style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }}
+                                                                    onClick={() => {
+                                                                        setActiveDocId(doc.id);
+                                                                        setActiveUserId(user.id);
+                                                                        setShowRejectModal(true);
+                                                                    }}
+                                                                >Відхилити</button>
+                                                            </div>
+                                                        ) : (
+                                                            <span style={{ fontWeight: '600', color: doc.status === 'APPROVED' ? '#16a34a' : '#ef4444' }}>
+                                                                {doc.status === 'APPROVED' ? '✅ Затверджено' : '❌ Відхилено'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p style={{ fontSize: '12px', color: '#9ca3af' }}>
+                                                    {userDocs[user.id] ? 'Документів немає' : 'Завантаження документів...'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            );
+                        })
+                    ) : (
+                        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+                            <p>На даний момент нових користувачів на верифікацію немає.</p>
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
 
@@ -715,9 +906,14 @@ export default function ManagementTab({ showNotification }) {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {viewingVol.documents && viewingVol.documents.length > 0 ? (
                                             viewingVol.documents.map(doc => (
-                                                <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '12px' }}>
-                                                    <span>📄 {doc.type}</span>
-                                                    <span style={{ fontWeight: '700', color: doc.status === 'APPROVED' ? 'green' : 'orange' }}>{doc.status}</span>
+                                                <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '12px', alignItems: 'center' }}>
+                                                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                                                       style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: '500', fontSize: '14px' }}>
+                                                        📄 {getFileNameFromUrl(doc.file_url)}
+                                                    </a>
+                                                    <span style={{ fontWeight: '700', fontSize: '12px', color: doc.status === 'APPROVED' ? 'green' : (doc.status === 'REJECTED' ? 'red' : 'orange') }}>
+                                                        {doc.status}
+                                                    </span>
                                                 </div>
                                             ))
                                         ) : (
@@ -835,9 +1031,14 @@ export default function ManagementTab({ showNotification }) {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {viewingCustomer.documents && viewingCustomer.documents.length > 0 ? (
                                         viewingCustomer.documents.map(doc => (
-                                            <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '12px' }}>
-                                                <span>📄 {doc.type}</span>
-                                                <span style={{ fontWeight: '700', color: doc.status === 'APPROVED' ? 'green' : 'orange' }}>{doc.status}</span>
+                                            <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '12px', alignItems: 'center' }}>
+                                                <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                                                   style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: '500', fontSize: '14px' }}>
+                                                    📄 {getFileNameFromUrl(doc.file_url)}
+                                                </a>
+                                                <span style={{ fontWeight: '700', fontSize: '12px', color: doc.status === 'APPROVED' ? 'green' : (doc.status === 'REJECTED' ? 'red' : 'orange') }}>
+                                                    {doc.status}
+                                                </span>
                                             </div>
                                         ))
                                     ) : (
