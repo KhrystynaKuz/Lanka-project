@@ -5,12 +5,28 @@ export default function InventoryTab({ showNotification }) {
     const [editingItem, setEditingItem] = useState(null);
     const [isNew, setIsNew] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [loading, setLoading] = useState(true);
+
+    // Стан для історії
+    const [showHistory, setShowHistory] = useState(false);
+    const [itemHistory, setItemHistory] = useState([]);
+
+    const loadInventory = async () => {
+        try {
+            const res = await fetch('/api/head/warehouse');
+            if (res.ok) {
+                const data = await res.json();
+                setWarehouseItems(Array.isArray(data) ? data : []);
+            } else {
+                throw new Error('Помилка сервера');
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification("🚨 Помилка завантаження складу", "error");
+        }
+    };
 
     useEffect(() => {
-        fetch('/api/head/warehouse')
-            .then(res => res.json())
-            .then(data => { setWarehouseItems(data); setLoading(false); });
+        loadInventory();
     }, []);
 
     const saveItem = async () => {
@@ -18,12 +34,12 @@ export default function InventoryTab({ showNotification }) {
             showNotification("⚠️ Будь ласка, введіть назву ресурсу.", "warning");
             return;
         }
-        if (editingItem.quantity === undefined || editingItem.quantity === null || editingItem.quantity < 0) {
-            showNotification("⚠️ Будь ласка, введіть коректну кількість.", "warning");
-            return;
-        }
         if (!editingItem.unit_of_measure || editingItem.unit_of_measure.trim() === '') {
             showNotification("⚠️ Будь ласка, введіть одиниці виміру.", "warning");
+            return;
+        }
+        if (editingItem.unit_price === undefined || editingItem.unit_price === null || editingItem.unit_price < 0) {
+            showNotification("⚠️ Введіть коректну ціну (не менше 0).", "warning");
             return;
         }
 
@@ -32,12 +48,15 @@ export default function InventoryTab({ showNotification }) {
             const response = await fetch(url, {
                 method: isNew ? 'POST' : 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(editingItem)
+                body: JSON.stringify({
+                    ...editingItem,
+                    quantity: isNew ? 0 : editingItem.quantity
+                })
             });
 
             if (response.ok) {
-                setWarehouseItems(isNew ? [...warehouseItems, editingItem] : warehouseItems.map(i => i.id === editingItem.id ? editingItem : i));
-                showNotification(isNew ? "📦 Новий ресурс успішно додано!" : "💾 Зміни успішно збережено!", "success");
+                await loadInventory();
+                showNotification(isNew ? "📦 Новий тип ресурсу успішно додано!" : "💾 Зміни успішно збережено!", "success");
                 setEditingItem(null);
             } else {
                 showNotification("🚨 Помилка при збереженні на сервері.", "error");
@@ -45,6 +64,39 @@ export default function InventoryTab({ showNotification }) {
         } catch (err) {
             console.error("Помилка:", err);
             showNotification("🚨 Критична помилка під час збереження.", "error");
+        }
+    };
+
+    const fetchHistory = async (itemId) => {
+        try {
+            const res = await fetch(`/api/warehouse/history/${itemId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setItemHistory(Array.isArray(data) ? data : []);
+                setShowHistory(true);
+            } else {
+                showNotification("🚨 Не вдалося завантажити історію", "error");
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification("🚨 Помилка при завантаженні історії", "error");
+        }
+    };
+
+    const handleDelete = async () => {
+        if(window.confirm('Видалити цей тип товару? Увага: це також видалить усю історію транзакцій для нього!')) {
+            try {
+                const response = await fetch(`/api/head/warehouse/${editingItem.id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    await loadInventory();
+                    showNotification("🗑️ Товар успішно видалено", "success");
+                    setEditingItem(null);
+                } else {
+                    showNotification("🚨 Не вдалося видалити товар", "error");
+                }
+            } catch (err) {
+                showNotification("🚨 Помилка при видаленні", "error");
+            }
         }
     };
 
@@ -66,9 +118,10 @@ export default function InventoryTab({ showNotification }) {
             <div style={{ marginBottom: '20px' }}>
                 <button className="coord-btn-add-item" onClick={() => {
                     setIsNew(true);
-                    setEditingItem({ id: crypto.randomUUID(), item_name: '', quantity: 0, unit_of_measure: '' });
+                    setShowHistory(false);
+                    setEditingItem({ id: crypto.randomUUID(), item_name: '', quantity: 0, unit_of_measure: '', unit_price: 0 });
                 }}>
-                    + ДОДАТИ ТОВАР
+                    + ДОДАТИ НОВИЙ ТИП ТОВАРУ
                 </button>
             </div>
 
@@ -77,15 +130,21 @@ export default function InventoryTab({ showNotification }) {
                     <thead>
                     <tr>
                         <th>НАЗВА</th>
+                        <th>ЦІНА (за од.)</th>
                         <th>К-ТЬ В НАЯВНОСТІ</th>
                     </tr>
                     </thead>
                     <tbody>
                     {warehouseItems
-                        .filter(item => item.item_name.toLowerCase().startsWith(searchQuery.toLowerCase()))
+                        .filter(item => item.item_name?.toLowerCase().includes(searchQuery.toLowerCase().trim()))
                         .map(item => (
-                            <tr key={item.id} onClick={() => { setIsNew(false); setEditingItem(item); }} className="coord-table-row-clickable">
+                            <tr key={item.id} onClick={() => {
+                                setIsNew(false);
+                                setShowHistory(false);
+                                setEditingItem(item);
+                            }} className="coord-table-row-clickable">
                                 <td>{item.item_name}</td>
+                                <td>{item.unit_price} ₴</td>
                                 <td>{item.quantity} {item.unit_of_measure}</td>
                             </tr>
                         ))}
@@ -95,68 +154,151 @@ export default function InventoryTab({ showNotification }) {
 
             {/* Модальне вікно */}
             {editingItem && (
-                <div className="modal-overlay">
-                    <div className="coord-editing-panel glass-panel" style={{ width: '400px', padding: '25px', color: '#1e3a8a' }}>
+                <div className="modal-overlay" style={{ zIndex: 1000 }}>
+                    <div className="coord-editing-panel glass-panel" style={{ width: showHistory ? '700px' : '400px', padding: '25px', color: '#1e3a8a', maxHeight: '80vh', overflowY: 'auto' }}>
 
-                        <h3 style={{ marginBottom: '20px', color: '#1e3a8a', textAlign: 'center' }}>
-                            {isNew ? 'ДОДАВАННЯ ТОВАРУ' : 'РЕДАГУВАННЯ ТОВАРУ'}
-                        </h3>
+                        {!showHistory ? (
+                            <>
+                                <h3 style={{ marginBottom: '20px', color: '#1e3a8a', textAlign: 'center' }}>
+                                    {isNew ? 'ДОДАВАННЯ ТОВАРУ' : 'РЕДАГУВАННЯ ТОВАРУ'}
+                                </h3>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                            <input
-                                className="coord-search-input"
-                                style={{ color: '#1e3a8a', border: '1px solid #1e3a8a' }}
-                                value={editingItem.item_name}
-                                onChange={e => setEditingItem({...editingItem, item_name: e.target.value})}
-                                placeholder="Назва ресурсу"
-                                required
-                            />
-                            <input
-                                type="number"
-                                className="coord-search-input"
-                                style={{ color: '#1e3a8a', border: '1px solid #1e3a8a' }}
-                                value={editingItem.quantity}
-                                onChange={e => {
-                                    const val = parseInt(e.target.value);
-                                    setEditingItem({...editingItem, quantity: val < 0 ? 0 : val || 0});
-                                }}
-                                placeholder="Кількість"
-                                min="0"
-                                required
-                            />
-                            <input
-                                className="coord-search-input"
-                                style={{ color: '#1e3a8a', border: '1px solid #1e3a8a' }}
-                                value={editingItem.unit_of_measure}
-                                onChange={e => setEditingItem({...editingItem, unit_of_measure: e.target.value})}
-                                placeholder="Од. виміру (напр. шт)"
-                                required
-                            />
-                        </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Назва ресурсу:</label>
+                                    <input
+                                        className="coord-search-input"
+                                        style={{ color: '#1e3a8a', border: '1px solid #1e3a8a' }}
+                                        value={editingItem.item_name}
+                                        onChange={e => setEditingItem({...editingItem, item_name: e.target.value})}
+                                        placeholder="Назва ресурсу"
+                                    />
 
-                        <div style={{ display: 'flex', gap: '10px', marginTop: '25px' }}>
-                            <button className="coord-btn-save-item" onClick={saveItem}>
-                                {isNew ? 'ДОДАТИ' : 'ЗБЕРЕГТИ'}
-                            </button>
+                                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Одиниці виміру:</label>
+                                    <input
+                                        className="coord-search-input"
+                                        style={{ color: '#1e3a8a', border: '1px solid #1e3a8a' }}
+                                        value={editingItem.unit_of_measure}
+                                        onChange={e => setEditingItem({...editingItem, unit_of_measure: e.target.value})}
+                                        placeholder="Од. виміру (напр. шт)"
+                                    />
 
-                            {!isNew && (
+                                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Оціночна вартість (₴):</label>
+                                    <input
+                                        type="number"
+                                        className="coord-search-input"
+                                        style={{ color: '#1e3a8a', border: '1px solid #1e3a8a' }}
+                                        value={editingItem.unit_price}
+                                        onChange={e => setEditingItem({...editingItem, unit_price: parseFloat(e.target.value) || 0})}
+                                        placeholder="Ціна за одиницю"
+                                        min="0"
+                                    />
+
+                                    {!isNew && (
+                                        <div style={{ padding: '10px', background: '#f1f5f9', borderRadius: '5px', fontSize: '0.9rem' }}>
+                                            <strong>Поточний залишок:</strong> {editingItem.quantity} {editingItem.unit_of_measure}
+                                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+                                                (Кількість змінюється координаторами через надходження та списання)
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '25px' }}>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <button className="coord-btn-save-item" style={{ flex: 1 }} onClick={saveItem}>
+                                            {isNew ? 'ДОДАТИ' : 'ЗБЕРЕГТИ'}
+                                        </button>
+                                        <button className="coord-btn-cancel-item" style={{ flex: 1 }} onClick={() => setEditingItem(null)}>
+                                            СКАСУВАТИ
+                                        </button>
+                                    </div>
+
+                                    {!isNew && (
+                                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                            <button
+                                                style={{ flex: 1, backgroundColor: '#3b82f6', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                                                onClick={() => fetchHistory(editingItem.id)}
+                                            >
+                                                📜 ІСТОРІЯ ТРАНЗАКЦІЙ
+                                            </button>
+                                            <button
+                                                style={{ flex: 1, backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                                                onClick={handleDelete}
+                                            >
+                                                🗑️ ВИДАЛИТИ
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <h3 style={{ marginBottom: '20px', color: '#1e3a8a', textAlign: 'center' }}>
+                                    ІСТОРІЯ РУХУ: {editingItem.item_name}
+                                </h3>
+
+                                <div style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '20px' }}>
+                                    {itemHistory.length === 0 ? (
+                                        <p style={{ textAlign: 'center' }}>Історія транзакцій порожня.</p>
+                                    ) : (
+                                        <table style={{ width: '100%', fontSize: '0.85rem', textAlign: 'left', borderCollapse: 'collapse' }}>
+                                            <thead>
+                                            <tr style={{ borderBottom: '2px solid #cbd5e1' }}>
+                                                <th style={{ padding: '8px' }}>Точний час</th>
+                                                <th style={{ padding: '8px' }}>Тип</th>
+                                                <th style={{ padding: '8px' }}>К-ть</th>
+                                                <th style={{ padding: '8px' }}>Логістика</th>
+                                                <th style={{ padding: '8px' }}>Користувач</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {itemHistory.map(txn => (
+                                                <tr key={txn.id} style={{borderBottom: '1px solid #e2e8f0'}}>
+                                                    <td style={{padding: '8px', whiteSpace: 'nowrap'}}>
+                                                        {txn.transaction_date ? new Date(txn.transaction_date).toLocaleString('uk-UA', {
+                                                            day: '2-digit', month: '2-digit', year: 'numeric',
+                                                            hour: '2-digit', minute: '2-digit', second: '2-digit'
+                                                        }) : '—'}
+                                                    </td>
+                                                    <td style={{padding: '8px'}}>
+                                                        {txn.type === 'ADDITION' ? (
+                                                            <span style={{ color: '#16a34a', fontWeight: 'bold' }}>🟢 Надх.</span>
+                                                        ) : (
+                                                            <span style={{ color: '#dc2626', fontWeight: 'bold' }}>🔴 Спис.</span>
+                                                        )}
+                                                    </td>
+                                                    <td style={{padding: '8px', fontWeight: 'bold'}}>
+                                                        {txn.quantity_changed > 0 ? `+${txn.quantity_changed}` : txn.quantity_changed}
+                                                    </td>
+                                                    <td style={{padding: '8px'}}>
+                                                        {txn.transportation_cost ? `${txn.transportation_cost} ₴` : '-'}
+                                                    </td>
+                                                    <td style={{padding: '8px'}}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                            <span style={{fontWeight: 'bold', color: '#1e3a8a', fontSize: '0.85rem'}}>
+                                                                {txn.user_full_name || 'Невідомий'}
+                                                            </span>
+                                                            <span style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: '#64748b' }}>
+                                                                {txn.user_id}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+
                                 <button
-                                    onClick={async () => {
-                                        if(window.confirm('Видалити цей товар зі складу?')) {
-                                            await fetch(`/api/head/warehouse/${editingItem.id}`, { method: 'DELETE' });
-                                            setWarehouseItems(warehouseItems.filter(i => i.id !== editingItem.id));
-                                            showNotification("🗑️ Товар успішно видалено зі складу", "success");
-                                            setEditingItem(null);
-                                        }
-                                    }}
-                                    style={{ backgroundColor: '#ff4d4d', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}
+                                    className="coord-btn-cancel-item"
+                                    style={{width: '100%'}}
+                                    onClick={() => setShowHistory(false)}
                                 >
-                                    ВИДАЛИТИ
+                                    НАЗАД ДО РЕДАГУВАННЯ
                                 </button>
-                            )}
-
-                            <button className="coord-btn-cancel-item" onClick={() => setEditingItem(null)}>СКАСУВАТИ</button>
-                        </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

@@ -14,46 +14,22 @@ import java.util.UUID;
 public class InventoryDAO {
 
     public void addInventory(Inventory item) throws SQLException {
-        String sql = "INSERT INTO inventory (id, item_name, quantity, unit_of_measure, last_updated_by, updated_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO inventory (id, item_name, quantity, unit_of_measure, unit_price, last_updated_by, updated_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            if (item.getId() == null) {
-                item.setId(UUID.randomUUID());
-            }
-            if (item.getUpdated_at() == null) {
-                item.setUpdated_at(OffsetDateTime.now());
-            }
+            if (item.getId() == null) item.setId(UUID.randomUUID());
+            if (item.getUpdated_at() == null) item.setUpdated_at(OffsetDateTime.now());
 
             ps.setObject(1, item.getId());
             ps.setString(2, item.getItem_name());
             ps.setInt(3, item.getQuantity());
             ps.setString(4, item.getUnit_of_measure());
-            ps.setObject(5, item.getLast_updated_by());
-            ps.setObject(6, item.getUpdated_at());
-
-            ps.executeUpdate();
-        }
-    }
-
-    public void updateInventory(Inventory item) throws SQLException {
-        String sql = "UPDATE inventory SET item_name = ?, quantity = ?, unit_of_measure = ?, last_updated_by = ?, updated_at = ? " +
-                "WHERE id = ?";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, item.getItem_name());
-            ps.setInt(2, item.getQuantity());
-            ps.setString(3, item.getUnit_of_measure());
-            ps.setObject(4, item.getLast_updated_by());
-
-            item.setUpdated_at(OffsetDateTime.now());
-            ps.setObject(5, item.getUpdated_at());
-
-            ps.setObject(6, item.getId());
+            ps.setBigDecimal(5, item.getUnit_price());
+            ps.setObject(6, item.getLast_updated_by());
+            ps.setObject(7, item.getUpdated_at());
 
             ps.executeUpdate();
         }
@@ -75,25 +51,42 @@ public class InventoryDAO {
     }
 
     public void deleteInventory(UUID id) throws SQLException {
-        String sql = "DELETE FROM inventory WHERE id = ?";
+        String deleteTransactionsSql = "DELETE FROM inventory_transactions WHERE inventory_id = ?";
+        String deleteInventorySql = "DELETE FROM inventory WHERE id = ?";
 
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        // We use a manual transaction to ensure both deletes succeed, or neither do.
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            conn.setAutoCommit(false);
 
-            ps.setObject(1, id);
-            ps.executeUpdate();
+            try (PreparedStatement ps1 = conn.prepareStatement(deleteTransactionsSql);
+                 PreparedStatement ps2 = conn.prepareStatement(deleteInventorySql)) {
+
+                // 1. Erase the history first
+                ps1.setObject(1, id);
+                ps1.executeUpdate();
+
+                // 2. Erase the item
+                ps2.setObject(1, id);
+                ps2.executeUpdate();
+
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         }
     }
 
     public List<Inventory> getAllInventory() throws SQLException {
-        String sql = "SELECT id, item_name, quantity, unit_of_measure, last_updated_by, updated_at " +
+        String sql = "SELECT id, item_name, quantity, unit_of_measure, unit_price, last_updated_by, updated_at " +
                 "FROM inventory ORDER BY item_name ASC";
         List<Inventory> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-
             while (rs.next()) {
                 list.add(mapRowToInventory(rs));
             }
@@ -102,57 +95,17 @@ public class InventoryDAO {
     }
 
     public Inventory getInventoryById(UUID id) throws SQLException {
-        String sql = "SELECT id, item_name, quantity, unit_of_measure, last_updated_by, updated_at " +
+        String sql = "SELECT id, item_name, quantity, unit_of_measure, unit_price, last_updated_by, updated_at " +
                 "FROM inventory WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setObject(1, id);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapRowToInventory(rs);
-                }
+                if (rs.next()) return mapRowToInventory(rs);
             }
         }
         return null;
-    }
-
-    public Inventory getInventoryByName(String itemName) throws SQLException {
-        String sql = "SELECT id, item_name, quantity, unit_of_measure, last_updated_by, updated_at " +
-                "FROM inventory WHERE item_name = ?";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, itemName);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapRowToInventory(rs);
-                }
-            }
-        }
-        return null;
-    }
-
-    public List<Inventory> getInventoryByNameStart(String namePattern) throws SQLException {
-        String sql = "SELECT id, item_name, quantity, unit_of_measure, last_updated_by, updated_at " +
-                "FROM inventory WHERE LOWER(item_name) LIKE LOWER(?) ORDER BY item_name ASC";
-
-        List<Inventory> list = new ArrayList<>();
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, namePattern + "%");
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRowToInventory(rs));
-                }
-            }
-        }
-        return list;
     }
 
     private Inventory mapRowToInventory(ResultSet rs) throws SQLException {
@@ -161,8 +114,32 @@ public class InventoryDAO {
         item.setItem_name(rs.getString("item_name"));
         item.setQuantity(rs.getInt("quantity"));
         item.setUnit_of_measure(rs.getString("unit_of_measure"));
+        item.setUnit_price(rs.getBigDecimal("unit_price"));
         item.setLast_updated_by(rs.getObject("last_updated_by", UUID.class));
         item.setUpdated_at(rs.getObject("updated_at", OffsetDateTime.class));
         return item;
+    }
+
+    public void updateInventory(Inventory item) throws SQLException {
+        // Note: 'quantity' is intentionally excluded from this UPDATE statement.
+        // Quantities should only be changed via transactions and updateInventoryQuantity().
+        String sql = "UPDATE inventory SET item_name = ?, unit_of_measure = ?, unit_price = ?, last_updated_by = ?, updated_at = ? " +
+                "WHERE id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, item.getItem_name());
+            ps.setString(2, item.getUnit_of_measure());
+            ps.setBigDecimal(3, item.getUnit_price());
+            ps.setObject(4, item.getLast_updated_by());
+
+            item.setUpdated_at(OffsetDateTime.now());
+            ps.setObject(5, item.getUpdated_at());
+
+            ps.setObject(6, item.getId());
+
+            ps.executeUpdate();
+        }
     }
 }

@@ -25,29 +25,61 @@ public class InventoryController {
     private final RequestDAO requestDAO = new RequestDAO();
 
     @GetMapping
-    public List<Inventory> getAll() throws SQLException { return inventoryDAO.getAllInventory(); }
+    public List<Inventory> getAll() throws SQLException {
+        return inventoryDAO.getAllInventory();
+    }
 
     @PostMapping
-    public void add(@RequestBody Inventory item) throws SQLException { inventoryDAO.addInventory(item); }
-
-    @PutMapping("/{id}")
-    public void update(@PathVariable UUID id, @RequestBody Inventory item) throws SQLException {
-        item.setId(id);
-        inventoryDAO.updateInventory(item);
+    public void add(@RequestBody Inventory item, HttpSession session) throws SQLException {
+        UUID userId = (UUID) session.getAttribute("userId");
+        item.setLast_updated_by(userId);
+        inventoryDAO.addInventory(item);
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable UUID id) throws SQLException { inventoryDAO.deleteInventory(id); }
+    public void delete(@PathVariable UUID id) throws SQLException {
+        inventoryDAO.deleteInventory(id);
+    }
 
-    @PostMapping("/book/{id}")
-    public void bookItem(@PathVariable UUID id, @RequestBody InventoryTransaction trans) throws SQLException {
+    // NEW: Handle adding stock to an existing item
+    @PostMapping("/transaction/{id}")
+    public void addStock(@PathVariable UUID id, @RequestBody InventoryTransaction trans, HttpSession session) throws SQLException {
+        UUID userId = (UUID) session.getAttribute("userId");
         Inventory item = inventoryDAO.getInventoryById(id);
-        if (item != null && item.getQuantity() >= Math.abs(trans.getQuantity_changed())) {
-            int newQty = item.getQuantity() - Math.abs(trans.getQuantity_changed());
-            inventoryDAO.updateInventoryQuantity(id, newQty, trans.getUser_id());
+
+        if (item != null) {
+            int newQty = item.getQuantity() + trans.getQuantity_changed();
+            inventoryDAO.updateInventoryQuantity(id, newQty, userId);
+
             trans.setInventory_id(id);
+            trans.setUser_id(userId);
+            trans.setType("ADDITION");
             transDAO.addTransaction(trans);
         }
+    }
+
+    // UPDATED: Handle deducting stock for a request
+    @PostMapping("/book/{id}")
+    public void bookItem(@PathVariable UUID id, @RequestBody InventoryTransaction trans, HttpSession session) throws SQLException {
+        UUID userId = (UUID) session.getAttribute("userId");
+        Inventory item = inventoryDAO.getInventoryById(id);
+
+        // trans.getQuantity_changed() is sent as a negative number from React
+        if (item != null && item.getQuantity() >= Math.abs(trans.getQuantity_changed())) {
+            int newQty = item.getQuantity() + trans.getQuantity_changed();
+            inventoryDAO.updateInventoryQuantity(id, newQty, userId);
+
+            trans.setInventory_id(id);
+            trans.setUser_id(userId);
+            trans.setType("DEDUCTION"); // Make sure this matches your DB enum for deductions
+            transDAO.addTransaction(trans);
+        }
+    }
+
+    // NEW: Fetch history for a specific item
+    @GetMapping("/history/{id}")
+    public List<InventoryTransaction> getHistory(@PathVariable UUID id) throws SQLException {
+        return transDAO.getTransactionsByInventoryId(id);
     }
 
     @GetMapping("/requests/mine")
