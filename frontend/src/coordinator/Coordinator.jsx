@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import './Coordinator.css';
+import '../volunteer/Volunteer.css';
 
 import DepartmentTasksTab from './DepartmentTasksTab';
+import TasksTab from '../volunteer/TasksTab.jsx';
+import ArchiveTab from '../volunteer/ArchiveTab.jsx';
 import ChatsTab from '../components/chat/ChatsTab';
 import InventoryTab from './InventoryTab';
+import BadgesTab from '../volunteer/BadgesTab.jsx';
 
 export default function Coordinator({ onLogout, onBackToHome }) {
     const [activeTab, setActiveTab] = useState('department_tasks');
     const [showDropdown, setShowDropdown] = useState(false);
 
-    // Стейти для розширеної інформації
     const [showFullProfileModal, setShowFullProfileModal] = useState(false);
     const [fullUserData, setFullUserData] = useState(null);
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Стейт для редагування додаткових полів профілю
     const [showEditProfileModal, setShowEditProfileModal] = useState(false);
     const [editForm, setEditForm] = useState({
         phone_number: '',
@@ -25,7 +27,6 @@ export default function Coordinator({ onLogout, onBackToHome }) {
 
     const [uploadingFile, setUploadingFile] = useState(false);
 
-    // Стейт для тост-сповіщень
     const [toasts, setToasts] = useState([]);
 
     const userId = localStorage.getItem('userId');
@@ -173,8 +174,11 @@ export default function Coordinator({ onLogout, onBackToHome }) {
 
                     <nav className="coord-nav-menu">
                         <button className={`coord-nav-btn ${activeTab === 'department_tasks' ? 'active' : ''}`} onClick={() => setActiveTab('department_tasks')}>Завдання відділу</button>
+                        <button className={`coord-nav-btn ${activeTab === 'tasks' ? 'active' : ''}`} onClick={() => setActiveTab('tasks')}>Мої завдання</button>
+                        <button className={`coord-nav-btn ${activeTab === 'archive' ? 'active' : ''}`} onClick={() => setActiveTab('archive')}>Архів</button>
                         <button className={`coord-nav-btn ${activeTab === 'chats' ? 'active' : ''}`} onClick={() => setActiveTab('chats')}>Чати</button>
                         <button className={`coord-nav-btn ${activeTab === 'warehouse' ? 'active' : ''}`} onClick={() => setActiveTab('warehouse')}>Склад</button>
+                        <button className={`coord-nav-btn ${activeTab === 'badges' ? 'active' : ''}`} onClick={() => setActiveTab('badges')}>Відзнаки</button>
                     </nav>
 
                     <div className="coord-profile-zone">
@@ -202,8 +206,11 @@ export default function Coordinator({ onLogout, onBackToHome }) {
 
             <main className="coord-glass-content fade-in">
                 {activeTab === 'department_tasks' && <DepartmentTasksTab />}
+                {activeTab === 'tasks' && <TasksTab userId={userId} />}
+                {activeTab === 'archive' && <ArchiveTab userId={userId} />}
                 {activeTab === 'chats' && <ChatsTab />}
                 {activeTab === 'warehouse' && <InventoryTab />}
+                {activeTab === 'badges' && <BadgesTab userId={userId} />}
             </main>
 
             {/* МОДАЛЬНЕ ВІКНО РОЗШИРЕНОЇ ІНФОРМАЦІЇ */}
