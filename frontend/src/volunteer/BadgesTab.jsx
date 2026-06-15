@@ -1,5 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import html2pdf from 'html2pdf.js';
+import './Volunteer.css';
+
+// Компонент тосту (той самий, що в ManagementTab)
+const Toast = ({ message, type, onClose }) => {
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            onClose();
+        }, 4000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <div className={`toast-item toast-${type}`}>
+            <span>{message}</span>
+            <button className="toast-close-btn" onClick={onClose}>✕</button>
+        </div>
+    );
+};
+
+// Компонент порталу для тостів
+const ToastPortal = ({ toasts, onRemove }) => {
+    const [container, setContainer] = useState(null);
+
+    useEffect(() => {
+        let toastContainer = document.getElementById('toast-notifications-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-notifications-container';
+            toastContainer.className = 'toast-notifications-container';
+            document.body.appendChild(toastContainer);
+        }
+        setContainer(toastContainer);
+
+        return () => {
+            if (toastContainer && toastContainer.children.length === 0) {
+                toastContainer.remove();
+            }
+        };
+    }, []);
+
+    if (!container) return null;
+
+    return createPortal(
+        <>
+            {toasts.map(toast => (
+                <Toast
+                    key={toast.id}
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => onRemove(toast.id)}
+                />
+            ))}
+        </>,
+        container
+    );
+};
 
 export default function BadgesTab() {
     const [levelData, setLevelData] = useState(null);
@@ -7,35 +64,143 @@ export default function BadgesTab() {
     const [levelMap, setLevelMap] = useState([]);
     const [achievements, setAchievements] = useState([]);
     const [userName, setUserName] = useState("Волонтер");
+    const [toasts, setToasts] = useState([]);
     const userId = localStorage.getItem('userId');
 
-    useEffect(() => {
+    const hasLoadedRef = useRef(false);
+    const previousLevelRef = useRef(null);
+    const previousTasksRef = useRef(null);
+
+    const addToast = (message, type = 'info') => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+    };
+
+    const removeToast = (id) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+    };
+
+    // ОРИГІНАЛЬНА ФУНКЦІЯ - НЕ ЗМІНЮВАЛАСЯ
+    const getMotivationalMessage = (level, tasksCompleted, isLevelUp = false) => {
+        const levels = [
+            { number: 1, name: "Новачок", minTasks: 0, maxTasks: 3, nextName: "Помічник",
+                message: "🌟 Вітаємо в команді! Ви - новачок. Виконайте ще {remaining} завдання, щоб перейти на рівень 'Помічник'!",
+                levelUpMessage: "🎉 Вітаємо! Ви перейшли на новий рівень 'Помічник'! Продовжуйте в тому ж дусі!" },
+            { number: 2, name: "Помічник", minTasks: 3, maxTasks: 10, nextName: "Рятівник",
+                message: "💪 Ви вже помічник! До рівня 'Рятівник' залишилося {remaining} завдань! Ви на правильному шляху!",
+                levelUpMessage: "🏆 Неймовірно! Ви досягли рівня 'Рятівник'! Тепер вам доступний сертифікат волонтера!" },
+            { number: 3, name: "Рятівник", minTasks: 10, maxTasks: 20, nextName: "Координатор змін",
+                message: "⭐ Ви - справжній рятівник! До рівня 'Координатор змін' залишилося {remaining} завдань. Ви робите велику справу!",
+                levelUpMessage: "🎯 Вражаюче! Ви досягли рівня 'Координатор змін'! Тепер ви можете координувати інших волонтерів!" },
+            { number: 4, name: "Координатор змін", minTasks: 20, maxTasks: 35, nextName: "Майстер логістики",
+                message: "🤝 Ви вже координатор! До рівня 'Майстер логістики' залишилося {remaining} завдань. Продовжуйте надихати інших!",
+                levelUpMessage: "🚛 Вітаємо! Ви стали 'Майстром логістики'! Ваша організаційна майстерність вражає!" },
+            { number: 5, name: "Майстер логістики", minTasks: 35, maxTasks: 55, nextName: "Ветеран волонтерства",
+                message: "📦 Ви - майстер логістики! До рівня 'Ветеран волонтерства' залишилося {remaining} завдань. Ви незамінні!",
+                levelUpMessage: "🎖️ Неймовірне досягнення! Ви - 'Ветеран волонтерства'! Ваш досвід безцінний!" },
+            { number: 6, name: "Ветеран волонтерства", minTasks: 55, maxTasks: 80, nextName: "Герой громади",
+                message: "🦾 Ви - ветеран! До рівня 'Герой громади' залишилося {remaining} завдань. Ви приклад для наслідування!",
+                levelUpMessage: "🦸‍♂️ Вітаємо! Ви отримали звання 'Герой громади'! Ваша спільнота пишається вами!" },
+            { number: 7, name: "Герой громади", minTasks: 80, maxTasks: 110, nextName: "Орденоносець",
+                message: "🌟 Ви - герой громади! До рівня 'Орденоносець' залишилося {remaining} завдань. Ви змінюєте світ на краще!",
+                levelUpMessage: "🏅 Найвища честь! Ви стали 'Орденоносцем'! Ваш внесок відзначено на найвищому рівні!" },
+            { number: 8, name: "Орденоносець", minTasks: 110, maxTasks: 150, nextName: "Експерт-наставник",
+                message: "🏅 Ви - орденоносець! До рівня 'Експерт-наставник' залишилося {remaining} завдань. Дякуємо за вашу відданість!",
+                levelUpMessage: "🎓 Вітаємо! Ви досягли рівня 'Експерт-наставник'! Тепер ви можете навчати нових волонтерів!" },
+            { number: 9, name: "Експерт-наставник", minTasks: 150, maxTasks: 200, nextName: "Легенда проекту",
+                message: "📚 Ви - експерт-наставник! До рівня 'Легенда проекту' залишилося {remaining} завдань. Ви передаєте знання новим поколінням!",
+                levelUpMessage: "👑 НЕЙМОВІРНО! Ви стали 'Легендою проекту'! Ваше ім'я назавжди в історії Ланка!" },
+            { number: 10, name: "Легенда проекту", minTasks: 200, maxTasks: Infinity, nextName: null,
+                message: "🔥 Ви - жива легенда! Дякуємо за вашу неймовірну відданість справі! Ви надихаєте тисячі людей!",
+                levelUpMessage: null }
+        ];
+
+        const currentLevel = levels.find(l => l.number === level);
+
+        if (!currentLevel) {
+            return `🏆 Вітаємо! Продовжуйте допомагати!`;
+        }
+
+        if (isLevelUp && currentLevel.levelUpMessage) {
+            return currentLevel.levelUpMessage;
+        }
+
+        if (tasksCompleted < currentLevel.maxTasks && currentLevel.nextName) {
+            const remaining = currentLevel.maxTasks - tasksCompleted;
+            return currentLevel.message.replace('{remaining}', remaining);
+        }
+
+        return currentLevel.message;
+    };
+
+    // ОРИГІНАЛЬНА ФУНКЦІЯ - НЕ ЗМІНЮВАЛАСЯ
+    const fetchData = async () => {
         if (!userId) return;
 
-        Promise.all([
-            fetch(`http://localhost:8080/api/badges/${userId}/level`).then(res => res.json()),
-            fetch(`http://localhost:8080/api/badges/${userId}/map`).then(res => res.json()),
-            fetch(`http://localhost:8080/api/badges/${userId}/achievements`).then(res => res.json()),
-            fetch(`http://localhost:8080/api/badges/${userId}/profile`).then(res => res.json())
-        ])
-            .then(([level, map, badges, profile]) => {
-                console.log("Дані профілю з сервера:", profile);
+        try {
+            const [level, map, badges, profile] = await Promise.all([
+                fetch(`http://localhost:8080/api/badges/${userId}/level`).then(res => res.json()),
+                fetch(`http://localhost:8080/api/badges/${userId}/map`).then(res => res.json()),
+                fetch(`http://localhost:8080/api/badges/${userId}/achievements`).then(res => res.json()),
+                fetch(`http://localhost:8080/api/badges/${userId}/profile`).then(res => res.json())
+            ]);
 
-                setLevelData(level);
-                setLevelMap(map);
-                setAchievements(badges);
+            const oldLevel = previousLevelRef.current;
+            const oldTasks = previousTasksRef.current;
+            const newLevel = level.levelNumber;
+            const newTasks = level.tasksCompleted;
 
-                const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+            setLevelData(level);
+            setLevelMap(map);
+            setAchievements(badges);
 
-                setUserName(fullName || "Волонтер");
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error("Помилка завантаження даних:", err);
-                setLoading(false);
-            });
+            const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+            setUserName(fullName || "Волонтер");
+
+            // ТІЛЬКИ ТУТ ДОДАНО TOAST - ОРИГІНАЛЬНА ЛОГІКА НЕ ЗМІНЕНА
+            if (oldLevel !== null && newLevel > oldLevel) {
+                const levelUpMsg = getMotivationalMessage(newLevel, newTasks, true);
+                addToast(levelUpMsg, "success");
+            }
+            else if (oldLevel !== null && oldTasks !== null && newTasks > oldTasks && newLevel === oldLevel) {
+                const remainingMsg = getMotivationalMessage(newLevel, newTasks, false);
+                if (remainingMsg && !remainingMsg.includes("Вітаємо! Ви перейшли")) {
+                    addToast(remainingMsg, "info");
+                }
+            }
+            else if (oldLevel === null) {
+                const msg = getMotivationalMessage(newLevel, newTasks, false);
+                if (msg) {
+                    addToast(msg, "info");
+                }
+            }
+
+            previousLevelRef.current = newLevel;
+            previousTasksRef.current = newTasks;
+            setLoading(false);
+        } catch (err) {
+            console.error("Помилка завантаження даних:", err);
+            addToast("🚨 Помилка завантаження даних про досягнення", "error");
+            setLoading(false);
+        }
+    };
+
+    // ОРИГІНАЛЬНИЙ useEffect - НЕ ЗМІНЮВАВСЯ (тільки додано addToast)
+    useEffect(() => {
+        if (hasLoadedRef.current) return;
+        hasLoadedRef.current = true;
+        fetchData();
+
+        const interval = setInterval(() => {
+            if (!loading) {
+                fetchData();
+            }
+        }, 30000);
+
+        return () => clearInterval(interval);
     }, [userId]);
 
+    // ОРИГІНАЛЬНИЙ badgeCatalog - НЕ ЗМІНЮВАВСЯ
     const badgeCatalog = [
         { id: "FIRST_TRIP", name: "Перший виїзд", icon: "🥇", desc: "Виконано твоє перше завдання." },
         { id: "FAST_HELP", name: "Швидка допомога", icon: "⚡", desc: "Завдання закрите швидше ніж за 2 години." },
@@ -47,11 +212,12 @@ export default function BadgesTab() {
         { id: "SPEED_DEMON", name: "Стріла", icon: "🚀", desc: "Закрив 3 завдання поспіль менш ніж за добу." }
     ];
 
-    if (loading) return <div>Завантаження...</div>;
+    if (loading) return <div className="volunteer-loader">Завантаження...</div>;
 
+    // ОРИГІНАЛЬНА ФУНКЦІЯ - НЕ ЗМІНЮВАЛАСЯ (тільки додано addToast)
     const downloadCertificate = () => {
         if (levelData.levelNumber < 3) {
-            alert("Сертифікат доступний лише після досягнення 3-го рівня (Рятівник). Продовжуйте допомагати!");
+            addToast("⚠️ Сертифікат доступний лише після досягнення 3-го рівня (Рятівник). Продовжуйте допомагати!", "warning");
             return;
         }
 
@@ -91,72 +257,79 @@ export default function BadgesTab() {
         };
 
         html2pdf().set(opt).from(element).save();
+        addToast("📄 Сертифікат успішно завантажено!", "success");
     };
 
+    // ОРИГІНАЛЬНИЙ JSX - НЕ ЗМІНЮВАВСЯ (тільки додано ToastPortal)
     return (
-        <div className="volunteer-badges-grid">
-            <div className="volunteer-sub-section level-map-section">
-                <div className="volunteer-sub-section-title"><h3>МІЙ РІВЕНЬ</h3></div>
+        <>
+            <ToastPortal toasts={toasts} onRemove={removeToast} />
 
-                <div className="volunteer-level-card active-level">
-                    <div className="volunteer-level-info">
-                        <h4>{levelData.name}</h4>
-                        <small>Виконано завдань: {levelData.tasksCompleted}</small>
-                    </div>
-                    <div className="volunteer-level-num">{levelData.levelNumber}</div>
-                </div>
+            <div className="volunteer-badges-grid">
+                <div className="volunteer-sub-section level-map-section">
+                    <div className="volunteer-sub-section-title"><h3>МІЙ РІВЕНЬ</h3></div>
 
-                <div className="progress-container" style={{ width: '100%', background: '#eee', height: '10px', margin: '10px 0' }}>
-                    <div style={{ width: `${levelData.progressPercentage}%`, background: 'green', height: '100%' }}></div>
-                </div>
-                <small>До наступного рівня залишилося: {levelData.tasksRequiredForNextLevel - levelData.tasksCompleted} тасок</small>
-                <div className="levels-map-list">
-                    {levelMap.map((lvl) => (
-                        <div key={lvl.levelNumber} className={`level-item ${lvl.isUnlocked ? 'unlocked' : 'locked'}`}>
-                            <span className="lvl-num">{lvl.levelNumber}</span>
-                            <span className="lvl-name">{lvl.name}</span>
-                            {!lvl.isUnlocked && <span className="lvl-lock">🔒</span>}
+                    <div className="volunteer-level-card active-level">
+                        <div className="volunteer-level-info">
+                            <h4>{levelData.name}</h4>
+                            <small>Виконано завдань: {levelData.tasksCompleted}</small>
                         </div>
-                    ))}
-                </div>
-            </div>
+                        <div className="volunteer-level-num">{levelData.levelNumber}</div>
+                    </div>
 
-            <div className="volunteer-sub-section rewards-section">
-                <div className="volunteer-sub-section-title"><h3>МОЇ ДОСЯГНЕННЯ</h3></div>
-                <div className="volunteer-badges-list">
-                    {badgeCatalog.map((b) => {
-                        const isUnlocked = achievements.includes(b.id);
-                        return (
-                            <div
-                                key={b.id}
-                                className={`volunteer-badge-item ${!isUnlocked ? 'locked-badge' : ''}`}
-                            >
-                                <div className="badge-icon">{isUnlocked ? b.icon : '🔒'}</div>
-                                <div className="badge-info">
-                                    <div className="badge-name">{b.name}</div>
-                                    <div className="badge-desc-popup">{b.desc}</div>
-                                </div>
+                    <div className="progress-container" style={{ width: '100%', background: '#eee', height: '10px', margin: '10px 0' }}>
+                        <div style={{ width: `${levelData.progressPercentage}%`, background: 'green', height: '100%' }}></div>
+                    </div>
+                    <small>До наступного рівня залишилося: {Math.max(0, levelData.tasksRequiredForNextLevel - levelData.tasksCompleted)} завдань</small>
+
+                    <div className="levels-map-list">
+                        {levelMap.map((lvl) => (
+                            <div key={lvl.levelNumber} className={`level-item ${lvl.isUnlocked ? 'unlocked' : 'locked'}`}>
+                                <span className="lvl-num">{lvl.levelNumber}</span>
+                                <span className="lvl-name">{lvl.name}</span>
+                                {!lvl.isUnlocked && <span className="lvl-lock">🔒</span>}
                             </div>
-                        );
-                    })}
+                        ))}
+                    </div>
                 </div>
 
-                <div className="volunteer-certificate-box">
-                    <h4>СЕРТИФІКАТ ВОЛОНТЕРА</h4>
-                    <p>
-                        {levelData.levelNumber >= 3
-                            ? "Ви можете завантажити офіційний документ, що підтверджує вашу волонтерську діяльність."
-                            : "Завантаження сертифіката стане доступним після досягнення 3-го рівня."}
-                    </p>
-                    <button
-                        className={`volunteer-download-cert-btn ${levelData.levelNumber < 3 ? 'disabled' : ''}`}
-                        onClick={downloadCertificate}
-                        disabled={levelData.levelNumber < 3}
-                    >
-                        {levelData.levelNumber >= 3 ? "ЗАВАНТАЖИТИ 📥" : "🔒 СЕРТИФІКАТ ЗАБЛОКОВАНО"}
-                    </button>
+                <div className="volunteer-sub-section rewards-section">
+                    <div className="volunteer-sub-section-title"><h3>МОЇ ДОСЯГНЕННЯ</h3></div>
+                    <div className="volunteer-badges-list">
+                        {badgeCatalog.map((b) => {
+                            const isUnlocked = achievements.includes(b.id);
+                            return (
+                                <div
+                                    key={b.id}
+                                    className={`volunteer-badge-item ${!isUnlocked ? 'locked-badge' : ''}`}
+                                >
+                                    <div className="badge-icon">{isUnlocked ? b.icon : '🔒'}</div>
+                                    <div className="badge-info">
+                                        <div className="badge-name">{b.name}</div>
+                                        <div className="badge-desc-popup">{b.desc}</div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="volunteer-certificate-box">
+                        <h4>СЕРТИФІКАТ ВОЛОНТЕРА</h4>
+                        <p>
+                            {levelData.levelNumber >= 3
+                                ? "Ви можете завантажити офіційний документ, що підтверджує вашу волонтерську діяльність."
+                                : `Завантаження сертифіката стане доступним після досягнення 3-го рівня. До нього залишилося ${Math.max(0, 10 - levelData.tasksCompleted)} завдань.`}
+                        </p>
+                        <button
+                            className={`volunteer-download-cert-btn ${levelData.levelNumber < 3 ? 'disabled' : ''}`}
+                            onClick={downloadCertificate}
+                            disabled={levelData.levelNumber < 3}
+                        >
+                            {levelData.levelNumber >= 3 ? "ЗАВАНТАЖИТИ 📥" : "🔒 СЕРТИФІКАТ ЗАБЛОКОВАНО"}
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

@@ -1,5 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './Volunteer.css';
+
+// Компонент тосту
+const Toast = ({ message, type, onClose }) => {
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            onClose();
+        }, 4000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <div className={`toast-item toast-${type}`}>
+            <span>{message}</span>
+            <button className="toast-close-btn" onClick={onClose}>✕</button>
+        </div>
+    );
+};
 
 export default function ArchiveTab() {
     const [archivedTasks, setArchivedTasks] = useState([]);
@@ -7,13 +24,32 @@ export default function ArchiveTab() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [taskReports, setTaskReports] = useState({});
+    const [toasts, setToasts] = useState([]);
 
     const userId = localStorage.getItem('userId');
 
+    // Додаємо ref для запобігання дублюванню тостів
+    const hasLoadedRef = useRef(false);
+    const toastShownRef = useRef(false);
+
+    const addToast = (message, type = 'info') => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+    };
+
+    const removeToast = (id) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+    };
+
     useEffect(() => {
+        // Запобігаємо подвійному виконанню в StrictMode
+        if (hasLoadedRef.current) return;
+        hasLoadedRef.current = true;
+
         if (!userId) {
             setError('Користувач не авторизований.');
             setLoading(false);
+            addToast("⚠️ Користувач не авторизований.", "warning");
             return;
         }
 
@@ -27,17 +63,27 @@ export default function ArchiveTab() {
             .then(data => {
                 setArchivedTasks(data);
                 setLoading(false);
+                // Показуємо тост тільки один раз
+                if (data.length > 0 && !toastShownRef.current) {
+                    toastShownRef.current = true;
+                    addToast(`📦 Завантажено ${data.length} виконаних завдань`, "success");
+                }
             })
             .catch(err => {
                 console.error(err);
                 setError('Не вдалося завантажити архів завдань.');
                 setLoading(false);
+                if (!toastShownRef.current) {
+                    toastShownRef.current = true;
+                    addToast("🚨 Не вдалося завантажити архів завдань.", "error");
+                }
             });
     }, [userId]);
 
     const fetchReports = async (taskId) => {
         try {
             const res = await fetch(`http://localhost:8080/api/archive/task/${taskId}/reports`);
+            if (!res.ok) throw new Error('Помилка завантаження звітів');
             const data = await res.json();
             setTaskReports(prev => ({ ...prev, [taskId]: data }));
         } catch (err) {
@@ -66,6 +112,18 @@ export default function ArchiveTab() {
 
     return (
         <div className="volunteer-archive-page">
+            {/* Контейнер для тостів */}
+            <div className="toast-notifications-container">
+                {toasts.map(toast => (
+                    <Toast
+                        key={toast.id}
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => removeToast(toast.id)}
+                    />
+                ))}
+            </div>
+
             <div className="tab-header-block">
                 <h2 className="tab-title">Виконані завдання</h2>
                 <div className="badge-counter">
