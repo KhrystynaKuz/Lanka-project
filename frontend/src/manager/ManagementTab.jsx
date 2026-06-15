@@ -380,20 +380,23 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
-    const handleOpenAddVolModal = async () => {
+    const handleOpenAddVolModal = async (dept) => {
+        setSelectedDept(dept);
+
         try {
-            const response = await fetch('http://localhost:8080/api/management/volunteers');
+            setLoading(true);
+            const response = await fetch(`${API_BASE_URL}/api/management/departments/${dept.id}/volunteers/available`);
+
+            if (!response.ok) throw new Error("Помилка завантаження");
+
             const data = await response.json();
-
-            const alreadyInDeptIds = volunteers.map(v => v.id);
-            const availableToAdd = data.filter(v => !alreadyInDeptIds.includes(v.id));
-
-            setAllAvailableVolunteers(availableToAdd);
-            setSelectedUserId('');
+            setAllAvailableVolunteers(data);
             setShowAddVolModal(true);
         } catch (error) {
-            console.error("Помилка при завантаженні списку волонтерів:", error);
-            if (showNotification) showNotification("🚨 Помилка завантаження списку волонтерів", "error");
+            console.error("Помилка при отриманні волонтерів:", error);
+            if (showNotification) showNotification("🚨 Помилка: " + error.message, "error");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -1133,7 +1136,7 @@ export default function ManagementTab({showNotification}) {
                     </div>
 
                     {selectedDept && (
-                        <button className="btn-add-new-item" onClick={handleOpenAddVolModal}>
+                        <button className="btn-add-new-item" onClick={() => handleOpenAddVolModal(selectedDept)}>
                             Додати до відділу
                         </button>
                     )}

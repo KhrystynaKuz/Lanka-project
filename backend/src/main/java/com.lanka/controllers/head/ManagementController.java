@@ -440,4 +440,37 @@ public class ManagementController {
             return ResponseEntity.internalServerError().body("Помилка БД: " + e.getMessage());
         }
     }
+
+    @GetMapping("/departments/{deptId}/volunteers/available")
+    public ResponseEntity<?> getAvailableVolunteersForDept(@PathVariable UUID deptId) {
+        try {
+            String sql = "SELECT u.* FROM users u " +
+                    "WHERE u.role = 'VOLUNTEER' " +
+                    "AND u.is_verified = true " +
+                    "AND u.id NOT IN (SELECT user_id FROM user_departments WHERE department_id = ?)";
+
+            List<User> availableVolunteers = new ArrayList<>();
+
+            try (Connection conn = DatabaseConfig.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                ps.setObject(1, deptId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        User user = new User();
+                        user.setId((UUID) rs.getObject("id"));
+                        user.setFirst_name(rs.getString("first_name"));
+                        user.setLast_name(rs.getString("last_name"));
+                        user.setEmail(rs.getString("email"));
+                        availableVolunteers.add(user);
+                    }
+                }
+            }
+            return ResponseEntity.ok(availableVolunteers);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Помилка БД: " + e.getMessage());
+        }
+    }
 }
