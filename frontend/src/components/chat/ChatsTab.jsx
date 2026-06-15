@@ -210,19 +210,24 @@ export default function ChatsTab({ initialChatId }) {
                     {selectedChat ? (
                         <>
                             <div className="chat-header">
-                                <div className="chat-header-info">
+                                <div className="chat-header-left">
                                     <h3>{selectedChat.type === 'DIRECT' ? selectedChat.displayName : selectedChat.name}</h3>
-                                    <span className="chat-status" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '4px' }}>
+                                </div>
+
+                                <div className="chat-header-center"></div>
+
+                                <div className="chat-header-right">
+                                    <span className="chat-status">
                                         <button
                                             onClick={handleToggleArchive}
                                             style={{ fontSize: '0.8rem', cursor: 'pointer', padding: '4px 8px', borderRadius: '12px', border: 'none', background: selectedChat.is_archived ? '#4caf50' : '#ff9800', color: 'white' }}
-                                        >
+                                            >
                                             {selectedChat.is_archived ? '⬆️ Розархівувати' : '⬇️ В архів'}
-                                        </button>
-                                        {selectedChat.type === 'GROUP' && (
-                                            <button onClick={() => setShowGroupSettings(true)} style={{fontSize: '0.8rem', cursor: 'pointer', border: 'none', background: 'none'}}>
-                                                ⚙️ Налаштування
                                             </button>
+                                            {selectedChat.type === 'GROUP' && (
+                                            <button onClick={() => setShowGroupSettings(true)} style={{fontSize: '0.8rem', cursor: 'pointer', border: 'none', background: 'none'}}>
+                                            ⚙️ Налаштування
+                                        </button>
                                         )}
                                     </span>
                                 </div>
