@@ -228,43 +228,42 @@ export default function DepartmentTasksTab() {
         }
     };
 
-    // Візуальний мапінг статусів завдань
     const renderTaskStatusBadge = (status) => {
         switch (status) {
-            case 'ASSIGNED': return <span style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: '#fef08a', color: '#854d0e', borderRadius: '12px', fontWeight: 'bold' }}>⏳ Призначено</span>;
-            case 'IN_PROGRESS': return <span style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: '#bfdbfe', color: '#1e3a8a', borderRadius: '12px', fontWeight: 'bold' }}>⚙️ В процесі</span>;
-            case 'COMPLETED': return <span style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '12px', fontWeight: 'bold' }}>✅ Виконано</span>;
-            case 'CANCELLED': return <span style={{ fontSize: '0.75rem', padding: '4px 10px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '12px', fontWeight: 'bold' }}>❌ Скасовано</span>;
+            case 'ASSIGNED': return <span style={{ fontSize: '0.75rem', padding: '5px 12px', backgroundColor: 'rgba(254, 240, 138, 0.25)', color: '#854d0e', borderRadius: '8px', fontWeight: 'bold', border: '1px solid rgba(133, 77, 14, 0.2)' }}>Призначено</span>;
+            case 'IN_PROGRESS': return <span style={{ fontSize: '0.75rem', padding: '5px 12px', backgroundColor: 'rgba(191, 219, 254, 0.25)', color: '#1e3a8a', borderRadius: '8px', fontWeight: 'bold', border: '1px solid rgba(30, 58, 138, 0.2)' }}>В процесі</span>;
+            case 'COMPLETED': return <span style={{ fontSize: '0.75rem', padding: '5px 12px', backgroundColor: 'rgba(220, 252, 231, 0.25)', color: '#166534', borderRadius: '8px', fontWeight: 'bold', border: '1px solid rgba(22, 101, 52, 0.2)' }}>Виконано</span>;
+            case 'CANCELLED': return <span style={{ fontSize: '0.75rem', padding: '5px 12px', backgroundColor: 'rgba(254, 226, 226, 0.25)', color: '#991b1b', borderRadius: '8px', fontWeight: 'bold', border: '1px solid rgba(153, 27, 27, 0.2)' }}>Скасовано</span>;
             default: return null;
         }
     };
 
-    // Оновлений, виразний мапінг статусів самої заявки
     const renderRequestStatusBadge = (status) => {
-        let config = { bg: '#f1f5f9', color: '#475569', icon: '📝', text: status };
+        let config = { bg: 'rgba(241, 245, 249, 0.6)', color: '#475569', text: status };
         switch (status) {
-            case 'IN_PROGRESS': config = { bg: '#fef3c7', color: '#b45309', icon: '⚙️', text: 'В ПРОЦЕСІ' }; break;
-            case 'APPROVED': config = { bg: '#e0e7ff', color: '#4338ca', icon: '👍', text: 'ЗАТВЕРДЖЕНО' }; break;
-            case 'REJECTED': config = { bg: '#fee2e2', color: '#b91c1c', icon: '❌', text: 'ВІДХИЛЕНО' }; break;
-            case 'FULFILLED': config = { bg: '#d1fae5', color: '#047857', icon: '✅', text: 'ВИКОНАНО' }; break;
+            case 'IN_PROGRESS': config = { bg: 'rgba(254, 243, 199, 0.6)', color: '#b45309', icon: '⚙️', text: 'В ПРОЦЕСІ' }; break;
+            case 'APPROVED': config = { bg: 'rgba(224, 231, 255, 0.6)', color: '#4338ca', icon: '👍', text: 'ЗАТВЕРДЖЕНО' }; break;
+            case 'REJECTED': config = { bg: 'rgba(254, 226, 226, 0.6)', color: '#b91c1c', icon: '❌', text: 'ВІДХИЛЕНО' }; break;
+            case 'FULFILLED': config = { bg: 'rgba(209, 250, 229, 0.6)', color: '#047857', icon: '✅', text: 'ВИКОНАНО' }; break;
             default: break;
         }
         return (
             <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
-                padding: '6px 14px', borderRadius: '99px',
+                padding: '6px 14px', borderRadius: '10px',
                 backgroundColor: config.bg, color: config.color,
-                fontWeight: 'bold', fontSize: '0.85rem', border: `1px solid ${config.color}40`
+                fontWeight: '700', fontSize: '0.85rem', border: `1px solid ${config.color}30`,
+                backdropFilter: 'blur(4px)'
             }}>
                 {config.icon} {config.text}
             </span>
         );
     };
 
-    if (loading) return <div className="coord-tasks-section"><p>Завантаження даних координатора...</p></div>;
+    if (loading) return <div className="coord-tasks-section" style={{ padding: '40px', textAlign: 'center', color: '#1e3a8a', fontWeight: '600' }}><p>Завантаження даних координатора...</p></div>;
 
     return (
-        <div className="coord-tasks-section">
+        <div className="coord-tasks-section" style={{ padding: '5px 0' }}>
             <div className="toast-notifications-container">
                 {toasts.map(toast => (
                     <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => removeToast(toast.id)} />
@@ -280,16 +279,26 @@ export default function DepartmentTasksTab() {
                 confirmText="Так, зберегти"
             />
 
-            <div className="filter-zone" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="filter-zone" style={{ marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ color: '#1e3a8a', fontSize: '14px', fontWeight: '700' }}>Фільтр за статусом:</span>
                 <select
                     className="coord-minimal-select"
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    style={{
+                        background: 'rgba(255, 255, 255, 0.7)',
+                        color: '#1e3a8a',
+                        border: '1px solid rgba(30, 58, 138, 0.2)',
+                        padding: '8px 14px',
+                        borderRadius: '10px',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        backdropFilter: 'blur(4px)'
+                    }}
                 >
                     <option value="all">Усі заявки</option>
-                    {/* Видалено фільтр PENDING */}
                     <option value="IN_PROGRESS">В процесі (IN_PROGRESS)</option>
                     <option value="APPROVED">Затверджено (APPROVED)</option>
                     <option value="REJECTED">Відхилено (REJECTED)</option>
@@ -298,9 +307,18 @@ export default function DepartmentTasksTab() {
             </div>
 
             {requests.filter(req => filterStatus === 'all' || req.status === filterStatus).length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b', backgroundColor: '#f8fafc', borderRadius: '12px', marginTop: '20px' }}>
-                    <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>📭 Заявок не знайдено</h3>
-                    <p>Для вашого відділу наразі немає призначених заявок, або вони не відповідають обраному фільтру.</p>
+                <div style={{
+                    textAlign: 'center',
+                    padding: '50px 20px',
+                    color: '#1e3a8a',
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    backdropFilter: 'blur(8px)',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(30, 58, 138, 0.1)',
+                    marginTop: '20px'
+                }}>
+                    <h3 style={{ fontSize: '1.2rem', marginBottom: '8px', fontWeight: '700' }}>📭 Заявок не знайдено</h3>
+                    <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>Для вашого відділу наразі немає призначених заявок або вони не відповідають критеріям фільтру.</p>
                 </div>
             ) : (
                 requests
@@ -308,139 +326,250 @@ export default function DepartmentTasksTab() {
                     .map((request) => {
                         const isExpanded = expandedRequests[request.id];
                         const reqTasks = tasksByRequest[request.id] || [];
-
-                        // Перевіряємо, чи заблокована вся заявка
                         const isRequestLocked = request.status === 'FULFILLED' || request.status === 'REJECTED';
 
                         return (
-                            <div className="coord-main-request-card fade-in" key={request.id} style={{
-                                marginBottom: '20px',
-                                borderLeft: `4px solid ${request.status === 'REJECTED' ? '#ef4444' : request.status === 'FULFILLED' ? '#10b981' : '#3b82f6'}`
+                            <div className="glass-main-request-panel fade-in" key={request.id} style={{
+                                padding: '20px',
+                                borderRadius: '16px',
+                                background: 'rgba(255, 255, 255, 0.55)',
+                                backdropFilter: 'blur(10px)',
+                                border: '1px solid rgba(255, 255, 255, 0.4)',
+                                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.06)',
+                                marginBottom: '25px',
+                                borderLeft: `5px solid ${request.status === 'REJECTED' ? '#ef4444' : request.status === 'FULFILLED' ? '#10b981' : '#1e40af'}`,
+                                boxSizing: 'border-box'
                             }}>
-                                <div className="coord-req-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                        <span style={{ fontWeight: 'bold', color: '#1e3a8a' }}>
+                                <div className="coord-req-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                                        <h3 style={{ color: '#1e3a8a', margin: 0, fontSize: '16px', fontWeight: '800', letterSpacing: '0.5px' }}>
                                             ЗАЯВКА №{request.id.toString().slice(0, 8).toUpperCase()}
-                                        </span>
+                                        </h3>
                                         {renderRequestStatusBadge(request.status)}
                                     </div>
-                                    <button className="coord-btn-details-outline" onClick={() => toggleExpand(request.id)}>
+                                    <button
+                                        className="main-search-btn"
+                                        style={{ padding: '6px 14px', fontSize: '13px', borderRadius: '10px' }}
+                                        onClick={() => toggleExpand(request.id)}
+                                    >
                                         {isExpanded ? 'Згорнути ▲' : 'Управління завданнями ▼'}
                                     </button>
                                 </div>
 
-                                <div className="coord-req-field" style={{ marginTop: '10px' }}><strong>Назва:</strong> {request.title}</div>
-                                <div className="coord-req-field"><strong>Опис:</strong> {request.description}</div>
+                                <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <div className="coord-req-field" style={{ color: '#374151', fontSize: '14px' }}>
+                                        <strong>Назва:</strong> {request.title}
+                                    </div>
+                                    <div className="coord-req-field" style={{ color: '#374151', fontSize: '14px' }}>
+                                        <strong>Опис:</strong> {request.description || "Опис відсутній"}
+                                    </div>
+                                </div>
 
                                 {isExpanded && (
-                                    <>
-                                        <div className="coord-subtasks-divider">
-                                            <span>РОЗПОДІЛ НА ЗАВДАННЯ ({reqTasks.length})</span>
+                                    <div className="fade-in" style={{ marginTop: '20px', paddingTop: '10px' }}>
+                                        <div className="coord-subtasks-divider" style={{
+                                            margin: '15px 0',
+                                            padding: '8px 0',
+                                            borderBottom: '2px dashed rgba(30, 58, 138, 0.15)',
+                                            display: 'flex',
+                                            justifyContent: 'flex-start'
+                                        }}>
+                                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#1e3a8a', letterSpacing: '0.5px' }}>
+                                                📋 РОЗПОДІЛ НА ЗАВДАННЯ ({reqTasks.length})
+                                            </span>
                                         </div>
 
                                         {isRequestLocked && (
-                                            <div style={{ padding: '12px', backgroundColor: '#f8fafc', color: '#64748b', borderRadius: '8px', textAlign: 'center', margin: '15px 0', border: '1px dashed #cbd5e1', fontWeight: '500' }}>
+                                            <div style={{
+                                                padding: '12px 16px',
+                                                backgroundColor: 'rgba(241, 245, 249, 0.7)',
+                                                color: '#475569',
+                                                borderRadius: '12px',
+                                                textAlign: 'center',
+                                                margin: '15px 0 20px 0',
+                                                border: '1px dashed rgba(71, 85, 105, 0.3)',
+                                                fontWeight: '600',
+                                                fontSize: '13px',
+                                                backdropFilter: 'blur(2px)'
+                                            }}>
                                                 🔒 Заявка перейшла у фінальний статус ({request.status}). Додавання та редагування завдань повністю заблоковано.
                                             </div>
                                         )}
 
-                                        <div className="coord-subtasks-list">
+                                        <div className="coord-subtasks-list" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                             {reqTasks.map((task, index) => {
-                                                // Завдання можна редагувати, якщо ЗАЯВКА не заблокована І (завдання нове або має статус ASSIGNED)
                                                 const isEditable = !isRequestLocked && (task.status === 'ASSIGNED' || task.isNew);
 
                                                 return (
-                                                    <div className="coord-subtask-row" key={task.id} style={{
-                                                        opacity: isEditable ? 1 : 0.85,
-                                                        backgroundColor: isEditable ? 'transparent' : '#f8fafc',
-                                                        border: isEditable ? '1px solid #e2e8f0' : '1px solid #cbd5e1',
-                                                        padding: '15px',
-                                                        borderRadius: '8px',
-                                                        marginBottom: '10px'
+                                                    <div className="request-full-card" key={task.id} style={{
+                                                        opacity: isEditable ? 1 : 0.9,
+                                                        backgroundColor: isEditable ? 'rgba(255, 255, 255, 0.6)' : 'rgba(241, 245, 249, 0.5)',
+                                                        border: isEditable ? '1px solid rgba(30, 58, 138, 0.15)' : '1px solid rgba(0, 0, 0, 0.08)',
+                                                        padding: '16px 20px',
+                                                        borderRadius: '12px',
+                                                        boxShadow: 'none',
+                                                        margin: 0,
+                                                        boxSizing: 'border-box',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: '4px'
                                                     }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                                <span className="coord-subtask-number" style={{ margin: 0 }}>{index + 1}</span>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                <span className="counter-number counter-number-styled" style={{ fontSize: '12px', padding: '3px 8px' }}>
+                                                                    {index + 1}
+                                                                </span>
                                                                 {renderTaskStatusBadge(task.status)}
                                                             </div>
-                                                            {!isEditable && <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>🔒 Заблоковано для змін</span>}
+                                                            {!isEditable && (
+                                                                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                    🔒 Заблоковано для змін
+                                                                </span>
+                                                            )}
                                                         </div>
 
-                                                        <div className="coord-subtask-inputs">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Назва завдання..."
-                                                                value={task.title}
-                                                                onChange={(e) => handleUpdateSubTask(request.id, task.id, 'title', e.target.value)}
-                                                                disabled={!isEditable}
-                                                                style={{
-                                                                    cursor: isEditable ? 'text' : 'not-allowed',
-                                                                    backgroundColor: isEditable ? '#fff' : '#e2e8f0',
-                                                                    color: isEditable ? '#0f172a' : '#475569'
-                                                                }}
-                                                            />
+                                                        <div className="coord-subtask-inputs" style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', boxSizing: 'border-box' }}>
+                                                                <span style={{ fontSize: '12px', fontWeight: '700', color: '#1e3a8a' }}>Назва завдання:</span>
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Введіть назву підзавдання..."
+                                                                    className="main-search-input"
+                                                                    value={task.title}
+                                                                    onChange={(e) => handleUpdateSubTask(request.id, task.id, 'title', e.target.value)}
+                                                                    disabled={!isEditable}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        padding: '8px 12px',
+                                                                        fontSize: '13px',
+                                                                        cursor: isEditable ? 'text' : 'not-allowed',
+                                                                        backgroundColor: isEditable ? '#fff' : 'rgba(226, 232, 240, 0.5)',
+                                                                        color: isEditable ? '#0f172a' : '#475569',
+                                                                        border: '1px solid rgba(30, 58, 138, 0.15)',
+                                                                        boxSizing: 'border-box'
+                                                                    }}
+                                                                />
+                                                            </div>
 
-                                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', boxSizing: 'border-box' }}>
+                                                                <span style={{ fontSize: '12px', fontWeight: '700', color: '#1e3a8a' }}>Відповідальний волонтер:</span>
                                                                 <select
                                                                     value={task.assigned_volunteer_id || ''}
                                                                     onChange={(e) => handleUpdateSubTask(request.id, task.id, 'assigned_volunteer_id', e.target.value)}
                                                                     disabled={!isEditable}
                                                                     style={{
-                                                                        flex: 1,
-                                                                        padding: '8px',
-                                                                        borderRadius: '4px',
-                                                                        border: '1px solid #ccc',
+                                                                        width: '100%',
+                                                                        padding: '8px 12px',
+                                                                        borderRadius: '10px',
+                                                                        border: '1px solid rgba(30, 58, 138, 0.15)',
+                                                                        fontSize: '13px',
+                                                                        outline: 'none',
                                                                         cursor: isEditable ? 'pointer' : 'not-allowed',
-                                                                        backgroundColor: isEditable ? '#fff' : '#e2e8f0',
-                                                                        color: isEditable ? '#0f172a' : '#475569'
+                                                                        backgroundColor: isEditable ? '#fff' : 'rgba(226, 232, 240, 0.5)',
+                                                                        color: isEditable ? '#0f172a' : '#475569',
+                                                                        fontWeight: '500',
+                                                                        boxSizing: 'border-box'
                                                                     }}
                                                                 >
                                                                     <option value="" disabled>Оберіть відповідального...</option>
                                                                     {departmentVolunteers.map(vol => (
                                                                         <option key={vol.id} value={vol.id}>
-                                                                            {vol.first_name} {vol.last_name} {vol.id === userId ? '(Я)' : ''}
+                                                                            👤 {vol.first_name} {vol.last_name} {vol.id === userId ? '(Я)' : ''}
                                                                         </option>
                                                                     ))}
                                                                 </select>
                                                             </div>
 
-                                                            <textarea
-                                                                placeholder="Опис підзавдання..."
-                                                                value={task.description || ''}
-                                                                onChange={(e) => handleUpdateSubTask(request.id, task.id, 'description', e.target.value)}
-                                                                disabled={!isEditable}
-                                                                style={{
-                                                                    cursor: isEditable ? 'text' : 'not-allowed',
-                                                                    backgroundColor: isEditable ? '#fff' : '#e2e8f0',
-                                                                    color: isEditable ? '#0f172a' : '#475569'
-                                                                }}
-                                                            />
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', boxSizing: 'border-box' }}>
+                                                                <span style={{ fontSize: '12px', fontWeight: '700', color: '#1e3a8a' }}>Опис завдання:</span>
+                                                                <textarea
+                                                                    placeholder="Детальний опис підзавдання..."
+                                                                    className="main-search-input"
+                                                                    value={task.description || ''}
+                                                                    onChange={(e) => handleUpdateSubTask(request.id, task.id, 'description', e.target.value)}
+                                                                    disabled={!isEditable}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        padding: '8px 12px',
+                                                                        fontSize: '13px',
+                                                                        minHeight: '65px',
+                                                                        borderRadius: '10px',
+                                                                        resize: 'vertical',
+                                                                        cursor: isEditable ? 'text' : 'not-allowed',
+                                                                        backgroundColor: isEditable ? '#fff' : 'rgba(226, 232, 240, 0.5)',
+                                                                        color: isEditable ? '#0f172a' : '#475569',
+                                                                        border: '1px solid rgba(30, 58, 138, 0.15)',
+                                                                        boxSizing: 'border-box'
+                                                                    }}
+                                                                />
+                                                            </div>
                                                         </div>
-                                                        <div className="coord-subtask-actions" style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end' }}>
-                                                            {isEditable && (
-                                                                <button className="coord-btn-delete-inline" onClick={() => handleDeleteSubTask(request.id, task.id, task.isNew)} title="Видалити завдання">✕ Видалити</button>
-                                                            )}
-                                                        </div>
+
+                                                        {isEditable && (
+                                                            <div className="coord-subtask-actions" style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+                                                                <button
+                                                                    className="btn-reject-request"
+                                                                    style={{
+                                                                        background: 'rgba(231, 76, 60, 0.12)',
+                                                                        color: '#e74c3c',
+                                                                        border: '1px solid rgba(231, 76, 60, 0.25)',
+                                                                        padding: '5px 12px',
+                                                                        borderRadius: '8px',
+                                                                        fontSize: '12px',
+                                                                        cursor: 'pointer',
+                                                                        fontWeight: '600'
+                                                                    }}
+                                                                    onClick={() => handleDeleteSubTask(request.id, task.id, task.isNew)}
+                                                                    title="Видалити завдання"
+                                                                >
+                                                                    ✕ Видалити завдання
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
                                             })}
                                         </div>
 
-                                        {/* Приховуємо кнопки додавання та збереження, якщо заявка заблокована */}
                                         {!isRequestLocked && (
                                             <>
-                                                <div className="coord-add-subtask-center" style={{ marginTop: '15px' }}>
-                                                    <button className="coord-circle-add-btn" onClick={() => handleAddSubTask(request.id)} title="Додати нове завдання">+</button>
+                                                <div className="coord-add-subtask-center" style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+                                                    <button
+                                                        className="coord-circle-add-btn"
+                                                        onClick={() => handleAddSubTask(request.id)}
+                                                        title="Додати нове завдання"
+                                                        style={{
+                                                            width: '36px',
+                                                            height: '36px',
+                                                            borderRadius: '50%',
+                                                            background: '#1e40af',
+                                                            color: '#fff',
+                                                            border: 'none',
+                                                            fontSize: '20px',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            boxShadow: '0 4px 12px rgba(30, 64, 175, 0.3)',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        +
+                                                    </button>
                                                 </div>
 
-                                                <div className="coord-action-right" style={{ marginTop: '20px' }}>
-                                                    <button className="coord-btn-save" onClick={() => handleSaveTasksTrigger(request.id)}>
-                                                        ЗБЕРЕГТИ ЗМІНИ
+                                                <div className="coord-action-right" style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                                                    <button
+                                                        className="btn-approve-request"
+                                                        style={{ padding: '8px 18px', borderRadius: '10px', fontSize: '14px' }}
+                                                        onClick={() => handleSaveTasksTrigger(request.id)}
+                                                    >
+                                                        💾 ЗБЕРЕГТИ ЗМІНИ
                                                     </button>
                                                 </div>
                                             </>
                                         )}
-                                    </>
+                                    </div>
                                 )}
                             </div>
                         );
