@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 
-// Компонент тосту
+/**
+ * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} props.message - Текст сповіщення.
+ * @param {string} props.type - Тип сповіщення ('info', 'success', 'error', 'warning').
+ * @param {Function} props.onClose - Функція закриття сповіщення.
+ * @returns {JSX.Element} Рендер тосту.
+ */
 const Toast = ({ message, type, onClose }) => {
     React.useEffect(() => {
         const timer = setTimeout(() => {
@@ -17,6 +26,17 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
+/**
+ * Головний компонент вкладки "Створити заявку" для замовника.
+ * Відповідає за створення нової заявки на допомогу з
+ * обов'язковими полями: назва, категорія, опис, пріоритет.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string|number} props.userId - Ідентифікатор поточного користувача.
+ * @param {Function} props.onSuccessSubmit - Функція, що викликається після успішного створення заявки.
+ * @returns {JSX.Element} Рендер форми створення заявки.
+ */
 export default function CreateRequestTab({ userId, onSuccessSubmit }) {
     const [title, setTitle] = useState('');
     const [category, setCategory] = useState('Гуманітарна допомога');
@@ -25,15 +45,34 @@ export default function CreateRequestTab({ userId, onSuccessSubmit }) {
     const [isLoading, setIsLoading] = useState(false);
     const [toasts, setToasts] = useState([]);
 
+    /**
+     * Додає нове сповіщення до списку.
+     *
+     * @param {string} message - Текст сповіщення.
+     * @param {string} [type='info'] - Тип сповіщення.
+     */
     const addToast = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
+    /**
+     * Видаляє сповіщення зі списку за ідентифікатором.
+     *
+     * @param {number} id - Ідентифікатор сповіщення.
+     */
     const removeToast = (id) => {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
 
+    /**
+     * Обробляє відправку форми створення заявки.
+     * Виконує валідацію полів та надсилає запит на бекенд.
+     *
+     * @async
+     * @param {Event} e - Подія відправки форми.
+     * @returns {Promise<void>}
+     */
     const handleCreateRequest = async (e) => {
         e.preventDefault();
 
@@ -92,7 +131,6 @@ export default function CreateRequestTab({ userId, onSuccessSubmit }) {
 
     return (
         <div className="fade-in" style={{ marginTop: '15px' }}>
-            {/* Контейнер для тостів */}
             <div className="toast-notifications-container">
                 {toasts.map(toast => (
                     <Toast

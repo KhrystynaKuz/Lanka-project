@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-// Компонент тосту
+/**
+ * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} props.message - Текст сповіщення.
+ * @param {string} props.type - Тип сповіщення ('info', 'success', 'error', 'warning').
+ * @param {Function} props.onClose - Функція закриття сповіщення.
+ * @returns {JSX.Element} Рендер тосту.
+ */
 const Toast = ({ message, type, onClose }) => {
     React.useEffect(() => {
         const timer = setTimeout(() => {
@@ -18,7 +27,21 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
-// Компонент модального вікна підтвердження
+/**
+ * Компонент модального вікна підтвердження дії.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {boolean} props.isOpen - Чи відкрито модальне вікно.
+ * @param {Function} props.onClose - Функція закриття вікна.
+ * @param {Function} props.onConfirm - Функція підтвердження дії.
+ * @param {string} props.title - Заголовок модального вікна.
+ * @param {string} props.message - Текст повідомлення.
+ * @param {string} [props.confirmText="Так, скасувати"] - Текст кнопки підтвердження.
+ * @param {string} [props.cancelText="Скасувати"] - Текст кнопки скасування.
+ * @param {boolean} [props.isDanger=true] - Чи є дія небезпечною.
+ * @returns {JSX.Element|null} Рендер модального вікна або null, якщо закрито.
+ */
 const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Так, скасувати", cancelText = "Скасувати", isDanger = true }) => {
     if (!isOpen) return null;
 
@@ -45,6 +68,18 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
     );
 };
 
+/**
+ * Головний компонент вкладки "Мої заявки" для замовника.
+ * Відображає список створених заявок, їх статуси,
+ * дозволяє скасовувати заявки зі статусом PENDING
+ * та переходити до чату з менеджером.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string|number} props.userId - Ідентифікатор поточного користувача.
+ * @param {Function} props.onGoToChat - Функція переходу до чату з менеджером.
+ * @returns {JSX.Element} Рендер вкладки "Мої заявки".
+ */
 export default function MyRequestsTab({ userId, onGoToChat }) {
     const [requests, setRequests] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -55,15 +90,29 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
         requestStatus: null
     });
 
+    /**
+     * Додає нове сповіщення до списку.
+     *
+     * @param {string} message - Текст сповіщення.
+     * @param {string} [type='info'] - Тип сповіщення.
+     */
     const addToast = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
+    /**
+     * Видаляє сповіщення зі списку за ідентифікатором.
+     *
+     * @param {number} id - Ідентифікатор сповіщення.
+     */
     const removeToast = (id) => {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
 
+    /**
+     * Закриває модальне вікно підтвердження.
+     */
     const closeConfirmModal = () => {
         setConfirmModal({
             isOpen: false,
@@ -72,6 +121,12 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
         });
     };
 
+    /**
+     * Завантажує список заявок поточного замовника з бекенду.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const fetchRequests = async () => {
         if (!userId) return;
         try {
@@ -95,6 +150,13 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
         fetchRequests();
     }, [userId]);
 
+    /**
+     * Обробляє натискання кнопки скасування заявки.
+     * Перевіряє, чи має заявка статус PENDING.
+     *
+     * @param {string|number} requestId - Ідентифікатор заявки.
+     * @param {string} currentStatus - Поточний статус заявки.
+     */
     const handleDeleteClick = (requestId, currentStatus) => {
         if (currentStatus?.toUpperCase() !== 'PENDING') {
             addToast("⚠️ Можна скасовувати тільки заявки зі статусом 'PENDING'.", "warning");
@@ -108,6 +170,12 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
         });
     };
 
+    /**
+     * Виконує скасування заявки після підтвердження.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const executeDelete = async () => {
         const { requestId } = confirmModal;
 
@@ -131,6 +199,14 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
         }
     };
 
+    /**
+     * Переходить до чату з менеджером, призначеним на заявку.
+     * Використовує Supabase RPC для створення або отримання існуючого прямого чату.
+     *
+     * @async
+     * @param {string|number} managerId - Ідентифікатор менеджера.
+     * @returns {Promise<void>}
+     */
     const handleChatNavigation = async (managerId) => {
         if (!managerId) {
             alert("До цієї заявки ще не призначено менеджера.");
@@ -138,7 +214,6 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
         }
 
         try {
-            // Call the Supabase function directly
             const { data: newChatId, error } = await supabase.rpc('get_or_create_direct_chat', {
                 user1_id: userId,
                 user2_id: managerId
@@ -150,7 +225,6 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
                 return;
             }
 
-            // Pass the new chat ID up to Customer.jsx
             if (newChatId) {
                 onGoToChat(newChatId);
             }
@@ -161,6 +235,12 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
         }
     };
 
+    /**
+     * Повертає колір для відображення статусу заявки.
+     *
+     * @param {string} status - Статус заявки.
+     * @returns {string} HEX-код кольору.
+     */
     const getStatusColor = (status) => {
         switch (status?.toUpperCase()) {
             case 'PENDING': return '#eab308';
@@ -170,6 +250,12 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
         }
     };
 
+    /**
+     * Повертає текстову мітку пріоритету за його числовим значенням.
+     *
+     * @param {number} priority - Рівень пріоритету.
+     * @returns {string} Мітка пріоритету.
+     */
     const getPriorityBadge = (priority) => {
         switch (priority) {
             case 1: return ' Низький';
@@ -182,7 +268,6 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
 
     return (
         <div className="fade-in" style={{ marginTop: '15px' }}>
-            {/* Контейнер для тостів */}
             <div className="toast-notifications-container">
                 {toasts.map(toast => (
                     <Toast
@@ -194,7 +279,6 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
                 ))}
             </div>
 
-            {/* Модальне вікно підтвердження */}
             <ConfirmModal
                 isOpen={confirmModal.isOpen}
                 onClose={closeConfirmModal}
@@ -206,7 +290,6 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
                 isDanger={true}
             />
 
-            {/* Header logic remains exactly the same */}
             <div className="tab-header-block">
                 <h2 className="tab-title">Історія моїх заявок</h2>
                 <div className="badge-counter">
@@ -242,7 +325,6 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
                                 </div>
 
                                 <div className="action-buttons-side">
-                                    {/* --- UPDATED BUTTON --- */}
                                     <button
                                         className="btn-detail-view"
                                         onClick={() => handleChatNavigation(req.manager_id)}

@@ -1,4 +1,3 @@
-
 .admin-glass-container {
     min-height: 100vh;
     font-family: system-ui, -apple-system, sans-serif;
@@ -589,9 +588,6 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ===== ДОДАТКОВІ СТИЛІ ДЛЯ ВИПАДАЮЧОГО МЕНЮ ТА МОДАЛЬНИХ ВІКОН ===== */
-
-/* Стилі для випадаючого меню (оновлені, як у Manager) */
 .admin-dropdown-menu {
     position: absolute;
     top: 45px;
@@ -660,7 +656,6 @@
     background: #dc2626;
 }
 
-/* ===== СТИЛІ ДЛЯ ТОСТ-СПОВІЩЕНЬ ===== */
 .toast-notifications-container {
     position: fixed;
     bottom: 24px;
@@ -732,7 +727,6 @@
     }
 }
 
-/* ===== МОДАЛЬНІ ВІКНА ===== */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -848,7 +842,6 @@
     background: #2563eb;
 }
 
-/* Інформаційний блок */
 .info-content {
     padding: 20px 24px;
     background: #eff6ff;
@@ -917,7 +910,6 @@
     box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
-/* Документи */
 .documents-section {
     padding: 0 24px 20px 24px;
 }
@@ -1073,7 +1065,6 @@
     border-color: #3b82f6;
 }
 
-/* Форма телефону */
 .phone-form {
     padding: 24px;
 }
