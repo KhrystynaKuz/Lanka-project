@@ -900,7 +900,7 @@
 }
 
 .volunteer-detail-btn {
-    background: #1e40af;+
+    background: #1e40af;
     color: white;
     border: none;
     padding: 8px 20px;
@@ -1184,7 +1184,6 @@
     background: #dc2626;
 }
 
-
 .volunteer-profile-arrow {
     font-size: 10px;
     color: #1e40af;
@@ -1444,7 +1443,6 @@
     box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
-
 .documents-section {
     padding: 0 24px 20px 24px;
 }
@@ -1658,6 +1656,7 @@
     height: 2px;
     background: linear-gradient(90deg, transparent, #bfdbfe, #bfdbfe, transparent);
 }
+
 .toast-notifications-container {
     position: fixed;
     bottom: 24px;
