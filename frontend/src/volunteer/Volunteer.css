@@ -850,12 +850,10 @@
 }
 
 .counter-number {
-    color: #e11d48; /* Той самий насичений малиново-червоний відтінок */
+    color: #e11d48;
     font-weight: 800;
 }
 
-
-/* Стилі для списку та карток архіву під ваш стиль */
 .volunteer-list-container {
     display: flex;
     flex-direction: column;
@@ -901,9 +899,8 @@
     line-height: 1.4;
 }
 
-/* Стиль для кнопки розгортання у форматі ваших кнопок */
 .volunteer-detail-btn {
-    background: #1e40af; /* Синій колір, як у вихідних бульбашок */
+    background: #1e40af;+
     color: white;
     border: none;
     padding: 8px 20px;
@@ -919,7 +916,6 @@
     background: #2563eb;
 }
 
-/* Розгорнуті деталі */
 .volunteer-expanded-details {
     margin-top: 15px;
     padding-top: 15px;
@@ -1119,9 +1115,7 @@
     filter: grayscale(1);
     background: #f4f4f4;
 }
-/* ===== ДОДАТКОВІ СТИЛІ ДЛЯ ВИПАДАЮЧОГО МЕНЮ ТА МОДАЛЬНИХ ВІКОН ===== */
 
-/* Стилі для випадаючого меню (оновлені, як у Manager) */
 .volunteer-dropdown-menu {
     position: absolute;
     top: 45px;
@@ -1190,13 +1184,12 @@
     background: #dc2626;
 }
 
-/* Стрілка профілю */
+
 .volunteer-profile-arrow {
     font-size: 10px;
     color: #1e40af;
 }
 
-/* ===== СТИЛІ ДЛЯ ТОСТ-СПОВІЩЕНЬ ===== */
 .toast-notifications-container {
     position: fixed;
     bottom: 24px;
@@ -1268,7 +1261,6 @@
     }
 }
 
-/* ===== МОДАЛЬНІ ВІКНА ===== */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -1384,7 +1376,6 @@
     background: #2563eb;
 }
 
-/* Інформаційний блок */
 .info-content {
     padding: 20px 24px;
     background: #eff6ff;
@@ -1453,7 +1444,7 @@
     box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
-/* Документи */
+
 .documents-section {
     padding: 0 24px 20px 24px;
 }
@@ -1589,7 +1580,6 @@
     transform: scale(1.05);
 }
 
-/* Форма телефону */
 .phone-form {
     padding: 24px;
 }
@@ -1668,11 +1658,6 @@
     height: 2px;
     background: linear-gradient(90deg, transparent, #bfdbfe, #bfdbfe, transparent);
 }
-/* ============================================
-   TOAST NOTIFICATIONS - СТИЛІ ДЛЯ СПОВІЩЕНЬ
-   ============================================ */
-
-/* Контейнер для всіх тостів (фіксований в правому нижньому куті) */
 .toast-notifications-container {
     position: fixed;
     bottom: 24px;
@@ -1684,7 +1669,6 @@
     pointer-events: none;
 }
 
-/* Базовий стиль тосту */
 .toast-item {
     pointer-events: auto;
     min-width: 300px;
@@ -1707,7 +1691,6 @@
     line-height: 1.4;
 }
 
-/* Типи тостів - колірні теми */
 .toast-item.toast-success {
     background: rgba(30, 142, 62, 0.95);
 }
@@ -1724,7 +1707,6 @@
     background: rgba(30, 58, 138, 0.95);
 }
 
-/* Кнопка закриття тосту */
 .toast-close-btn {
     background: none;
     border: none;
@@ -1743,7 +1725,6 @@
     color: #ffffff;
 }
 
-/* Анімація появи тосту */
 @keyframes toastSlideIn {
     from {
         transform: translateX(100%);
@@ -1755,7 +1736,6 @@
     }
 }
 
-/* Анімація зникнення тосту (опціонально) */
 @keyframes toastSlideOut {
     from {
         transform: translateX(0);
@@ -1771,7 +1751,6 @@
     animation: toastSlideOut 0.3s ease-out forwards;
 }
 
-/* Адаптивність для мобільних пристроїв */
 @media (max-width: 768px) {
     .toast-notifications-container {
         bottom: 16px;
