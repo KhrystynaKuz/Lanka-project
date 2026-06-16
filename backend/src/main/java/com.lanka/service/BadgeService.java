@@ -14,12 +14,18 @@ import java.util.List;
 import java.time.Duration;
 import java.util.*;
 
+/**
+ * Відповідає за логіку рівнів волонтерів та видачу досягнень (бейджів).
+ */
 @Service
 public class BadgeService {
 
     @Autowired
     private TaskDAO taskDAO;
 
+    /**
+     * Внутрішній клас конфігурації рівнів.
+     */
     private static class LevelConfig {
         int threshold;
         String name;
@@ -43,6 +49,12 @@ public class BadgeService {
             new LevelConfig(500, "Легенда проекту")
     );
 
+    /**
+     * Визначає поточний рівень волонтера на основі кількості виконаних завдань.
+     * @param volunteerId ID волонтера
+     * @return об'єкт VolunteerLevel з інформацією про рівень
+     * @throws SQLException при помилці запиту до БД
+     */
     public VolunteerLevel getVolunteerLevel(UUID volunteerId) throws SQLException {
         int count = taskDAO.countCompletedTasks(volunteerId);
 
@@ -59,6 +71,13 @@ public class BadgeService {
         return new VolunteerLevel(LEVELS.indexOf(current) + 1, current.name, count, next.threshold);
     }
 
+    /**
+     * Отримує список усіх рівнів із позначенням того, чи досяг їх волонтер.
+     *
+     * @param volunteerId унікальний ідентифікатор волонтера.
+     * @return список мап, де кожна мапа містить опис рівня та статус "відкрито".
+     * @throws SQLException у разі виникнення помилок при роботі з базою даних.
+     */
     public List<Map<String, Object>> getAllLevels(UUID volunteerId) throws SQLException {
         int count = taskDAO.countCompletedTasks(volunteerId);
         List<Map<String, Object>> result = new ArrayList<>();
@@ -76,6 +95,13 @@ public class BadgeService {
         return result;
     }
 
+    /**
+     * Нараховує волонтеру новий бейдж, записуючи його в базу даних.
+     *
+     * @param volunteerId унікальний ідентифікатор волонтера.
+     * @param badgeId     ідентифікатор бейджа, який потрібно видати.
+     * @throws SQLException у разі виникнення помилок при роботі з базою даних.
+     */
     public void grantBadge(UUID volunteerId, String badgeId) throws SQLException {
         String sql = "INSERT INTO user_achievements (user_id, badge_id) VALUES (?, ?) ON CONFLICT DO NOTHING";
 
@@ -87,6 +113,13 @@ public class BadgeService {
         }
     }
 
+    /**
+     * Отримує список усіх бейджів, які вже заробив волонтер.
+     *
+     * @param volunteerId унікальний ідентифікатор волонтера.
+     * @return список ідентифікаторів отриманих бейджів.
+     * @throws SQLException у разі виникнення помилок при роботі з базою даних.
+     */
     public List<String> getVolunteerAchievements(UUID volunteerId) throws SQLException {
         List<String> badges = new ArrayList<>();
         String sql = "SELECT badge_id FROM user_achievements WHERE user_id = ?";
@@ -103,6 +136,13 @@ public class BadgeService {
         return badges;
     }
 
+    /**
+     * Повертає повний каталог доступних бейджів з інформацією, чи отримав їх конкретний волонтер.
+     *
+     * @param volunteerId унікальний ідентифікатор волонтера.
+     * @return список мап з описом бейджа та його статусом (відкрито/закрито).
+     * @throws SQLException у разі виникнення помилок при роботі з базою даних.
+     */
     public List<Map<String, Object>> getAllAvailableBadges(UUID volunteerId) throws SQLException {
         List<String> userAchieved = getVolunteerAchievements(volunteerId);
         List<Map<String, Object>> allBadges = new ArrayList<>();
@@ -127,6 +167,12 @@ public class BadgeService {
         return allBadges;
     }
 
+    /**
+     * Перевіряє умови отримання всіх доступних бейджів після виконання завдання.
+     * Реалізує бізнес-логіку нарахування нагород (наприклад, за швидкість чи нічні зміни).
+     * @param volunteerId ID волонтера
+     * @param taskId ID виконаного завдання
+     */
     public void checkAndGrantBadges(UUID volunteerId, UUID taskId) throws SQLException {
         var task = taskDAO.getTaskById(taskId);
         int totalCompleted = taskDAO.countCompletedTasks(volunteerId);

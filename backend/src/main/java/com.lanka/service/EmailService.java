@@ -5,12 +5,20 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+/**
+ * Сервіс для надсилання сповіщень волонтерам через email.
+ */
 @Service
 public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
 
+    /**
+     * Надсилає повідомлення про відхилення документів.
+     * @param to email отримувача
+     * @param reason причина відхилення, що буде вказана у листі
+     */
     public void sendRejectionEmail(String to, String reason) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("christinakuz12@gmail.com");
@@ -22,6 +30,10 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    /**
+     * Надсилає привітальний лист після успішної верифікації акаунту.
+     * @param to email отримувача
+     */
     public void sendWelcomeEmail(String to) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("christinakuz12@gmail.com");

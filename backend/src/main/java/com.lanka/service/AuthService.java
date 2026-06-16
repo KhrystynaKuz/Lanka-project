@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+/**
+ * Сервіс для керування автентифікацією та валідації JWT-токенів.
+ */
 @Service
 public class AuthService {
 
@@ -18,6 +21,12 @@ public class AuthService {
         jwtSecret = secret;
     }
 
+    /**
+     * Перевіряє дійсність JWT-токена та отримує ID користувача.
+     * @param token рядок токена (JWT)
+     * @return UUID користувача, якщо токен валідний
+     * @throws RuntimeException якщо токен недійсний або підпис некоректний
+     */
     public static UUID verifyTokenAndGetUserId(String token) {
         try {
             if (jwtSecret == null) {
