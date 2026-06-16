@@ -333,7 +333,7 @@ export default function Header({ onLogOut, onBackToHome }) {
                 )}
 
                 {activeTab === 'reports' && (
-                    <ReportsTab />
+                    <ReportsTab showNotification={showNotification} />
                 )}
 
                 {activeTab === 'site_editor' && (
