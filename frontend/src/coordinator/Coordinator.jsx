@@ -38,10 +38,17 @@ export default function Coordinator({ onLogout, onBackToHome }) {
     });
 
     const [uploadingFile, setUploadingFile] = useState(false);
-
     const [toasts, setToasts] = useState([]);
 
-    const userId = localStorage.getItem('userId');
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        text: '',
+        icon: '⚠️',
+        onConfirm: null
+    });
+
+    const currentUserId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
 
     /**
@@ -59,6 +66,19 @@ export default function Coordinator({ onLogout, onBackToHome }) {
     };
 
     /**
+     * Закриває модальне вікно підтвердження.
+     */
+    const closeConfirmModal = () => {
+        setConfirmModal({
+            isOpen: false,
+            title: '',
+            text: '',
+            icon: '⚠️',
+            onConfirm: null
+        });
+    };
+
+    /**
      * Завантажує повну інформацію про користувача з бекенду.
      * У разі успіху відкриває модальне вікно з даними.
      *
@@ -66,14 +86,14 @@ export default function Coordinator({ onLogout, onBackToHome }) {
      * @returns {Promise<void>}
      */
     const fetchFullProfile = async () => {
-        if (!userId) {
+        if (!currentUserId) {
             showNotification('🚨 ID користувача не знайдено', 'error');
             return;
         }
 
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:8080/api/profile/full-info-by-id?userId=${userId}`);
+            const res = await fetch(`http://localhost:8080/api/profile/full-info-by-id?userId=${currentUserId}`);
             const data = await res.json();
             if (res.ok) {
                 setFullUserData(data);
@@ -139,15 +159,28 @@ export default function Coordinator({ onLogout, onBackToHome }) {
     };
 
     /**
-     * Видаляє документ за його ідентифікатором.
-     * Перед видаленням запитує підтвердження у користувача.
+     * Відкриває кастомне модальне вікно для підтвердження видалення документа.
+     *
+     * @param {string|number} docId - Ідентифікатор документа.
+     */
+    const deleteDocument = (docId) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Видалення документа',
+            text: 'Ви впевнені, що хочете видалити цей документ? Цю дію не можна скасувати.',
+            icon: '🗑️',
+            onConfirm: () => executeDeleteDocument(docId)
+        });
+    };
+
+    /**
+     * Виконує видалення документа після підтвердження.
      *
      * @async
      * @param {string|number} docId - Ідентифікатор документа.
      * @returns {Promise<void>}
      */
-    const deleteDocument = async (docId) => {
-        if (!confirm('Видалити документ?')) return;
+    const executeDeleteDocument = async (docId) => {
         try {
             const res = await fetch(`http://localhost:8080/api/profile/documents/delete?docId=${docId}`, {
                 method: 'DELETE'
@@ -161,6 +194,8 @@ export default function Coordinator({ onLogout, onBackToHome }) {
         } catch (err) {
             console.error(err);
             showNotification('🚨 Сталася помилка під час видалення', 'error');
+        } finally {
+            closeConfirmModal();
         }
     };
 
@@ -179,7 +214,7 @@ export default function Coordinator({ onLogout, onBackToHome }) {
         setUploadingFile(true);
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('userId', userId);
+        formData.append('userId', currentUserId);
         formData.append('title', file.name);
 
         try {
@@ -204,7 +239,7 @@ export default function Coordinator({ onLogout, onBackToHome }) {
     };
 
     return (
-        <div className="coord-glass-container">
+        <div className="admin-glass-container">
             <div className="toast-notifications-container">
                 {toasts.map(toast => (
                     <div key={toast.id} className={`toast-item toast-${toast.type}`}>
@@ -219,49 +254,99 @@ export default function Coordinator({ onLogout, onBackToHome }) {
                 ))}
             </div>
 
-            <header className="coord-glass-header">
-                <div className="coord-header-left">
-                    <div className="coord-logo" onClick={onBackToHome} style={{ cursor: 'pointer' }}>ЛАНКА</div>
+            <header className="admin-glass-header">
+                <div className="admin-header-left">
+                    <div className="admin-logo" onClick={onBackToHome} style={{ cursor: 'pointer' }}>ЛАНКА</div>
 
-                    <nav className="coord-nav-menu">
-                        <button className={`coord-nav-btn ${activeTab === 'department_tasks' ? 'active' : ''}`} onClick={() => setActiveTab('department_tasks')}>Завдання відділу</button>
-                        <button className={`coord-nav-btn ${activeTab === 'tasks' ? 'active' : ''}`} onClick={() => setActiveTab('tasks')}>Мої завдання</button>
-                        <button className={`coord-nav-btn ${activeTab === 'archive' ? 'active' : ''}`} onClick={() => setActiveTab('archive')}>Архів</button>
-                        <button className={`coord-nav-btn ${activeTab === 'chats' ? 'active' : ''}`} onClick={() => setActiveTab('chats')}>Чати</button>
-                        <button className={`coord-nav-btn ${activeTab === 'warehouse' ? 'active' : ''}`} onClick={() => setActiveTab('warehouse')}>Склад</button>
-                        <button className={`coord-nav-btn ${activeTab === 'badges' ? 'active' : ''}`} onClick={() => setActiveTab('badges')}>Відзнаки</button>
+                    <nav className="admin-nav-menu">
+                        <button
+                            className={`admin-nav-btn ${activeTab === 'department_tasks' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('department_tasks')}
+                        >
+                            Завдання відділу
+                        </button>
+                        <button
+                            className={`admin-nav-btn ${activeTab === 'my_tasks' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('my_tasks')}
+                        >
+                            Мої завдання
+                        </button>
+                        <button
+                            className={`admin-nav-btn ${activeTab === 'archive' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('archive')}
+                        >
+                            Архів
+                        </button>
+                        <button
+                            className={`admin-nav-btn ${activeTab === 'chats' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('chats')}
+                        >
+                            Чати
+                        </button>
+                        <button
+                            className={`admin-nav-btn ${activeTab === 'inventory' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('inventory')}
+                        >
+                            Склад
+                        </button>
+                        <button
+                            className={`admin-nav-btn ${activeTab === 'badges' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('badges')}
+                        >
+                            Відзнаки
+                        </button>
                     </nav>
 
-                    <div className="coord-profile-zone">
-                        <div className="coord-profile-avatar" onClick={() => setShowDropdown(!showDropdown)} style={{ cursor: 'pointer' }}>
+                    <div className="admin-profile-zone">
+                        <div className="admin-profile-avatar" onClick={() => setShowDropdown(!showDropdown)}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                <circle cx="12" cy="7" r="4"/>
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
                             </svg>
                             <span className="profile-arrow">{showDropdown ? '▲' : '▼'}</span>
                         </div>
+
                         {showDropdown && (
-                            <div className="coord-dropdown-menu">
+                            <div className="admin-dropdown-menu">
                                 <div className="dropdown-info">
                                     {userRole === 'COORDINATOR' ? 'Координатор' : userRole || 'Користувач'}
                                 </div>
                                 <button className="dropdown-info-btn" onClick={fetchFullProfile} disabled={loading}>
                                     {loading ? 'Завантаження...' : 'Розширена інформація'}
                                 </button>
-                                <button className="dropdown-logout-btn" onClick={onLogout}>Вийти</button>
+                                <button className="dropdown-logout-btn" onClick={onLogout}>
+                                    Вийти
+                                </button>
                             </div>
                         )}
                     </div>
                 </div>
             </header>
 
-            <main className="coord-glass-content fade-in">
-                {activeTab === 'department_tasks' && <DepartmentTasksTab />}
-                {activeTab === 'tasks' && <TasksTab userId={userId} />}
-                {activeTab === 'archive' && <ArchiveTab userId={userId} />}
-                {activeTab === 'chats' && <ChatsTab />}
-                {activeTab === 'warehouse' && <InventoryTab />}
-                {activeTab === 'badges' && <BadgesTab userId={userId} />}
+            <main className="admin-glass-content">
+                {activeTab === 'department_tasks' && (
+                    <DepartmentTasksTab showNotification={showNotification} />
+                )}
+
+                {activeTab === 'my_tasks' && (
+                    <TasksTab showNotification={showNotification} />
+                )}
+
+                {activeTab === 'archive' && (
+                    <ArchiveTab />
+                )}
+
+                {activeTab === 'chats' && (
+                    <ChatsTab />
+                )}
+
+                {activeTab === 'inventory' && (
+                    <InventoryTab showNotification={showNotification} />
+                )}
+
+                {activeTab === 'badges' && (
+                    <BadgesTab />
+                )}
             </main>
 
             {showFullProfileModal && fullUserData && (
@@ -340,13 +425,107 @@ export default function Coordinator({ onLogout, onBackToHome }) {
                                                 <span style={{ fontSize: '12px', fontWeight: 'bold', color: doc.status === 'APPROVED' ? 'green' : 'orange' }}>
                                                     {doc.status || 'PENDING'}
                                                 </span>
-                                                <button onClick={() => deleteDocument(doc.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', marginLeft: '10px' }}>🗑️</button>
+                                                <button onClick={() => deleteDocument(doc.id)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>🗑️</button>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </div>
                         </div>
+
+                        {/* ВІКНО ПІДТВЕРДЖЕННЯ ВИДАЛЕННЯ (Всередині модалки профілю, щоб бути поверх неї) */}
+                        {confirmModal.isOpen && (
+                            <div className="modal-overlay" style={{
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                zIndex: 99999,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(0, 0, 0, 0.4)',
+                                backdropFilter: 'blur(4px)'
+                            }}>
+                                <div className="modal-content" style={{
+                                    width: '420px',
+                                    padding: 0,
+                                    background: '#fff',
+                                    borderRadius: '24px',
+                                    overflow: 'hidden',
+                                    boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+                                    border: 'none'
+                                }}>
+                                    <div className="modal-header" style={{
+                                        background: '#ef4444',
+                                        padding: '20px 24px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        border: 'none'
+                                    }}>
+                                        <h3 style={{
+                                            margin: 0,
+                                            color: '#fff',
+                                            fontSize: '18px',
+                                            fontWeight: '600',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '10px'
+                                        }}>
+                                            {confirmModal.icon} {confirmModal.title}
+                                        </h3>
+                                        <button className="modal-close" onClick={closeConfirmModal} style={{
+                                            background: 'rgba(255,255,255,0.2)',
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            border: 'none',
+                                            color: '#fff',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            fontSize: '14px'
+                                        }}>✕</button>
+                                    </div>
+
+                                    <div style={{ padding: '24px', fontSize: '15px', color: '#475569', lineHeight: '1.5', textAlign: 'center' }}>
+                                        {confirmModal.text}
+                                    </div>
+
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: '12px',
+                                        justifyContent: 'center',
+                                        padding: '0 24px 24px 24px'
+                                    }}>
+                                        <button style={{
+                                            background: '#dc2626',
+                                            padding: '12px 32px',
+                                            cursor: 'pointer',
+                                            border: 'none',
+                                            color: '#fff',
+                                            borderRadius: '14px',
+                                            fontSize: '14px',
+                                            fontWeight: '600'
+                                        }} onClick={confirmModal.onConfirm}>Видалити</button>
+
+                                        <button style={{
+                                            background: '#eff6ff',
+                                            padding: '12px 32px',
+                                            cursor: 'pointer',
+                                            border: '1px solid #bfdbfe',
+                                            color: '#1e40af',
+                                            borderRadius: '14px',
+                                            fontSize: '14px',
+                                            fontWeight: '600'
+                                        }} onClick={closeConfirmModal}>Скасувати</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

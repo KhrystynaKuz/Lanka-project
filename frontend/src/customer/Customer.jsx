@@ -32,8 +32,15 @@ export default function Customer({ onLogOut }) {
     });
 
     const [uploadingFile, setUploadingFile] = useState(false);
-
     const [toasts, setToasts] = useState([]);
+
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        text: '',
+        icon: '⚠️',
+        onConfirm: null
+    });
 
     const currentUserId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
@@ -50,6 +57,19 @@ export default function Customer({ onLogOut }) {
         setTimeout(() => {
             setToasts(prev => prev.filter(toast => toast.id !== id));
         }, 4000);
+    };
+
+    /**
+     * Закриває модальне вікно підтвердження.
+     */
+    const closeConfirmModal = () => {
+        setConfirmModal({
+            isOpen: false,
+            title: '',
+            text: '',
+            icon: '⚠️',
+            onConfirm: null
+        });
     };
 
     /**
@@ -133,15 +153,28 @@ export default function Customer({ onLogOut }) {
     };
 
     /**
-     * Видаляє документ за його ідентифікатором.
-     * Перед видаленням запитує підтвердження у користувача.
+     * Відкриває кастомне модальне вікно для підтвердження видалення документа.
+     *
+     * @param {string|number} docId - Ідентифікатор документа.
+     */
+    const deleteDocument = (docId) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Видалення документа',
+            text: 'Ви впевнені, що хочете видалити цей документ? Цю дію не можна скасувати.',
+            icon: '🗑️',
+            onConfirm: () => executeDeleteDocument(docId)
+        });
+    };
+
+    /**
+     * Виконує видалення документа після підтвердження.
      *
      * @async
      * @param {string|number} docId - Ідентифікатор документа.
      * @returns {Promise<void>}
      */
-    const deleteDocument = async (docId) => {
-        if (!confirm('Видалити документ?')) return;
+    const executeDeleteDocument = async (docId) => {
         try {
             const res = await fetch(`http://localhost:8080/api/profile/documents/delete?docId=${docId}`, {
                 method: 'DELETE'
@@ -155,6 +188,8 @@ export default function Customer({ onLogOut }) {
         } catch (err) {
             console.error(err);
             showNotification('🚨 Сталася помилка під час видалення', 'error');
+        } finally {
+            closeConfirmModal();
         }
     };
 
@@ -372,6 +407,100 @@ export default function Customer({ onLogOut }) {
                                 )}
                             </div>
                         </div>
+
+                        {/* ВІКНО ПІДТВЕРДЖЕННЯ ТЕПЕР ТУТ (Всередині модалки профілю) */}
+                        {confirmModal.isOpen && (
+                            <div className="modal-overlay" style={{
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                zIndex: 99999,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(0, 0, 0, 0.4)',
+                                backdropFilter: 'blur(4px)'
+                            }}>
+                                <div className="modal-content" style={{
+                                    width: '420px',
+                                    padding: 0,
+                                    background: '#fff',
+                                    borderRadius: '24px',
+                                    overflow: 'hidden',
+                                    boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+                                    border: 'none'
+                                }}>
+                                    <div className="modal-header" style={{
+                                        background: '#ef4444',
+                                        padding: '20px 24px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        border: 'none'
+                                    }}>
+                                        <h3 style={{
+                                            margin: 0,
+                                            color: '#fff',
+                                            fontSize: '18px',
+                                            fontWeight: '600',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '10px'
+                                        }}>
+                                            {confirmModal.icon} {confirmModal.title}
+                                        </h3>
+                                        <button className="modal-close" onClick={closeConfirmModal} style={{
+                                            background: 'rgba(255,255,255,0.2)',
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            border: 'none',
+                                            color: '#fff',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            fontSize: '14px'
+                                        }}>✕</button>
+                                    </div>
+
+                                    <div style={{ padding: '24px', fontSize: '15px', color: '#475569', lineHeight: '1.5', textAlign: 'center' }}>
+                                        {confirmModal.text}
+                                    </div>
+
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: '12px',
+                                        justifyContent: 'center',
+                                        padding: '0 24px 24px 24px'
+                                    }}>
+                                        <button style={{
+                                            background: '#dc2626',
+                                            padding: '12px 32px',
+                                            cursor: 'pointer',
+                                            border: 'none',
+                                            color: '#fff',
+                                            borderRadius: '14px',
+                                            fontSize: '14px',
+                                            fontWeight: '600'
+                                        }} onClick={confirmModal.onConfirm}>Видалити</button>
+
+                                        <button style={{
+                                            background: '#eff6ff',
+                                            padding: '12px 32px',
+                                            cursor: 'pointer',
+                                            border: '1px solid #bfdbfe',
+                                            color: '#1e40af',
+                                            borderRadius: '14px',
+                                            fontSize: '14px',
+                                            fontWeight: '600'
+                                        }} onClick={closeConfirmModal}>Скасувати</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
