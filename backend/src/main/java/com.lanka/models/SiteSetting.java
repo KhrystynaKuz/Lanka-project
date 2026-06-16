@@ -1,5 +1,8 @@
 package com.lanka.models;
 
+/**
+ * Пара-ключ-значення для налаштувань розділу "Про нас" головного сайту.
+ */
 public class SiteSetting {
     private String key;
     private String value;

@@ -1,5 +1,9 @@
 package com.lanka.models;
 
+/**
+ * DTO для відображення прогресу рівня волонтера.
+ * Використовується для візуалізації досвіду користувача та призначення досягнень.
+ */
 public class VolunteerLevel {
     private int levelNumber;
     private String name;

@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Модель складського обліку ресурсів.
+ */
 public class Inventory {
     private UUID id;
     private String item_name;

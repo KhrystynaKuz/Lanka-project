@@ -4,7 +4,14 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 import java.util.List;
 
+/**
+ * Модель, що представляє запит на допомогу.
+ * Керує статусами, пріоритетами та відповідальними менеджерами.
+ */
 public class Request {
+    /**
+     * Статуси життєвого циклу запиту.
+     */
     public enum RequestStatus {
         PENDING, APPROVED, REJECTED, IN_PROGRESS, FULFILLED
     }

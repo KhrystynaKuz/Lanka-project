@@ -5,6 +5,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DTO для формування агрегованого звіту по запиту.
+ * Містить деталі запиту та список використаних ресурсів.
+ */
 public class ReportDTO {
     private String requestId;
     private LocalDate requestDate;
@@ -16,13 +20,15 @@ public class ReportDTO {
     private BigDecimal totalItemsCost = BigDecimal.ZERO;
     private BigDecimal totalTransportCost = BigDecimal.ZERO;
 
+    /**
+     * Додає елемент до звіту та автоматично перераховує загальні витрати.
+     * @param item об'єкт {@link ReportItemDTO} для додавання.
+     */
     public void addItem(ReportItemDTO item) {
         this.items.add(item);
-        // Додаємо вартість (ціна * кількість) до загальної вартості речей
         BigDecimal itemTotal = item.getPrice().multiply(BigDecimal.valueOf(item.getQty()));
         this.totalItemsCost = this.totalItemsCost.add(itemTotal);
 
-        // Додаємо вартість доставки
         if (item.getTransportCost() != null) {
             this.totalTransportCost = this.totalTransportCost.add(item.getTransportCost());
         }

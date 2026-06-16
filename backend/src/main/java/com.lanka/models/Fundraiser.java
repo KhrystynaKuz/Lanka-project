@@ -3,6 +3,10 @@ package com.lanka.models;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Модель збору коштів для сайту.
+ * Зберігає інформацію про цілі та способи переказу грошей.
+ */
 public class Fundraiser {
     private UUID id;
     private String title;

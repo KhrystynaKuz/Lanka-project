@@ -3,6 +3,9 @@ package com.lanka.models;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Звіт волонтера про виконану роботу або використання ресурсів.
+ */
 public class Report {
     private UUID id;
     private UUID task_id;

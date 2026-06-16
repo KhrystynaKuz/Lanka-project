@@ -2,6 +2,9 @@ package com.lanka.models;
 
 import java.util.UUID;
 
+/**
+ * Сполучна таблиця, що визначає належність волонтера до певного відділу.
+ */
 public class UserDepartment {
     private UUID user_id;
     private UUID department_id;

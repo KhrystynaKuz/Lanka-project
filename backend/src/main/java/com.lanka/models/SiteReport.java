@@ -1,5 +1,8 @@
 package com.lanka.models;
 
+/**
+ * Представляє звітний об'єкт сайту.
+ */
 public class SiteReport {
     private String name;
     private String url;

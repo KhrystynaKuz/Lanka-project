@@ -3,8 +3,15 @@ package com.lanka.models;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Модель завдання, що походить від запиту на допомогу.
+ * Завдання — це атомарна одиниця роботи, яку виконує волонтер.
+ */
 public class Task {
     public enum TaskStatus {
+        /**
+         * Статуси виконання завдання.
+         */
         ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED
     }
 

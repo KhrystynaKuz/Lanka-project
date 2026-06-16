@@ -2,6 +2,9 @@ package com.lanka.models;
 
 import java.util.UUID;
 
+/**
+ * Модель, що представляє волонтерський відділ.
+ */
 public class Department {
     private UUID id;
     private String name;

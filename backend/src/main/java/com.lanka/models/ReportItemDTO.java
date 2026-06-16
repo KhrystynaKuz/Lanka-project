@@ -3,6 +3,9 @@ package com.lanka.models;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * DTO окремого елемента звіту.
+ */
 public class ReportItemDTO {
     private String name;
     private int qty;

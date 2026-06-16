@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Модель для фіксації руху ресурсів на складі (надходження або витрати).
+ */
 public class InventoryTransaction {
     private UUID id;
     private UUID inventory_id;

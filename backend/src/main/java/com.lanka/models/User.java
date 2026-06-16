@@ -4,7 +4,14 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Модель користувача системи.
+ * Містить особисті дані, контактну інформацію та роль користувача.
+ */
 public class User {
+    /**
+     * Ролі користувача в системі, що визначають рівень доступу.
+     */
     public enum UserRole {
         CUSTOMER, VOLUNTEER, COORDINATOR, HEAD
     }
