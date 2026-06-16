@@ -3,8 +3,11 @@ package com.lanka.controllers.head;
 import com.lanka.dao.UserDAO;
 import com.lanka.dao.DocumentDAO;
 import com.lanka.models.User;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -27,6 +30,9 @@ public class ProfileController {
 
     private final UserDAO userDAO;
     private final DocumentDAO documentDAO;
+
+    @Value("${supabase.service-role-key}")
+    private String serviceRoleKey;
 
     /**
      * Constructs a new {@code ProfileController} initializing necessary DAOs.
@@ -216,27 +222,46 @@ public class ProfileController {
         }
     }
 
-    /**
-     * Uploads a multipart file acting as a registration document and logs its URL in the database.
-     *
-     * @param file   the uploaded file object
-     * @param userId the UUID of the user registering the document
-     * @param title  the title/type designation for the document
-     * @return a {@link ResponseEntity} containing the generated URL upon success
-     */
+
     @PostMapping("/registration/documents/upload")
     public ResponseEntity<?> uploadDocument(
-            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
             @RequestParam("userId") UUID userId,
-            @RequestParam("title") String title) {
+            @RequestParam("file") MultipartFile file) {
+
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Файл порожній"));
+        }
+
         try {
-            String fileUrl = "http://storage.lanka.com/" + file.getOriginalFilename();
+            String originalName = file.getOriginalFilename();
+            String sanitizedName = (originalName != null) ? originalName.replaceAll("\\s+", "_") : "document.png";
 
-            documentDAO.addDocument(userId, title, fileUrl);
+            String bucketName = "user-documents";
+            String fileName = userId.toString() + "/" + sanitizedName;
 
-            return ResponseEntity.ok(Map.of("message", "Файл успішно завантажено", "url", fileUrl));
+            String supabaseUrl = "https://dxgywtqqzpyrueostjdy.supabase.co/storage/v1/object/" + bucketName + "/" + fileName;
+
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("apikey", serviceRoleKey);
+            headers.set("Authorization", "Bearer " + serviceRoleKey);
+
+            String contentType = file.getContentType();
+            headers.setContentType(MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"));
+
+            HttpEntity<byte[]> requestEntity = new HttpEntity<>(file.getBytes(), headers);
+
+            restTemplate.exchange(supabaseUrl, HttpMethod.PUT, requestEntity, String.class);
+
+            String publicUrl = "https://dxgywtqqzpyrueostjdy.supabase.co/storage/v1/object/public/" + bucketName + "/" + fileName;
+
+            documentDAO.addDocument(userId, "IDENTITY_DOC", publicUrl);
+
+            return ResponseEntity.ok(Map.of("message", "Файл успішно завантажено", "url", publicUrl));
+
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Помилка завантаження: " + e.getMessage()));
         }
     }
 
