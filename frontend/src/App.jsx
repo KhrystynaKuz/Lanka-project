@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import Login from './auth/Login';
 import Home from './home_page/Home';
 import Register from './auth/Register';
@@ -7,9 +7,27 @@ import Customer from './customer/Customer.jsx';
 import Volunteer from "./volunteer/Volunteer.jsx";
 import Coordinator from './coordinator/Coordinator.jsx';
 import EditDocuments from './auth/EditDocuments.jsx';
+import './App.css';
+
+// Компонент гарного модального вікна
+const CustomAlert = ({ isOpen, onClose, title, message, buttonText = "OK" }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="custom-alert-overlay" onClick={onClose}>
+            <div className="custom-alert-card" onClick={(e) => e.stopPropagation()}>
+                <div className="custom-alert-icon">🔔</div>
+                <h3 className="custom-alert-title">{title || "Повідомлення"}</h3>
+                <p className="custom-alert-message">{message}</p>
+                <button className="custom-alert-btn" onClick={onClose}>
+                    {buttonText}
+                </button>
+            </div>
+        </div>
+    );
+};
 
 function App() {
-
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         return localStorage.getItem('isLoggedIn') === 'true';
     });
@@ -21,6 +39,32 @@ function App() {
     const [role, setRole] = useState(() => {
         return localStorage.getItem('userRole') || null;
     });
+
+    // Стейт для кастомного алерту
+    const [alertModal, setAlertModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        buttonText: 'OK'
+    });
+
+    const showAlert = (message, title = 'Повідомлення', buttonText = 'OK') => {
+        setAlertModal({
+            isOpen: true,
+            title: title,
+            message: message,
+            buttonText: buttonText
+        });
+    };
+
+    const closeAlert = () => {
+        setAlertModal({
+            isOpen: false,
+            title: '',
+            message: '',
+            buttonText: 'OK'
+        });
+    };
 
     const handleLoginSuccess = async (userRole, userId) => {
         const API_BASE_URL = 'http://localhost:8080';
@@ -41,12 +85,18 @@ function App() {
                     proceedLogin(userRole, userId, 'edit_documents');
                 }
                 else {
-                    alert("Ваш акаунт ще не верифіковано адміністратором. Будь ласка, зачекайте.");
+                    showAlert(
+                        "Ваш акаунт ще не верифіковано адміністратором. Будь ласка, зачекайте.",
+                        "⏳ Очікування верифікації"
+                    );
                     return;
                 }
             } catch (error) {
                 console.error(error);
-                alert("Помилка зв'язку з сервером.");
+                showAlert(
+                    "Помилка зв'язку з сервером. Перевірте підключення до інтернету.",
+                    "🚨 Помилка мережі"
+                );
                 return;
             }
         } else {
@@ -76,7 +126,6 @@ function App() {
         localStorage.removeItem('userId');
     };
 
-
     const navigateTo = (page) => {
         setCurrentPage(page);
         localStorage.setItem('currentPage', page);
@@ -84,6 +133,15 @@ function App() {
 
     return (
         <>
+            {/* Кастомне модальне вікно замість alert */}
+            <CustomAlert
+                isOpen={alertModal.isOpen}
+                onClose={closeAlert}
+                title={alertModal.title}
+                message={alertModal.message}
+                buttonText={alertModal.buttonText}
+            />
+
             {currentPage === 'edit_documents' && (
                 <EditDocuments
                     userId={localStorage.getItem('userId')}
@@ -91,7 +149,7 @@ function App() {
                     onBackToDashboard={() => navigateTo('home')}
                 />
             )}
-            
+
             {currentPage === 'login' && (
                 <Login
                     onLoginSuccess={handleLoginSuccess}
