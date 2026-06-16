@@ -54,6 +54,24 @@ export default function RequestsTab() {
         return labels[priorityLevel] || '⚪ Не вказано';
     };
 
+    // Динамічні стилі для селекта статусів в історії
+    const getStatusStyles = (status) => {
+        switch (status) {
+            case 'PENDING':
+                return { background: 'rgba(230, 126, 34, 0.15)', color: '#e67e22', border: '1px solid rgba(230, 126, 34, 0.3)' };
+            case 'APPROVED':
+                return { background: 'rgba(37, 99, 235, 0.15)', color: '#2563eb', border: '1px solid rgba(37, 99, 235, 0.3)' };
+            case 'IN_PROGRESS':
+                return { background: 'rgba(52, 152, 219, 0.15)', color: '#3498db', border: '1px solid rgba(52, 152, 219, 0.3)' };
+            case 'FULFILLED':
+                return { background: 'rgba(46, 204, 113, 0.15)', color: '#2ecc71', border: '1px solid rgba(46, 204, 113, 0.3)' };
+            case 'REJECTED':
+                return { background: 'rgba(231, 76, 60, 0.15)', color: '#e74c3c', border: '1px solid rgba(231, 76, 60, 0.3)' };
+            default:
+                return { background: 'rgba(107, 114, 128, 0.15)', color: '#6b7280', border: '1px solid rgba(107, 114, 128, 0.3)' };
+        }
+    };
+
     const loadCoreData = () => {
         setLoadingRequests(true);
         fetch('/api/requests')
@@ -112,6 +130,7 @@ export default function RequestsTab() {
         }
     }, [showPendingDropdown, pendingRequests.length]);
 
+    // Обробник зміни статусу для Нових (PENDING) заявок
     const handleStatusChange = (id, newStatus) => {
         if (newStatus === 'APPROVED') {
             const chosenDepts = selectedDepartmentsByRequest[id] || [];
@@ -161,6 +180,30 @@ export default function RequestsTab() {
             .catch(err => {
                 console.error("Помилка при оновленні статусу:", err);
                 addToast("🚨 Помилка оновлення статусу заявки.", "error");
+            });
+    };
+
+    // Функція для прямої зміни статусу через випадний список в історії оброблених заявок
+    const updateRequestStatus = (id, newStatus) => {
+        fetch(`/api/requests/${id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                status: newStatus,
+                departmentIds: [] // Для зміни вже оброблених статусів (наприклад, переведення в роботі/виконано)
+            })
+        })
+            .then(res => {
+                if (!res.ok) throw new Error();
+                return res.json();
+            })
+            .then(() => {
+                setRequests(prev => prev.map(req => req.id === id ? { ...req, status: newStatus } : req));
+                addToast(`🔄 Статус заявки №${String(id).slice(0, 8).toUpperCase()} змінено на ${newStatus}`, "success");
+            })
+            .catch(err => {
+                console.error("Помилка зміни статусу в історії:", err);
+                addToast("🚨 Не вдалося змінити статус заявки.", "error");
             });
     };
 
@@ -463,9 +506,37 @@ export default function RequestsTab() {
                                         </span>
                                     </div>
                                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                        <span className={`status-badge ${request.status ? request.status.toLowerCase() : ''}`} style={{ fontWeight: '600' }}>
-                                            {request.status}
-                                        </span>
+                                        {/* Випадний список (селект) замість звичайного статичного баджа статусу */}
+                                        <select
+                                            value={request.status || 'PENDING'}
+                                            onClick={(e) => e.stopPropagation()} // Запобігаємо згортанню картки при кліці на селект
+                                            onChange={(e) => updateRequestStatus(request.id, e.target.value)}
+                                            style={{
+                                                ...getStatusStyles(request.status),
+                                                padding: '6px 12px',
+                                                borderRadius: '8px',
+                                                fontWeight: '600',
+                                                fontSize: '13px',
+                                                cursor: 'pointer',
+                                                outline: 'none',
+                                                border: '1px solid rgba(0, 0, 0, 0.15)',
+                                                appearance: 'none', // Приховуємо стандартну стрілочку браузера
+                                                WebkitAppearance: 'none',
+                                                MozAppearance: 'none',
+                                                paddingRight: '24px',
+                                                backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231e3a8a' d='M0 0l5 5 5-5z'/></svg>")`,
+                                                backgroundRepeat: 'no-repeat',
+                                                backgroundPosition: 'right 8px center',
+                                                backgroundSize: '10px 6px'
+                                            }}
+                                        >
+                                            <option value="PENDING" style={{ background: '#fff', color: '#000' }}>PENDING</option>
+                                            <option value="APPROVED" style={{ background: '#fff', color: '#000' }}>APPROVED</option>
+                                            <option value="IN_PROGRESS" style={{ background: '#fff', color: '#000' }}>IN_PROGRESS</option>
+                                            <option value="FULFILLED" style={{ background: '#fff', color: '#000' }}>FULFILLED</option>
+                                            <option value="REJECTED" style={{ background: '#fff', color: '#000' }}>REJECTED</option>
+                                        </select>
+
                                         <button className="main-search-btn" style={{ padding: '5px 10px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); toggleExpand(`history_${request.id}`); }}>
                                             {isExpanded ? 'Згорнути ▲' : 'Розгорнути ▼'}
                                         </button>
