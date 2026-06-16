@@ -9,7 +9,18 @@ import Coordinator from './coordinator/Coordinator.jsx';
 import EditDocuments from './auth/EditDocuments.jsx';
 import './App.css';
 
-// Компонент гарного модального вікна
+/**
+ * Компонент кастомного модального вікна для повідомлень.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {boolean} props.isOpen - Чи відкрито модальне вікно.
+ * @param {Function} props.onClose - Функція закриття вікна.
+ * @param {string} props.title - Заголовок повідомлення.
+ * @param {string} props.message - Текст повідомлення.
+ * @param {string} [props.buttonText="OK"] - Текст кнопки закриття.
+ * @returns {JSX.Element|null} Рендер модального вікна або null, якщо закрито.
+ */
 const CustomAlert = ({ isOpen, onClose, title, message, buttonText = "OK" }) => {
     if (!isOpen) return null;
 
@@ -27,6 +38,14 @@ const CustomAlert = ({ isOpen, onClose, title, message, buttonText = "OK" }) => 
     );
 };
 
+/**
+ * Головний кореневий компонент додатку.
+ * Відповідає за маршрутизацію, управління станом автентифікації,
+ * навігацію між сторінками та перевірку верифікації користувачів.
+ *
+ * @component
+ * @returns {JSX.Element} Рендер всього додатку.
+ */
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         return localStorage.getItem('isLoggedIn') === 'true';
@@ -40,7 +59,6 @@ function App() {
         return localStorage.getItem('userRole') || null;
     });
 
-    // Стейт для кастомного алерту
     const [alertModal, setAlertModal] = useState({
         isOpen: false,
         title: '',
@@ -48,6 +66,13 @@ function App() {
         buttonText: 'OK'
     });
 
+    /**
+     * Показує кастомне модальне вікно з повідомленням.
+     *
+     * @param {string} message - Текст повідомлення.
+     * @param {string} [title='Повідомлення'] - Заголовок вікна.
+     * @param {string} [buttonText='OK'] - Текст кнопки.
+     */
     const showAlert = (message, title = 'Повідомлення', buttonText = 'OK') => {
         setAlertModal({
             isOpen: true,
@@ -57,6 +82,9 @@ function App() {
         });
     };
 
+    /**
+     * Закриває модальне вікно з повідомленням.
+     */
     const closeAlert = () => {
         setAlertModal({
             isOpen: false,
@@ -66,6 +94,16 @@ function App() {
         });
     };
 
+    /**
+     * Обробляє успішний вхід користувача.
+     * Перевіряє статус верифікації для CUSTOMER та VOLUNTEER,
+     * визначає цільову сторінку та виконує вхід.
+     *
+     * @async
+     * @param {string} userRole - Роль користувача.
+     * @param {string|number} userId - Ідентифікатор користувача.
+     * @returns {Promise<void>}
+     */
     const handleLoginSuccess = async (userRole, userId) => {
         const API_BASE_URL = 'http://localhost:8080';
         const isProtectedRole = (userRole === 'CUSTOMER' || userRole === 'VOLUNTEER');
@@ -105,6 +143,13 @@ function App() {
         }
     };
 
+    /**
+     * Виконує вхід користувача, зберігає дані в локальному сховищі.
+     *
+     * @param {string} role - Роль користувача.
+     * @param {string|number} id - Ідентифікатор користувача.
+     * @param {string} page - Назва сторінки для переходу.
+     */
     const proceedLogin = (role, id, page) => {
         setIsLoggedIn(true);
         setRole(role);
@@ -115,6 +160,9 @@ function App() {
         localStorage.setItem('currentPage', page);
     };
 
+    /**
+     * Виконує вихід користувача, очищає локальне сховище.
+     */
     const handleLogOut = () => {
         setIsLoggedIn(false);
         setRole(null);
@@ -126,6 +174,11 @@ function App() {
         localStorage.removeItem('userId');
     };
 
+    /**
+     * Переходить на вказану сторінку та зберігає це в локальному сховищі.
+     *
+     * @param {string} page - Назва сторінки.
+     */
     const navigateTo = (page) => {
         setCurrentPage(page);
         localStorage.setItem('currentPage', page);
@@ -133,7 +186,6 @@ function App() {
 
     return (
         <>
-            {/* Кастомне модальне вікно замість alert */}
             <CustomAlert
                 isOpen={alertModal.isOpen}
                 onClose={closeAlert}
