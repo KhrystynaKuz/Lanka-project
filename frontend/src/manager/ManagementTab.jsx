@@ -892,11 +892,22 @@ export default function ManagementTab({showNotification}) {
                                         paddingRight: '20px'
                                     }}
                                 >
-                                    <button className="doc-action-btn approve">
+                                    <button
+                                        className="doc-action-btn approve"
+                                        onClick={() => handleApprove(doc.id)}
+                                    >
                                         Затвердити
                                     </button>
 
-                                    <button className="doc-action-btn reject">
+                                    <button
+                                        className="doc-action-btn reject"
+                                        onClick={() => {
+                                            setIsInitialVerification(false);
+                                            setActiveDocId(doc.id);
+                                            setActiveUserId(doc.user_id);
+                                            setShowRejectModal(true);
+                                        }}
+                                    >
                                         Відхилити
                                     </button>
                                 </div>
