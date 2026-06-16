@@ -11,6 +11,10 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * REST controller responsible for handling customer requests.
+ * Provides endpoints to create, retrieve, and delete requests made by customers.
+ */
 @RestController("customerRequestController")
 @RequestMapping("/api/requests")
 @CrossOrigin(origins = "http://localhost:5173")
@@ -18,11 +22,23 @@ public class RequestController {
 
     private final RequestDAO requestDAO;
 
+    /**
+     * Constructs a new {@code RequestController} with the specified data access object.
+     *
+     * @param requestDAO the data access object for managing requests
+     */
     @Autowired
     public RequestController(RequestDAO requestDAO) {
         this.requestDAO = requestDAO;
     }
 
+    /**
+     * Creates a new customer request based on the provided Data Transfer Object (DTO).
+     * Validates input parameters before interacting with the database.
+     *
+     * @param dto the {@link RequestDTO} containing the request details
+     * @return a {@link ResponseEntity} containing the created {@link Request} or an error message
+     */
     @PostMapping("/create")
     public ResponseEntity<?> createRequest(@RequestBody RequestDTO dto) {
         if (dto.getTitle() == null || dto.getTitle().trim().isEmpty() ||
@@ -59,6 +75,12 @@ public class RequestController {
         }
     }
 
+    /**
+     * Retrieves all requests submitted by a specific customer.
+     *
+     * @param customerId the string representation of the customer's UUID
+     * @return a {@link ResponseEntity} containing a list of {@link Request} objects or an error message
+     */
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<?> getCustomerRequests(@PathVariable String customerId) {
         try {
@@ -74,6 +96,12 @@ public class RequestController {
         }
     }
 
+    /**
+     * Deletes or cancels a specific request identified by its UUID.
+     *
+     * @param requestId the string representation of the request's UUID
+     * @return a {@link ResponseEntity} indicating the result of the deletion operation
+     */
     @DeleteMapping("/delete/{requestId}")
     public ResponseEntity<?> deleteRequest(@PathVariable String requestId) {
         try {
@@ -89,11 +117,16 @@ public class RequestController {
         }
     }
 
+    /**
+     * Retrieves a single request by its unique identifier.
+     *
+     * @param requestId the string representation of the request's UUID
+     * @return a {@link ResponseEntity} containing the {@link Request} or a not found status
+     */
     @GetMapping("/{requestId}")
     public ResponseEntity<?> getRequestById(@PathVariable String requestId) {
         try {
             UUID uuid = UUID.fromString(requestId);
-            // Assuming your requestDAO has a method like getRequestById()
             Request request = requestDAO.getRequestById(uuid);
 
             if (request != null) {
@@ -110,6 +143,9 @@ public class RequestController {
         }
     }
 
+    /**
+     * Data Transfer Object for handling incoming request creation payloads.
+     */
     public static class RequestDTO {
         private String customerId;
         private String title;
@@ -117,15 +153,54 @@ public class RequestController {
         private String description;
         private int priority;
 
+        /**
+         * @return the customer ID string
+         */
         public String getCustomerId() { return customerId; }
+
+        /**
+         * @param customerId the customer ID string to set
+         */
         public void setCustomerId(String customerId) { this.customerId = customerId; }
+
+        /**
+         * @return the request title
+         */
         public String getTitle() { return title; }
+
+        /**
+         * @param title the request title to set
+         */
         public void setTitle(String title) { this.title = title; }
+
+        /**
+         * @return the request category
+         */
         public String getCategory() { return category; }
+
+        /**
+         * @param category the request category to set
+         */
         public void setCategory(String category) { this.category = category; }
+
+        /**
+         * @return the request description
+         */
         public String getDescription() { return description; }
+
+        /**
+         * @param description the request description to set
+         */
         public void setDescription(String description) { this.description = description; }
+
+        /**
+         * @return the priority level of the request
+         */
         public int getPriority() { return priority; }
-        public void setPriority(int priority) { this.priority = priority; } // Сеттер
+
+        /**
+         * @param priority the priority level to set
+         */
+        public void setPriority(int priority) { this.priority = priority; }
     }
 }

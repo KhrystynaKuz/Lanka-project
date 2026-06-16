@@ -11,9 +11,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Data Access Object for handling military and civilian aid requests.
+ */
 @Repository
 public class RequestDAO {
 
+    /**
+     * Adds a new request to the system.
+     *
+     * @param request The Request object to save.
+     * @throws SQLException If a database access error occurs.
+     */
     public void addRequest(Request request) throws SQLException {
         String sql = "INSERT INTO requests (id, customer_id, title, description, status, priority, created_at, updated_at, manager_id) " +
                 "VALUES (?, ?, ?, ?, ?::request_status, ?, ?, ?, ?)";
@@ -40,6 +49,12 @@ public class RequestDAO {
         }
     }
 
+    /**
+     * Updates an existing request.
+     *
+     * @param request The Request object containing updated data.
+     * @throws SQLException If a database access error occurs.
+     */
     public void updateRequest(Request request) throws SQLException {
         String sql = "UPDATE requests SET customer_id = ?, title = ?, description = ?, status = ?::request_status, priority = ?, updated_at = ? " +
                 "WHERE id = ?";
@@ -61,6 +76,12 @@ public class RequestDAO {
         }
     }
 
+    /**
+     * Deletes a request from the database.
+     *
+     * @param id The UUID of the request to delete.
+     * @throws SQLException If a database access error occurs.
+     */
     public void deleteRequest(UUID id) throws SQLException {
         String sql = "DELETE FROM requests WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -70,6 +91,13 @@ public class RequestDAO {
         }
     }
 
+    /**
+     * Retrieves all requests made by a specific customer.
+     *
+     * @param customerId The UUID of the customer making the requests.
+     * @return A list of Request objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Request> getRequestsByCustomerId(UUID customerId) throws SQLException {
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests WHERE customer_id = ? ORDER BY created_at DESC";
@@ -87,6 +115,9 @@ public class RequestDAO {
         return list;
     }
 
+    /**
+     * Helper method to map a ResultSet to a Request object.
+     */
     private Request mapRowToRequest(ResultSet rs) throws SQLException {
         Request request = new Request();
         request.setId(rs.getObject("id", UUID.class));
@@ -116,10 +147,22 @@ public class RequestDAO {
         return request;
     }
 
+    /**
+     * Retrieves all requests with a PENDING status.
+     *
+     * @return A list of pending Request objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Request> getPendingRequests() throws SQLException {
         return getRequestsByStatus(RequestStatus.PENDING);
     }
 
+    /**
+     * Counts the total number of pending requests.
+     *
+     * @return The count of pending requests.
+     * @throws SQLException If a database access error occurs.
+     */
     public int getPendingCount() throws SQLException {
         String sql = "SELECT COUNT(*) FROM requests WHERE status::text = 'PENDING'";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -130,6 +173,13 @@ public class RequestDAO {
         return 0;
     }
 
+    /**
+     * Updates the status of a specific request.
+     *
+     * @param requestId The ID string of the request.
+     * @param status    The new status string.
+     * @throws SQLException If a database access error occurs.
+     */
     public void updateStatus(String requestId, String status) throws SQLException {
         String sql = "UPDATE requests SET status = ?::request_status, updated_at = ? WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -141,6 +191,12 @@ public class RequestDAO {
         }
     }
 
+    /**
+     * Retrieves all requests, filling in the relevant departments associated with them.
+     *
+     * @return A list of Request objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Request> getAllRequests() throws SQLException {
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests ORDER BY created_at DESC";
@@ -159,6 +215,13 @@ public class RequestDAO {
         return list;
     }
 
+    /**
+     * Retrieves a request by its ID.
+     *
+     * @param id The UUID of the request.
+     * @return The Request object, or null if not found.
+     * @throws SQLException If a database access error occurs.
+     */
     public Request getRequestById(UUID id) throws SQLException {
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests WHERE id = ?";
@@ -176,6 +239,13 @@ public class RequestDAO {
         return null;
     }
 
+    /**
+     * Searches requests by a title matching pattern.
+     *
+     * @param titlePart The starting string to match the title.
+     * @return A list of matching Request objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Request> searchByTitle(String titlePart) throws SQLException {
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests WHERE title ILIKE ? ORDER BY created_at DESC";
@@ -195,6 +265,13 @@ public class RequestDAO {
         return list;
     }
 
+    /**
+     * Retrieves requests filtered by a specific status.
+     *
+     * @param status The target RequestStatus.
+     * @return A list of Request objects filtered by the status.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Request> getRequestsByStatus(RequestStatus status) throws SQLException {
         String sql = "SELECT id, customer_id, title, description, status::text, priority, created_at, updated_at, manager_id " +
                 "FROM requests WHERE status::text = ? ORDER BY priority DESC, created_at DESC";
@@ -214,6 +291,13 @@ public class RequestDAO {
         return list;
     }
 
+    /**
+     * Finds the names of all departments involved in a specific request based on its tasks.
+     *
+     * @param requestId The UUID of the request.
+     * @return A list of department names.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<String> getDepartmentsByRequestId(UUID requestId) throws SQLException {
         String sql = "SELECT DISTINCT d.name FROM tasks t JOIN departments d ON d.id = t.department_id WHERE t.request_id = ?";
         List<String> departments = new ArrayList<>();
@@ -236,6 +320,14 @@ public class RequestDAO {
     }
 
     // --- NEW METHOD FOR COORDINATOR LOGIC ---
+
+    /**
+     * Retrieves all requests relevant to a coordinator's assigned department.
+     *
+     * @param coordinatorId The UUID of the coordinator.
+     * @return A list of matching Request objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Request> getRequestsByCoordinatorDepartment(UUID coordinatorId) throws SQLException {
         String sql = "SELECT DISTINCT r.id, r.customer_id, r.title, r.description, r.status::text, r.priority, r.created_at, r.updated_at, r.manager_id " +
                 "FROM requests r " +
@@ -258,6 +350,12 @@ public class RequestDAO {
         return list;
     }
 
+    /**
+     * Retrieves all requests along with joined customer names.
+     *
+     * @return A list of Request objects mapped with customer names.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Request> getAllRequestsWithCustomerName() throws SQLException {
         List<Request> requests = new ArrayList<>();
 
@@ -284,6 +382,12 @@ public class RequestDAO {
         return requests;
     }
 
+    /**
+     * Retrieves pending requests along with joined customer names.
+     *
+     * @return A list of pending Request objects with customer names.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Request> getPendingRequestsWithCustomerName() throws SQLException {
         String sql = "SELECT r.*, u.first_name, u.last_name " +
                 "FROM requests r " +
@@ -308,6 +412,13 @@ public class RequestDAO {
         return list;
     }
 
+    /**
+     * Retrieves requests related to tasks inside a volunteer's assigned department.
+     *
+     * @param userId The UUID of the volunteer.
+     * @return A list of relevant Request objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Request> getRequestsByVolunteerDepartments(UUID userId) throws SQLException {
         String sql = "SELECT DISTINCT r.* FROM requests r " +
                 "JOIN tasks t ON r.id = t.request_id " +
@@ -324,7 +435,6 @@ public class RequestDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    // Використовуйте ваш існуючий метод мапінгу
                     list.add(mapRowToRequest(rs));
                 }
             }

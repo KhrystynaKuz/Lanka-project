@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * REST controller responsible for handling volunteer gamification metrics such as levels, maps, and achievements.
+ */
 @RestController
 @RequestMapping("/api/badges")
 @CrossOrigin(origins = "http://localhost:5173")
@@ -23,6 +26,12 @@ public class BadgesController {
     @Autowired
     private UserDAO userDAO;
 
+    /**
+     * Retrieves the current progression level calculation for a specific volunteer.
+     *
+     * @param volunteerId the UUID of the volunteer
+     * @return a {@link ResponseEntity} exposing the current {@link VolunteerLevel}
+     */
     @GetMapping("/{volunteerId}/level")
     public ResponseEntity<VolunteerLevel> getLevel(@PathVariable UUID volunteerId) {
         try {
@@ -33,6 +42,12 @@ public class BadgesController {
         }
     }
 
+    /**
+     * Retrieves the comprehensive map of all accessible and completed levels for a volunteer.
+     *
+     * @param volunteerId the UUID of the volunteer
+     * @return a {@link ResponseEntity} listing level metrics mapped by milestone configurations
+     */
     @GetMapping("/{volunteerId}/map")
     public ResponseEntity<List<Map<String, Object>>> getLevelMap(@PathVariable UUID volunteerId) {
         try {
@@ -43,6 +58,12 @@ public class BadgesController {
         }
     }
 
+    /**
+     * Fetches all distinctive achievements and badges obtained by the volunteer.
+     *
+     * @param volunteerId the UUID of the volunteer
+     * @return a {@link ResponseEntity} holding a list of achievement identifiers or names
+     */
     @GetMapping("/{volunteerId}/achievements")
     public ResponseEntity<List<String>> getAchievements(@PathVariable UUID volunteerId) {
         try {
@@ -52,6 +73,12 @@ public class BadgesController {
         }
     }
 
+    /**
+     * Fetches the general user profile details for the target volunteer.
+     *
+     * @param volunteerId the UUID of the volunteer
+     * @return a {@link ResponseEntity} holding the {@link User} object, or a not found status
+     */
     @GetMapping("/{volunteerId}/profile")
     public ResponseEntity<?> getVolunteerProfile(@PathVariable UUID volunteerId) {
         try {

@@ -10,9 +10,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Data Access Object for managing inventory items in the system.
+ */
 @Repository
 public class InventoryDAO {
 
+    /**
+     * Adds a new item to the inventory.
+     *
+     * @param item The Inventory object to insert.
+     * @throws SQLException If a database access error occurs.
+     */
     public void addInventory(Inventory item) throws SQLException {
         String sql = "INSERT INTO inventory (id, item_name, quantity, unit_of_measure, unit_price, last_updated_by, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -35,6 +44,14 @@ public class InventoryDAO {
         }
     }
 
+    /**
+     * Updates the quantity of a specific inventory item.
+     *
+     * @param id            The UUID of the inventory item.
+     * @param newQuantity   The updated quantity.
+     * @param coordinatorId The UUID of the user making the change.
+     * @throws SQLException If a database access error occurs.
+     */
     public void updateInventoryQuantity(UUID id, int newQuantity, UUID coordinatorId) throws SQLException {
         String sql = "UPDATE inventory SET quantity = ?, last_updated_by = ?, updated_at = ? WHERE id = ?";
 
@@ -50,6 +67,13 @@ public class InventoryDAO {
         }
     }
 
+    /**
+     * Deletes an inventory item and completely removes its transaction history.
+     * Executed within a manual transaction block.
+     *
+     * @param id The UUID of the inventory item to delete.
+     * @throws SQLException If a database access error occurs.
+     */
     public void deleteInventory(UUID id) throws SQLException {
         String deleteTransactionsSql = "DELETE FROM inventory_transactions WHERE inventory_id = ?";
         String deleteInventorySql = "DELETE FROM inventory WHERE id = ?";
@@ -79,6 +103,12 @@ public class InventoryDAO {
         }
     }
 
+    /**
+     * Retrieves all inventory items sorted alphabetically by item name.
+     *
+     * @return A list of Inventory objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Inventory> getAllInventory() throws SQLException {
         String sql = "SELECT id, item_name, quantity, unit_of_measure, unit_price, last_updated_by, updated_at " +
                 "FROM inventory ORDER BY item_name ASC";
@@ -94,6 +124,13 @@ public class InventoryDAO {
         return list;
     }
 
+    /**
+     * Retrieves a single inventory item by its ID.
+     *
+     * @param id The UUID of the inventory item.
+     * @return The Inventory object, or null if not found.
+     * @throws SQLException If a database access error occurs.
+     */
     public Inventory getInventoryById(UUID id) throws SQLException {
         String sql = "SELECT id, item_name, quantity, unit_of_measure, unit_price, last_updated_by, updated_at " +
                 "FROM inventory WHERE id = ?";
@@ -108,6 +145,9 @@ public class InventoryDAO {
         return null;
     }
 
+    /**
+     * Helper method to map a ResultSet to an Inventory object.
+     */
     private Inventory mapRowToInventory(ResultSet rs) throws SQLException {
         Inventory item = new Inventory();
         item.setId(rs.getObject("id", UUID.class));
@@ -120,6 +160,13 @@ public class InventoryDAO {
         return item;
     }
 
+    /**
+     * Updates an inventory item's metadata (name, unit, price) without affecting its quantity.
+     * Quantities should only be changed via transactions and updateInventoryQuantity().
+     *
+     * @param item The Inventory object with updated details.
+     * @throws SQLException If a database access error occurs.
+     */
     public void updateInventory(Inventory item) throws SQLException {
         // Note: 'quantity' is intentionally excluded from this UPDATE statement.
         // Quantities should only be changed via transactions and updateInventoryQuantity().

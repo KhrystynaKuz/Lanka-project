@@ -15,6 +15,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * REST controller for handling user authentication and session management.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
@@ -22,15 +25,29 @@ public class AuthController {
 
     private final UserDAO userDAO;
 
+    /**
+     * Constructs the AuthController with a specific UserDAO.
+     *
+     * @param userDAO The data access object for users.
+     */
     @Autowired
     public AuthController(UserDAO userDAO) {
         this.userDAO = userDAO;
     }
 
+    /**
+     * Default constructor for AuthController.
+     */
     public AuthController() {
         this.userDAO = new UserDAO();
     }
 
+    /**
+     * Authenticates a user using a Bearer token and returns their profile.
+     *
+     * @param authHeader The Authorization header containing the Bearer token.
+     * @return A ResponseEntity containing the verified User object, or an error payload based on the failure.
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestHeader(value = "Authorization", required = false) String authHeader) {
 
@@ -61,11 +78,23 @@ public class AuthController {
         }
     }
 
+    /**
+     * Sets the user ID into the current HTTP session.
+     *
+     * @param userId  The UUID string of the user.
+     * @param session The current HTTP session.
+     */
     @PostMapping("/set-session")
     public void setSession(@RequestBody String userId, HttpSession session) {
         session.setAttribute("userId", UUID.fromString(userId.replace("\"", "")));
     }
 
+    /**
+     * Initializes a login session by mapping the given user ID to the session attributes.
+     *
+     * @param payload A map containing the "userId" string.
+     * @param session The current HTTP session.
+     */
     @PostMapping("/login-session")
     public void loginSession(@RequestBody Map<String, String> payload, HttpSession session) {
         String userId = payload.get("userId");
@@ -74,6 +103,12 @@ public class AuthController {
         }
     }
 
+    /**
+     * Retrieves the verification status of a user.
+     *
+     * @param userId The UUID of the user.
+     * @return A ResponseEntity containing a map with the "is_verified" status, or an error payload.
+     */
     @GetMapping("/status/{userId}")
     public ResponseEntity<?> getUserStatus(@PathVariable UUID userId) {
         try {

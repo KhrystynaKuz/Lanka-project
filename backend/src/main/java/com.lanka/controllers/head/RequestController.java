@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * REST controller for managing incoming requests, statistics, and task allocation at the head management level.
+ */
 @RestController
 @RequestMapping("/api/requests")
 @CrossOrigin(originPatterns = "http://localhost:*")
@@ -24,12 +27,20 @@ public class RequestController {
     private final TaskDAO taskDAO;
     private final UserDepartmentDAO userDepartmentDAO;
 
+    /**
+     * Constructs a new {@code RequestController} and initializes DAOs.
+     */
     public RequestController() {
         this.requestDAO = new RequestDAO();
         this.taskDAO = new TaskDAO();
         this.userDepartmentDAO = new UserDepartmentDAO();
     }
 
+    /**
+     * Retrieves basic statistics regarding requests, such as the total count of pending requests.
+     *
+     * @return a {@link ResponseEntity} encapsulating the statistical map
+     */
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         try {
@@ -40,6 +51,11 @@ public class RequestController {
         }
     }
 
+    /**
+     * Retrieves a list of all requests, mapped with customer name details.
+     *
+     * @return a {@link ResponseEntity} containing a list of {@link Request} objects
+     */
     @GetMapping
     public ResponseEntity<List<Request>> getAll() {
         try {
@@ -51,6 +67,12 @@ public class RequestController {
         }
     }
 
+    /**
+     * Searches for requests whose title partially matches the provided string.
+     *
+     * @param title the search query string
+     * @return a {@link ResponseEntity} containing matching {@link Request} objects
+     */
     @GetMapping("/search")
     public ResponseEntity<List<Request>> search(@RequestParam String title) {
         try {
@@ -60,6 +82,11 @@ public class RequestController {
         }
     }
 
+    /**
+     * Retrieves a list of all requests currently marked as pending.
+     *
+     * @return a {@link ResponseEntity} containing pending {@link Request} objects
+     */
     @GetMapping("/pending")
     public ResponseEntity<List<Request>> getPending() {
         try {
@@ -69,6 +96,15 @@ public class RequestController {
         }
     }
 
+    /**
+     * Updates the status of a specific request. If the request is approved, this method
+     * handles the downstream generation of specific {@link Task} entities distributed to
+     * target department coordinators.
+     *
+     * @param id   the UUID string of the request
+     * @param body a map containing the new 'status' and an optional list of 'departmentIds'
+     * @return a {@link ResponseEntity} confirming the status update
+     */
     @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(
             @PathVariable String id,
@@ -121,6 +157,12 @@ public class RequestController {
         }
     }
 
+    /**
+     * Deletes a request from the database entirely.
+     *
+     * @param id the UUID string of the request to remove
+     * @return a {@link ResponseEntity} confirming the deletion outcome
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteRequest(@PathVariable String id) {
         try {

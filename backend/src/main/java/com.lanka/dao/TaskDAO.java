@@ -11,9 +11,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Data Access Object for handling CRUD operations on tasks.
+ */
 @Repository
 public class TaskDAO {
 
+    /**
+     * Adds a new task to the database.
+     *
+     * @param task The Task object to insert.
+     * @throws SQLException If a database access error occurs.
+     */
     public void addTask(Task task) throws SQLException {
         String sql = "INSERT INTO tasks (id, request_id, department_id, assigned_volunteer_id, coordinator_id, title, description, status, created_at, completed_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?::task_status, ?, ?)";
@@ -40,6 +49,12 @@ public class TaskDAO {
         }
     }
 
+    /**
+     * Updates an existing task.
+     *
+     * @param task The Task object containing updated data.
+     * @throws SQLException If a database access error occurs.
+     */
     public void updateTask(Task task) throws SQLException {
         String sql = "UPDATE tasks SET request_id = ?, department_id = ?, assigned_volunteer_id = ?, " +
                 "coordinator_id = ?, title = ?, description = ?, status = ?::task_status, completed_at = ? " +
@@ -62,6 +77,12 @@ public class TaskDAO {
         }
     }
 
+    /**
+     * Deletes a task by its ID.
+     *
+     * @param id The UUID of the task.
+     * @throws SQLException If a database access error occurs.
+     */
     public void deleteTask(UUID id) throws SQLException {
         String sql = "DELETE FROM tasks WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -71,6 +92,12 @@ public class TaskDAO {
         }
     }
 
+    /**
+     * Retrieves all tasks and attempts to join the parent request title.
+     *
+     * @return A list of Task objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Task> getAllTasks() throws SQLException {
         String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id ORDER BY t.created_at DESC";
         List<Task> list = new ArrayList<>();
@@ -83,6 +110,13 @@ public class TaskDAO {
         return list;
     }
 
+    /**
+     * Retrieves a task by its ID and attempts to join the parent request title.
+     *
+     * @param id The UUID of the task.
+     * @return The Task object, or null if not found.
+     * @throws SQLException If a database access error occurs.
+     */
     public Task getTaskById(UUID id) throws SQLException {
         String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id WHERE t.id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -95,6 +129,13 @@ public class TaskDAO {
         return null;
     }
 
+    /**
+     * Retrieves all tasks belonging to a specific request.
+     *
+     * @param requestId The UUID of the request.
+     * @return A list of Task objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Task> getTasksByRequestId(UUID requestId) throws SQLException {
         String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id WHERE t.request_id = ? ORDER BY t.created_at ASC";
         List<Task> list = new ArrayList<>();
@@ -108,6 +149,13 @@ public class TaskDAO {
         return list;
     }
 
+    /**
+     * Retrieves all tasks assigned to a specific volunteer.
+     *
+     * @param volunteerId The UUID of the volunteer.
+     * @return A list of Task objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Task> getTasksByVolunteerId(UUID volunteerId) throws SQLException {
         String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id WHERE t.assigned_volunteer_id = ? ORDER BY t.status ASC, t.created_at DESC";
         List<Task> list = new ArrayList<>();
@@ -121,6 +169,13 @@ public class TaskDAO {
         return list;
     }
 
+    /**
+     * Retrieves all tasks coordinated by a specific coordinator.
+     *
+     * @param coordinatorId The UUID of the coordinator.
+     * @return A list of Task objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Task> getTasksByCoordinatorId(UUID coordinatorId) throws SQLException {
         String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id WHERE t.coordinator_id = ? ORDER BY t.created_at DESC";
         List<Task> list = new ArrayList<>();
@@ -134,6 +189,14 @@ public class TaskDAO {
         return list;
     }
 
+    /**
+     * Retrieves tasks assigned to a volunteer matching a specific status.
+     *
+     * @param volunteerId The UUID of the volunteer.
+     * @param status      The targeted TaskStatus.
+     * @return A list of matching Task objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Task> getTasksByVolunteerAndStatus(UUID volunteerId, TaskStatus status) throws SQLException {
         String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id WHERE t.assigned_volunteer_id = ? AND t.status = ?::task_status ORDER BY t.created_at DESC";
         List<Task> list = new ArrayList<>();
@@ -149,6 +212,14 @@ public class TaskDAO {
     }
 
     // --- NEW METHOD FOR ARCHIVE ---
+
+    /**
+     * Retrieves tasks that have been either completed or cancelled for a volunteer.
+     *
+     * @param volunteerId The UUID of the volunteer.
+     * @return A list of archived Task objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Task> getArchivedTasksByVolunteerId(UUID volunteerId) throws SQLException {
         String sql = "SELECT t.*, r.title as request_title FROM tasks t " +
                 "LEFT JOIN requests r ON t.request_id = r.id " +
@@ -165,6 +236,13 @@ public class TaskDAO {
         return list;
     }
 
+    /**
+     * Counts the total number of COMPLETED tasks assigned to a volunteer.
+     *
+     * @param volunteerId The UUID of the volunteer.
+     * @return The integer count.
+     * @throws SQLException If a database access error occurs.
+     */
     public int countCompletedTasks(UUID volunteerId) throws SQLException {
         String sql = "SELECT COUNT(*) FROM tasks WHERE assigned_volunteer_id = ? AND status = 'COMPLETED'";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -177,6 +255,13 @@ public class TaskDAO {
         return 0;
     }
 
+    /**
+     * Counts the total number of active (non-completed) tasks for a volunteer.
+     *
+     * @param volunteerId The UUID of the volunteer.
+     * @return The integer count.
+     * @throws SQLException If a database access error occurs.
+     */
     public int countActiveTasks(UUID volunteerId) throws SQLException {
         String sql = "SELECT COUNT(*) FROM tasks WHERE assigned_volunteer_id = ? AND status != 'COMPLETED'";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -189,6 +274,14 @@ public class TaskDAO {
         return 0;
     }
 
+    /**
+     * Counts tasks completed by a volunteer within a specified lookback window.
+     *
+     * @param volunteerId The UUID of the volunteer.
+     * @param days        The number of days to look back.
+     * @return The integer count.
+     * @throws SQLException If a database access error occurs.
+     */
     public int countTasksCompletedInLastDays(UUID volunteerId, int days) throws SQLException {
         String sql = "SELECT COUNT(*) FROM tasks WHERE assigned_volunteer_id = ? AND status = 'COMPLETED' AND completed_at >= NOW() - CAST(? AS INTERVAL)";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -202,6 +295,9 @@ public class TaskDAO {
         return 0;
     }
 
+    /**
+     * Helper method to map a ResultSet to a Task object.
+     */
     private Task mapRowToTask(ResultSet rs) throws SQLException {
         Task task = new Task();
         task.setId(rs.getObject("id", UUID.class));

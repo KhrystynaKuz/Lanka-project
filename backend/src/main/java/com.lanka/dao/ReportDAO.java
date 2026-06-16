@@ -15,9 +15,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Data Access Object for handling user-submitted task reports and generating financial reports.
+ */
 @Repository
 public class ReportDAO {
 
+    /**
+     * Adds a new report submission to the database.
+     *
+     * @param report The Report object to save.
+     * @throws SQLException If a database access error occurs.
+     */
     public void addReport(Report report) throws SQLException {
         String sql = "INSERT INTO reports (id, task_id, author_id, content, attached_files_urls, created_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?)";
@@ -50,6 +59,12 @@ public class ReportDAO {
         }
     }
 
+    /**
+     * Updates an existing report in the database.
+     *
+     * @param report The Report object containing updated information.
+     * @throws SQLException If a database access error occurs.
+     */
     public void updateReport(Report report) throws SQLException {
         String sql = "UPDATE reports SET task_id = ?, author_id = ?, content = ?, attached_files_urls = ? " +
                 "WHERE id = ?";
@@ -74,6 +89,12 @@ public class ReportDAO {
         }
     }
 
+    /**
+     * Deletes a report by its ID.
+     *
+     * @param id The UUID of the report to delete.
+     * @throws SQLException If a database access error occurs.
+     */
     public void deleteReport(UUID id) throws SQLException {
         String sql = "DELETE FROM reports WHERE id = ?";
 
@@ -85,6 +106,12 @@ public class ReportDAO {
         }
     }
 
+    /**
+     * Retrieves all reports in the database.
+     *
+     * @return A list of all Report objects sorted by creation date (descending).
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Report> getAllReports() throws SQLException {
         String sql = "SELECT id, task_id, author_id, content, attached_files_urls, created_at " +
                 "FROM reports ORDER BY created_at DESC";
@@ -101,6 +128,13 @@ public class ReportDAO {
         return list;
     }
 
+    /**
+     * Retrieves a report by its ID.
+     *
+     * @param id The UUID of the report.
+     * @return The Report object, or null if not found.
+     * @throws SQLException If a database access error occurs.
+     */
     public Report getReportById(UUID id) throws SQLException {
         String sql = "SELECT id, task_id, author_id, content, attached_files_urls, created_at " +
                 "FROM reports WHERE id = ?";
@@ -118,6 +152,13 @@ public class ReportDAO {
         return null;
     }
 
+    /**
+     * Retrieves all reports associated with a specific task.
+     *
+     * @param taskId The UUID of the task.
+     * @return A list of Report objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Report> getReportsByTaskId(UUID taskId) throws SQLException {
         String sql = "SELECT id, task_id, author_id, content, attached_files_urls, created_at " +
                 "FROM reports WHERE task_id = ? ORDER BY created_at DESC";
@@ -136,6 +177,9 @@ public class ReportDAO {
         return list;
     }
 
+    /**
+     * Helper method to map a ResultSet to a Report object.
+     */
     private Report mapRowToReport(ResultSet rs) throws SQLException {
         Report report = new Report();
         report.setId(rs.getObject("id", UUID.class));
@@ -158,6 +202,16 @@ public class ReportDAO {
         return report;
     }
 
+    /**
+     * Generates a comprehensive data transfer object representing financial and inventory reports
+     * for a specific time range and optional department.
+     *
+     * @param startDate    The start date for filtering requests.
+     * @param endDate      The end date for filtering requests.
+     * @param departmentId The optional UUID of a department to filter by.
+     * @return A list of Generated Report DTOs containing aggregated request and transaction details.
+     * @throws SQLException If a database access error occurs.
+     */
     // НОВИЙ МЕТОД ДЛЯ ГЕНЕРАЦІЇ ЗВІТІВ (ВИПРАВЛЕНИЙ)
     public List<ReportDTO> getGeneratedReportsData(LocalDate startDate, LocalDate endDate, UUID departmentId) throws SQLException {
         // Базовий запит
@@ -186,7 +240,7 @@ public class ReportDAO {
 
         // Динамічно додаємо умову для відділу, якщо він переданий
         if (departmentId != null) {
-            sql.append(" AND t.department_id = ? ");
+            sql.append("  AND t.department_id = ? ");
         }
 
         sql.append("ORDER BY r.created_at DESC");

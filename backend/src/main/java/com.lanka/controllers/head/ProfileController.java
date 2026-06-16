@@ -12,6 +12,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
+/**
+ * REST controller for managing individual user profiles and user document uploads.
+ */
 @RestController
 @RequestMapping("/api/profile")
 @CrossOrigin(
@@ -25,11 +28,20 @@ public class ProfileController {
     private final UserDAO userDAO;
     private final DocumentDAO documentDAO;
 
+    /**
+     * Constructs a new {@code ProfileController} initializing necessary DAOs.
+     */
     public ProfileController() {
         this.userDAO = new UserDAO();
         this.documentDAO = new DocumentDAO();
     }
 
+    /**
+     * Retrieves comprehensive profile information and associated documents for a given user ID.
+     *
+     * @param userId the UUID of the user
+     * @return a {@link ResponseEntity} containing a structured map of the user's data
+     */
     @GetMapping("/full-info-by-id")
     public ResponseEntity<?> getFullUserInfoById(@RequestParam UUID userId) {
         try {
@@ -68,6 +80,12 @@ public class ProfileController {
         }
     }
 
+    /**
+     * Retrieves a list of documents uploaded by a specific user.
+     *
+     * @param userId the UUID of the user
+     * @return a {@link ResponseEntity} containing the user's document metadata
+     */
     @GetMapping("/documents")
     public ResponseEntity<?> getUserDocuments(@RequestParam UUID userId) {
         try {
@@ -78,6 +96,13 @@ public class ProfileController {
         }
     }
 
+    /**
+     * Registers a new document URL to a user's profile within the database.
+     *
+     * @param payload a map containing 'type' and 'file_url' of the document
+     * @param userId  the UUID of the user owning the document
+     * @return a {@link ResponseEntity} indicating success or missing fields
+     */
     @PostMapping("/documents/add")
     public ResponseEntity<?> addDocument(@RequestBody Map<String, String> payload, @RequestParam UUID userId) {
         try {
@@ -99,6 +124,12 @@ public class ProfileController {
         }
     }
 
+    /**
+     * Deletes a specific document record from the database.
+     *
+     * @param docId the string representation of the document's UUID
+     * @return a {@link ResponseEntity} confirming deletion
+     */
     @DeleteMapping("/documents/delete")
     public ResponseEntity<?> deleteDocument(@RequestParam String docId) {
         try {
@@ -110,6 +141,12 @@ public class ProfileController {
         }
     }
 
+    /**
+     * Updates specific details (phone, patronymic, date of birth) for a user profile.
+     *
+     * @param payload a map containing 'id', and optionally 'phone_number', 'patronymic', and 'dob'
+     * @return a {@link ResponseEntity} detailing the outcome of the update
+     */
     @PutMapping("/update-details")
     public ResponseEntity<?> updateProfileDetails(@RequestBody Map<String, String> payload) {
         try {
@@ -179,6 +216,14 @@ public class ProfileController {
         }
     }
 
+    /**
+     * Uploads a multipart file acting as a registration document and logs its URL in the database.
+     *
+     * @param file   the uploaded file object
+     * @param userId the UUID of the user registering the document
+     * @param title  the title/type designation for the document
+     * @return a {@link ResponseEntity} containing the generated URL upon success
+     */
     @PostMapping("/registration/documents/upload")
     public ResponseEntity<?> uploadDocument(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file,

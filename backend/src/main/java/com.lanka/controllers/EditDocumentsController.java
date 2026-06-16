@@ -10,6 +10,9 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * REST controller for handling document editing and verification retries.
+ */
 @RestController
 @RequestMapping("/api/documents")
 @CrossOrigin(origins = "http://localhost:5173")
@@ -21,6 +24,13 @@ public class EditDocumentsController {
     @Autowired
     private UserDAO userDAO;
 
+    /**
+     * Retrieves the details regarding a document rejection for a specific user.
+     *
+     * @param userId The UUID of the user whose rejection details are being requested.
+     * @return A ResponseEntity containing a map with the "rejection_reason".
+     * @throws SQLException If a database error occurs.
+     */
     @GetMapping("/rejection-info/{userId}")
     public ResponseEntity<?> getRejectionInfo(@PathVariable UUID userId) throws SQLException {
         System.out.println("Запит до БД для користувача: " + userId);
@@ -32,6 +42,13 @@ public class EditDocumentsController {
         return ResponseEntity.ok(details);
     }
 
+    /**
+     * Allows a user to retry uploading their verification documents after a rejection.
+     * Clears rejected documents and resets the user's verification status.
+     *
+     * @param payload A map containing the "userId".
+     * @return A ResponseEntity containing a success message, or a 500 error if the process fails.
+     */
     @PostMapping("/upload-retry")
     public ResponseEntity<?> retryUpload(@RequestBody Map<String, Object> payload) {
         try {

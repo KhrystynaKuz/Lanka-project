@@ -9,6 +9,9 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
 
+/**
+ * REST controller for handling user document registration and uploading to Supabase storage.
+ */
 @RestController
 @RequestMapping("/api/profile/documents")
 @CrossOrigin(origins = "*")
@@ -20,6 +23,14 @@ public class RegisterController {
     @Value("${supabase.service-role-key}")
     private String serviceRoleKey;
 
+    /**
+     * Uploads an identity document directly to a Supabase storage bucket
+     * and records the document's URL in the database.
+     *
+     * @param userId The UUID of the user uploading the document.
+     * @param file   The MultipartFile being uploaded.
+     * @return A ResponseEntity containing a success JSON message or a 500 error message.
+     */
     @PostMapping("/upload")
     public ResponseEntity<?> uploadDocument(
             @RequestParam("userId") UUID userId,

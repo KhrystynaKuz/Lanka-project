@@ -8,8 +8,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Data Access Object for handling Fundraiser records.
+ */
 public class FundraiserDAO {
 
+    /**
+     * Retrieves all active fundraisers from the database.
+     *
+     * @return A list of Fundraiser objects sorted by creation date (descending).
+     */
     public List<Fundraiser> getAllFundraisers() {
         List<Fundraiser> fundraisers = new ArrayList<>();
         String sql = "SELECT id, title, description, link, qr_code_url, is_hidden, created_at FROM fundraisers ORDER BY created_at DESC";
@@ -36,6 +44,13 @@ public class FundraiserDAO {
         return fundraisers;
     }
 
+    /**
+     * Overwrites all fundraisers in the database with the provided list.
+     * This operation deletes existing entries and inserts the new list inside a transaction.
+     *
+     * @param fundraisers The list of Fundraiser objects to save.
+     * @return True if the transaction succeeded, false if an error occurred.
+     */
     public boolean saveAll(List<Fundraiser> fundraisers) {
         String deleteSql = "DELETE FROM fundraisers";
         String insertSql = "INSERT INTO fundraisers (id, title, description, link, qr_code_url, is_hidden, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)";

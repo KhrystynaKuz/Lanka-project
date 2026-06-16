@@ -12,9 +12,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Data Access Object for handling user records, roles, and verifications.
+ */
 @Repository
 public class UserDAO {
 
+    /**
+     * Adds a new user to the database.
+     *
+     * @param user The User object to create.
+     * @throws SQLException If a database access error occurs.
+     */
     public void addUser(User user) throws SQLException {
         String sql = "INSERT INTO users (id, email, first_name, last_name, patronymic, dob, role, phone_number, created_at, is_verified) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?::user_role, ?, ?, ?)";
@@ -40,6 +49,13 @@ public class UserDAO {
         }
     }
 
+    /**
+     * Finds a user by their ID.
+     *
+     * @param id The UUID of the user.
+     * @return An Optional containing the User if found, empty otherwise.
+     * @throws SQLException If a database access error occurs.
+     */
     public Optional<User> findById(UUID id) throws SQLException {
         String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at, is_verified FROM users WHERE id = ?";
 
@@ -53,6 +69,12 @@ public class UserDAO {
         return Optional.empty();
     }
 
+    /**
+     * Retrieves all users whose verification status is currently NULL.
+     *
+     * @return A list of unverified User objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<User> getUnverifiedUsers() throws SQLException {
         String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at, is_verified " +
                 "FROM users WHERE is_verified IS NULL ORDER BY created_at ASC";
@@ -65,6 +87,13 @@ public class UserDAO {
         return list;
     }
 
+    /**
+     * Updates the verification flag for a user.
+     *
+     * @param userId     The UUID of the user.
+     * @param isVerified The new boolean verification status (can be null).
+     * @throws SQLException If a database access error occurs.
+     */
     public void updateVerificationStatus(UUID userId, Boolean isVerified) throws SQLException {
         String sql = "UPDATE users SET is_verified = ? WHERE id = ?";
 
@@ -82,6 +111,13 @@ public class UserDAO {
         }
     }
 
+    /**
+     * Updates an existing user's personal details.
+     *
+     * @param user The User object with updated fields.
+     * @return True if successful.
+     * @throws SQLException If a database access error occurs.
+     */
     public boolean updateUser(User user) throws SQLException {
         String sql = "UPDATE users SET first_name = ?, last_name = ?, patronymic = ?, phone_number = ?, dob = ? WHERE id = ?";
 
@@ -106,6 +142,13 @@ public class UserDAO {
         }
     }
 
+    /**
+     * Updates the system role for a user using the UserRole enum.
+     *
+     * @param userId  The UUID of the user.
+     * @param newRole The target UserRole.
+     * @throws SQLException If a database access error occurs.
+     */
     public void updateRole(UUID userId, User.UserRole newRole) throws SQLException {
         String sql = "UPDATE users SET role = ?::user_role WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -116,6 +159,13 @@ public class UserDAO {
         }
     }
 
+    /**
+     * Updates the system role for a user using a string.
+     *
+     * @param userId  The UUID of the user.
+     * @param newRole The target role string.
+     * @throws SQLException If a database access error occurs.
+     */
     public void updateUserRole(UUID userId, String newRole) throws SQLException {
         String sql = "UPDATE users SET role = ?::user_role WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -125,6 +175,17 @@ public class UserDAO {
             ps.executeUpdate();
         }
     }
+
+    /**
+     * Selectively updates a user's phone number, patronymic, and date of birth.
+     *
+     * @param userId      The UUID of the user.
+     * @param phoneNumber The user's phone number.
+     * @param patronymic  The user's patronymic/middle name.
+     * @param dob         The user's date of birth.
+     * @return True if the update succeeded.
+     * @throws SQLException If a database access error occurs.
+     */
     public boolean updateUserDetails(UUID userId, String phoneNumber, String patronymic, java.time.LocalDate dob) throws SQLException {
         String sql = "UPDATE users SET phone_number = ?, patronymic = ?, dob = ? WHERE id = ?";
 
@@ -147,6 +208,12 @@ public class UserDAO {
         }
     }
 
+    /**
+     * Deletes a user by their ID.
+     *
+     * @param id The UUID of the user.
+     * @throws SQLException If a database access error occurs.
+     */
     public void deleteUser(UUID id) throws SQLException {
         String sql = "DELETE FROM users WHERE id = ?";
 
@@ -158,6 +225,12 @@ public class UserDAO {
         }
     }
 
+    /**
+     * Retrieves a list of all users identified as VOLUNTEER or COORDINATOR.
+     *
+     * @return A list of User objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<User> getVolunteersAndCoordinators() throws SQLException {
         String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at, is_verified " +
                 "FROM users WHERE UPPER(role::text) IN ('VOLUNTEER', 'COORDINATOR') ORDER BY last_name ASC";
@@ -170,6 +243,13 @@ public class UserDAO {
         return list;
     }
 
+    /**
+     * Finds the ID of a coordinator assigned to a specific department.
+     *
+     * @param deptId The UUID of the department.
+     * @return The coordinator's UUID, or null if none exist.
+     * @throws SQLException If a database access error occurs.
+     */
     public UUID getCoordinatorIdByDepartmentId(UUID deptId) throws SQLException {
         String sql = "SELECT u.id FROM users u " +
                 "JOIN user_departments ud ON u.id = ud.user_id " +
@@ -187,6 +267,12 @@ public class UserDAO {
         return null;
     }
 
+    /**
+     * Retrieves a list of all users identified as CUSTOMER.
+     *
+     * @return A list of User objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<User> getCustomers() throws SQLException {
         String sql = "SELECT id, email, first_name, last_name, patronymic, dob, role::text, phone_number, created_at, is_verified " +
                 "FROM users WHERE role = 'CUSTOMER'::user_role ORDER BY last_name ASC";
@@ -199,6 +285,9 @@ public class UserDAO {
         return list;
     }
 
+    /**
+     * Helper method to map a ResultSet to a User object.
+     */
     private User mapRowToUser(ResultSet rs) throws SQLException {
         User user = new User();
         user.setId(rs.getObject("id", UUID.class));

@@ -11,9 +11,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Data Access Object for performing CRUD operations and managing relationships
+ * related to the Department entity in the database.
+ */
 @Repository
 public class DepartmentDAO {
 
+    /**
+     * Adds a new department to the database.
+     *
+     * @param department The Department object to add.
+     * @throws SQLException If a database access error occurs.
+     */
     public void addDepartment(Department department) throws SQLException {
         String sql = "INSERT INTO departments (id, name, description) VALUES (?, ?, ?)";
 
@@ -32,6 +42,12 @@ public class DepartmentDAO {
         }
     }
 
+    /**
+     * Updates an existing department's name and description.
+     *
+     * @param department The Department object containing updated details.
+     * @throws SQLException If a database access error occurs.
+     */
     public void updateDepartment(Department department) throws SQLException {
         String sql = "UPDATE departments SET name = ?, description = ? WHERE id = ?";
 
@@ -46,6 +62,12 @@ public class DepartmentDAO {
         }
     }
 
+    /**
+     * Deletes a department by its ID.
+     *
+     * @param id The UUID of the department to delete.
+     * @throws SQLException If a database access error occurs.
+     */
     public void deleteDepartment(UUID id) throws SQLException {
         String sql = "DELETE FROM departments WHERE id = ?";
 
@@ -57,6 +79,12 @@ public class DepartmentDAO {
         }
     }
 
+    /**
+     * Retrieves all departments from the database, ordered alphabetically by name.
+     *
+     * @return A list of all Department objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Department> getAllDepartments() throws SQLException {
         String sql = "SELECT id, name, description FROM departments ORDER BY name ASC";
         List<Department> list = new ArrayList<>();
@@ -72,6 +100,13 @@ public class DepartmentDAO {
         return list;
     }
 
+    /**
+     * Retrieves a specific department by its ID.
+     *
+     * @param id The UUID of the department.
+     * @return The Department object, or null if not found.
+     * @throws SQLException If a database access error occurs.
+     */
     public Department getDepartmentById(UUID id) throws SQLException {
         String sql = "SELECT id, name, description FROM departments WHERE id = ?";
 
@@ -88,6 +123,13 @@ public class DepartmentDAO {
         return null;
     }
 
+    /**
+     * Retrieves a list of departments matching a name pattern.
+     *
+     * @param namePattern The string pattern to search for (case-insensitive).
+     * @return A list of matching Department objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<Department> getDepartmentsByName(String namePattern) throws SQLException {
         String sql = "SELECT id, name, description FROM departments WHERE name ILIKE ? ORDER BY name ASC";
         List<Department> list = new ArrayList<>();
@@ -108,6 +150,13 @@ public class DepartmentDAO {
 
     // --- RELATIONSHIP MANAGEMENT ---
 
+    /**
+     * Assigns a user (volunteer/coordinator) to a specific department.
+     *
+     * @param userId The UUID of the user.
+     * @param deptId The UUID of the department.
+     * @throws SQLException If a database access error occurs.
+     */
     // Призначити волонтера до відділу
     public void assignUserToDepartment(UUID userId, UUID deptId) throws SQLException {
         String sql = "INSERT INTO user_departments(user_id, department_id) VALUES (?, ?)";
@@ -119,9 +168,15 @@ public class DepartmentDAO {
         }
     }
 
+    /**
+     * Removes all department assignments for a specific user to ensure they belong to only one.
+     *
+     * @param userId The UUID of the user.
+     * @throws SQLException If a database access error occurs.
+     */
     // Видалити всі зв'язки користувача з відділами (щоб він був лише в одному)
     public void removeAllAssignmentsForUser(UUID userId) throws SQLException {
-        String sql = "DELETE FROM user_departmentsWHERE user_id = ?";
+        String sql = "DELETE FROM user_departments WHERE user_id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setObject(1, userId);
@@ -129,6 +184,13 @@ public class DepartmentDAO {
         }
     }
 
+    /**
+     * Finds the coordinator ID for a specific department.
+     *
+     * @param deptId The UUID of the department.
+     * @return The UUID of the coordinator, or null if not found.
+     * @throws SQLException If a database access error occurs.
+     */
     // Знайти координатора конкретного відділу
     public UUID findCoordinatorByDeptId(UUID deptId) throws SQLException {
         String sql = "SELECT coordinator_id FROM departments WHERE id = ?";
@@ -144,6 +206,13 @@ public class DepartmentDAO {
         return null;
     }
 
+    /**
+     * Updates the coordinator ID for a specific department.
+     *
+     * @param deptId The UUID of the department.
+     * @param userId The UUID of the new coordinator.
+     * @throws SQLException If a database access error occurs.
+     */
     // Оновити координатора для відділу
     public void setCoordinatorForDepartment(UUID deptId, UUID userId) throws SQLException {
         String sql = "UPDATE departments SET coordinator_id = ? WHERE id = ?";
@@ -157,6 +226,13 @@ public class DepartmentDAO {
 
     // --- NEW / IMPROVED METHODS ---
 
+    /**
+     * Retrieves the specific department to which a user belongs.
+     *
+     * @param userId The UUID of the user.
+     * @return The Department object, or null if the user has no assignment.
+     * @throws SQLException If a database access error occurs.
+     */
     // Отримати відділ, до якого належить конкретний користувач
     public Department getDepartmentByUserId(UUID userId) throws SQLException {
         // ДОДАНО ПРОБІЛ між user_departments та ud
@@ -177,6 +253,13 @@ public class DepartmentDAO {
         return null;
     }
 
+    /**
+     * Retrieves all users assigned to a specific department.
+     *
+     * @param deptId The UUID of the department.
+     * @return A list of User objects assigned to the department.
+     * @throws SQLException If a database access error occurs.
+     */
     // Отримати всіх користувачів конкретного відділу
     public List<User> getUsersByDepartmentId(UUID deptId) throws SQLException {
         // ДОДАНО ПРОБІЛ між user_departments та ud
@@ -200,6 +283,14 @@ public class DepartmentDAO {
         return list;
     }
 
+    /**
+     * Retrieves a list of volunteers managed by a specific coordinator.
+     * Determines the department based on the coordinator's assignment.
+     *
+     * @param coordinatorId The UUID of the coordinator.
+     * @return A list of User objects (VOLUNTEER or COORDINATOR roles) in that department.
+     * @throws SQLException If a database access error occurs.
+     */
     // Повністю заповнений мапінг для волонтерів по координатору
     public List<User> getVolunteersByCoordinatorId(UUID coordinatorId) throws SQLException {
         // Змінено SELECT, щоб отримати всі колонки для mapRowToUser
@@ -231,6 +322,9 @@ public class DepartmentDAO {
 
     // --- HELPER MAPPERS ---
 
+    /**
+     * Helper method to map a ResultSet row to a Department object.
+     */
     private Department mapRowToDepartment(ResultSet rs) throws SQLException {
         return new Department(
                 rs.getObject("id", UUID.class),
@@ -239,6 +333,9 @@ public class DepartmentDAO {
         );
     }
 
+    /**
+     * Helper method to map a ResultSet row to a User object.
+     */
     private User mapRowToUser(ResultSet rs) throws SQLException {
         User user = new User();
         user.setId(rs.getObject("id", UUID.class));

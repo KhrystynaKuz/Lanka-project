@@ -24,6 +24,10 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * REST controller for high-level organizational management.
+ * Provides endpoints to manage departments, users (volunteers, coordinators, customers), documents, and reporting.
+ */
 @RestController
 @RequestMapping("/api/management")
 @CrossOrigin(origins = "http://localhost:5173", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.DELETE, RequestMethod.OPTIONS})
@@ -38,6 +42,11 @@ public class ManagementController {
     private final DocumentDAO documentDAO = new DocumentDAO();
     private final ReportDAO reportDAO = new ReportDAO();
 
+    /**
+     * Retrieves a list of all departments.
+     *
+     * @return a {@link ResponseEntity} containing department data
+     */
     @GetMapping("/departments")
     public ResponseEntity<?> getDepartments() {
         try {
@@ -47,6 +56,13 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Adds a new department to the system.
+     * Generates a new UUID if one is not provided.
+     *
+     * @param dept the {@link Department} to add
+     * @return a {@link ResponseEntity} containing the saved department
+     */
     @PostMapping("/departments/add")
     public ResponseEntity<?> addDepartment(@RequestBody Department dept) {
         try {
@@ -61,6 +77,12 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Retrieves all verified volunteers associated with a specific department ID.
+     *
+     * @param deptId the UUID of the department
+     * @return a {@link ResponseEntity} containing a list of verified {@link User} volunteers
+     */
     @GetMapping("/departments/{deptId}/volunteers")
     public ResponseEntity<?> getVolunteersByDepartment(@PathVariable UUID deptId) {
         try {
@@ -78,6 +100,14 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Assigns a user as the coordinator for a given department.
+     * Updates previous coordinator roles back to volunteer if necessary.
+     *
+     * @param deptId     the UUID of the department
+     * @param newCoordId the UUID of the user to be appointed as coordinator
+     * @return a {@link ResponseEntity} detailing the outcome
+     */
     @PostMapping("/departments/{deptId}/set-coordinator")
     public ResponseEntity<?> setCoordinator(@PathVariable UUID deptId, @RequestBody UUID newCoordId) {
         try {
@@ -99,6 +129,12 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Retrieves the UUID of the current coordinator for a specific department.
+     *
+     * @param deptId the UUID of the department
+     * @return a {@link ResponseEntity} containing the coordinator's UUID or an empty string
+     */
     @GetMapping("/departments/{deptId}/coordinator")
     public ResponseEntity<?> getCoordinator(@PathVariable UUID deptId) {
         try {
@@ -109,6 +145,14 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Updates department details and optionally changes its assigned coordinator in a single operation.
+     *
+     * @param dept             the updated {@link Department} details
+     * @param newCoordinatorId the UUID of the new coordinator (optional)
+     * @param oldCoordinatorId the UUID of the previous coordinator to demote (optional)
+     * @return a {@link ResponseEntity} confirming the update
+     */
     @PostMapping("/departments/save-with-coordinator")
     public ResponseEntity<?> saveDepartmentWithCoordinator(
             @RequestBody Department dept,
@@ -129,6 +173,12 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Updates the basic details of a department.
+     *
+     * @param dept the updated {@link Department} object
+     * @return a {@link ResponseEntity} detailing the success of the operation
+     */
     @PostMapping("/departments/update")
     public ResponseEntity<?> updateDepartment(@RequestBody Department dept) {
         try {
@@ -139,6 +189,12 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Deletes a department from the system.
+     *
+     * @param id the UUID of the department to delete
+     * @return a {@link ResponseEntity} detailing the outcome
+     */
     @DeleteMapping("/departments/{id}")
     public ResponseEntity<?> deleteDepartment(@PathVariable UUID id) {
         try {
@@ -149,6 +205,11 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Retrieves all verified volunteers across the entire system.
+     *
+     * @return a {@link ResponseEntity} containing a list of verified volunteers
+     */
     @GetMapping("/volunteers")
     public ResponseEntity<?> getVolunteers() {
         try {
@@ -164,6 +225,12 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Deletes a volunteer from the system based on their UUID.
+     *
+     * @param id the UUID of the volunteer
+     * @return a {@link ResponseEntity} confirming deletion
+     */
     @DeleteMapping("/volunteers/{id}")
     public ResponseEntity<?> deleteVolunteer(@PathVariable UUID id) {
         try {
@@ -174,6 +241,12 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Updates the profile information of a volunteer user.
+     *
+     * @param user the updated {@link User} object
+     * @return a {@link ResponseEntity} indicating success or failure
+     */
     @PostMapping("/volunteers/update")
     public ResponseEntity<?> updateVolunteer(@RequestBody User user) {
         try {
@@ -184,6 +257,13 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Assigns a volunteer to a specific department.
+     *
+     * @param deptId the UUID of the target department
+     * @param userId the UUID of the volunteer to add
+     * @return a {@link ResponseEntity} confirming the assignment
+     */
     @PostMapping("/departments/{deptId}/add-volunteer")
     public ResponseEntity<?> addVolunteerToDept(
             @PathVariable UUID deptId,
@@ -201,6 +281,13 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Removes a volunteer assignment from a specific department.
+     *
+     * @param deptId the UUID of the department
+     * @param userId the UUID of the volunteer to remove
+     * @return a {@link ResponseEntity} confirming the removal
+     */
     @DeleteMapping("/departments/{deptId}/remove-volunteer")
     public ResponseEntity<?> removeVolunteer(
             @PathVariable UUID deptId,
@@ -213,6 +300,12 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Retrieves detailed profile and document information for a specific volunteer.
+     *
+     * @param userId the UUID of the volunteer
+     * @return a {@link ResponseEntity} with the volunteer details payload
+     */
     @GetMapping("/volunteers/{userId}/details")
     public ResponseEntity<?> getVolunteerDetails(@PathVariable UUID userId) {
         try {
@@ -231,6 +324,11 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Retrieves all verified customers registered in the system.
+     *
+     * @return a {@link ResponseEntity} containing a list of verified customer users
+     */
     @GetMapping("/customers")
     public ResponseEntity<?> getCustomers() {
         try {
@@ -246,6 +344,12 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Retrieves detailed profile and document information for a specific customer.
+     *
+     * @param userId the UUID of the customer
+     * @return a {@link ResponseEntity} with the customer details payload
+     */
     @GetMapping("/customers/{userId}/details")
     public ResponseEntity<?> getCustomerDetails(@PathVariable UUID userId) {
         try {
@@ -264,6 +368,11 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Retrieves a list of users pending verification, including their potential department assignments.
+     *
+     * @return a {@link ResponseEntity} containing a list of pending users mapped with department info
+     */
     @GetMapping("/volunteers/pending")
     public ResponseEntity<?> getPendingUsers() {
         try {
@@ -299,6 +408,12 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Retrieves all documents associated with a particular user.
+     *
+     * @param userId the UUID of the user
+     * @return a {@link ResponseEntity} containing the user's documents
+     */
     @GetMapping("/documents/{userId}")
     public ResponseEntity<?> getDocuments(@PathVariable UUID userId) {
         try {
@@ -308,6 +423,13 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Updates the status of a submitted document. Automatically verifies the user
+     * and sends a welcome email if all required documents are approved.
+     *
+     * @param payload a map containing 'docId', 'status', and an optional 'reason'
+     * @return a {@link ResponseEntity} confirming the status update
+     */
     @PostMapping("/documents/status")
     public ResponseEntity<?> updateDocStatus(@RequestBody Map<String, String> payload) {
         try {
@@ -340,6 +462,13 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Determines the target email address for sending system notifications.
+     * Implements a fallback domain mapping for internal system routing.
+     *
+     * @param originalEmail the user's registered email
+     * @return the resolved email address to send notifications to
+     */
     private String getTargetEmail(String originalEmail) {
         if (originalEmail != null && originalEmail.endsWith("@lanka.com")) {
             return "christinakuz14@gmail.com";
@@ -347,6 +476,13 @@ public class ManagementController {
         return originalEmail;
     }
 
+    /**
+     * Rejects a user's document during the initial verification process.
+     * Flags the user as unverified and sends a rejection notice via email.
+     *
+     * @param payload a map containing 'docId', 'reason', and 'userId'
+     * @return a {@link ResponseEntity} detailing the outcome
+     */
     @PostMapping("/documents/reject")
     public ResponseEntity<?> rejectDocument(@RequestBody Map<String, String> payload) {
         try {
@@ -371,6 +507,15 @@ public class ManagementController {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
+
+    /**
+     * Generates analytical reports based on a date range and optional department filter.
+     *
+     * @param startDate    the start date for the report query
+     * @param endDate      the end date for the report query
+     * @param departmentId the UUID of the department to filter by (optional)
+     * @return a {@link ResponseEntity} containing generated report DTOs
+     */
     @GetMapping("/reports")
     public ResponseEntity<?> getGeneratedReports(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -385,6 +530,13 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Rejects a document submission for a user who is already verified.
+     * Preserves the user's verification status while rejecting the specific payload.
+     *
+     * @param payload a map containing 'docId', 'reason', and 'userId'
+     * @return a {@link ResponseEntity} confirming document rejection without impacting user status
+     */
     @PostMapping("/documents/reject-verified")
     public ResponseEntity<?> rejectDocumentForVerifiedUser(@RequestBody Map<String, String> payload) {
         try {
@@ -409,6 +561,12 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Retrieves all pending documents submitted by users who are already verified.
+     * Useful for auditing supplemental documents uploaded after initial onboarding.
+     *
+     * @return a {@link ResponseEntity} containing a list of pending documents and user info
+     */
     @GetMapping("/documents/pending-all")
     public ResponseEntity<?> getAllPendingDocuments() {
         try {
@@ -441,6 +599,12 @@ public class ManagementController {
         }
     }
 
+    /**
+     * Retrieves a list of available, verified volunteers who are not currently assigned to the specified department.
+     *
+     * @param deptId the UUID of the department
+     * @return a {@link ResponseEntity} containing a list of eligible volunteers
+     */
     @GetMapping("/departments/{deptId}/volunteers/available")
     public ResponseEntity<?> getAvailableVolunteersForDept(@PathVariable UUID deptId) {
         try {

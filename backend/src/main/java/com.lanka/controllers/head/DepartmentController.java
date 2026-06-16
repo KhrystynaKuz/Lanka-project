@@ -4,7 +4,7 @@ import com.lanka.dao.DepartmentDAO;
 import com.lanka.dao.RequestDAO;
 import com.lanka.models.Department;
 import com.lanka.models.Request;
-import com.lanka.models.User; // Ensure this is imported!
+import com.lanka.models.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,19 +12,33 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * REST controller for retrieving department information and associations for the head coordinators.
+ */
 @RestController
 @RequestMapping("/api/departments")
 @CrossOrigin(originPatterns = "http://localhost:*")
 public class DepartmentController {
 
     private final DepartmentDAO departmentDAO;
-    private final RequestDAO requestDAO; // Added to handle request fetches
+    private final RequestDAO requestDAO;
 
+    /**
+     * Constructs a new {@code DepartmentController}.
+     *
+     * @param departmentDAO the DAO for department operations
+     * @param requestDAO    the DAO for request operations
+     */
     public DepartmentController(DepartmentDAO departmentDAO, RequestDAO requestDAO) {
         this.departmentDAO = departmentDAO;
         this.requestDAO = requestDAO;
     }
 
+    /**
+     * Retrieves a list of all active departments.
+     *
+     * @return a {@link ResponseEntity} containing a list of {@link Department} objects
+     */
     @GetMapping
     public ResponseEntity<List<Department>> getAllDepartments() {
         try {
@@ -34,6 +48,12 @@ public class DepartmentController {
         }
     }
 
+    /**
+     * Retrieves all volunteers assigned to a specific coordinator's department.
+     *
+     * @param userId the UUID of the coordinator
+     * @return a {@link ResponseEntity} containing a list of {@link User} volunteers
+     */
     @GetMapping("/coordinator/{userId}/volunteers")
     public ResponseEntity<?> getDepartmentVolunteers(@PathVariable UUID userId) {
         try {
@@ -45,6 +65,12 @@ public class DepartmentController {
         }
     }
 
+    /**
+     * Retrieves all requests applicable to a specific coordinator's department.
+     *
+     * @param userId the UUID of the coordinator
+     * @return a {@link ResponseEntity} containing a list of relevant {@link Request} objects
+     */
     @GetMapping("/coordinator/{userId}/requests")
     public ResponseEntity<?> getRequestsForCoordinator(@PathVariable UUID userId) {
         try {

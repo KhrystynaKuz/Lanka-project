@@ -8,8 +8,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Data Access Object for handling the many-to-many junction between users and departments.
+ */
 public class UserDepartmentDAO {
 
+    /**
+     * Links a user to a specific department.
+     *
+     * @param userDepartment The UserDepartment junction object.
+     * @throws SQLException If a database access error occurs.
+     */
     public void addUserToDepartment(UserDepartment userDepartment) throws SQLException {
         String sql = "INSERT INTO user_departments (user_id, department_id) VALUES (?, ?)";
 
@@ -23,6 +32,13 @@ public class UserDepartmentDAO {
         }
     }
 
+    /**
+     * Severs the link between a user and a specific department.
+     *
+     * @param userId       The UUID of the user.
+     * @param departmentId The UUID of the department.
+     * @throws SQLException If a database access error occurs.
+     */
     public void removeUserFromDepartment(UUID userId, UUID departmentId) throws SQLException {
         String sql = "DELETE FROM user_departments WHERE user_id = ? AND department_id = ?";
 
@@ -36,6 +52,13 @@ public class UserDepartmentDAO {
         }
     }
 
+    /**
+     * Retrieves all departments a specific user is linked to.
+     *
+     * @param userId The UUID of the user.
+     * @return A list of UserDepartment junction objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<UserDepartment> getDepartmentsByUserId(UUID userId) throws SQLException {
         String sql = "SELECT user_id, department_id FROM user_departments WHERE user_id = ?";
         List<UserDepartment> list = new ArrayList<>();
@@ -54,6 +77,13 @@ public class UserDepartmentDAO {
         return list;
     }
 
+    /**
+     * Retrieves all users linked to a specific department.
+     *
+     * @param departmentId The UUID of the department.
+     * @return A list of UserDepartment junction objects.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<UserDepartment> getUsersByDepartmentId(UUID departmentId) throws SQLException {
         String sql = "SELECT user_id, department_id FROM user_departments WHERE department_id = ?";
         List<UserDepartment> list = new ArrayList<>();
@@ -75,6 +105,9 @@ public class UserDepartmentDAO {
     /**
      * Видаляє всі записи про приналежність користувача до будь-яких відділів.
      * Потрібно для того, щоб гарантувати, що координатор належить лише до одного відділу.
+     *
+     * @param userId The UUID of the user.
+     * @throws SQLException If a database access error occurs.
      */
     public void removeAllAssignmentsForUser(UUID userId) throws SQLException {
         String sql = "DELETE FROM user_departments WHERE user_id = ?";
@@ -87,6 +120,13 @@ public class UserDepartmentDAO {
         }
     }
 
+    /**
+     * Overloaded method to link a user to a specific department using primitives/UUIDs.
+     *
+     * @param userId       The UUID of the user.
+     * @param departmentId The UUID of the department.
+     * @throws SQLException If a database access error occurs.
+     */
     public void addUserToDepartment(UUID userId, UUID departmentId) throws SQLException {
         String sql = "INSERT INTO user_departments (user_id, department_id) VALUES (?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -97,6 +137,13 @@ public class UserDepartmentDAO {
         }
     }
 
+    /**
+     * Finds the ID of a coordinator within a specific department junction.
+     *
+     * @param departmentId The UUID of the department.
+     * @return The UUID of the coordinator, or null if not found.
+     * @throws SQLException If a database access error occurs.
+     */
     public UUID findCoordinatorByDeptId(UUID departmentId) throws SQLException {
         String sql = "SELECT u.id " +
                 "FROM users u " +
@@ -117,6 +164,9 @@ public class UserDepartmentDAO {
         return null;
     }
 
+    /**
+     * Helper method to map a ResultSet to a UserDepartment junction object.
+     */
     private UserDepartment mapRowToUserDepartment(ResultSet rs) throws SQLException {
         UserDepartment ud = new UserDepartment();
         ud.setUser_id(rs.getObject("user_id", UUID.class));
@@ -124,6 +174,13 @@ public class UserDepartmentDAO {
         return ud;
     }
 
+    /**
+     * Returns a list of all coordinator IDs assigned to a given department.
+     *
+     * @param departmentId The UUID of the department.
+     * @return A list of coordinator UUIDs.
+     * @throws SQLException If a database access error occurs.
+     */
     public List<UUID> getCoordinatorsByDepartment(UUID departmentId) throws SQLException {
         String sql = "SELECT u.id FROM users u " +
                 "JOIN user_departments ud ON ud.user_id = u.id " +

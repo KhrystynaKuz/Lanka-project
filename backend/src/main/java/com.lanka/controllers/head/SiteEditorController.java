@@ -12,6 +12,9 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * REST controller for managing global site content, including home page settings, fundraisers, and public reports.
+ */
 @RestController
 @RequestMapping("/api/site-editor")
 @CrossOrigin(origins = "http://localhost:5173")
@@ -21,13 +24,20 @@ public class SiteEditorController {
     private final FundraiserDAO fundraiserDAO;
     private final SiteReportDAO siteReportDAO;
 
+    /**
+     * Constructs a new {@code SiteEditorController} and initializes DAOs.
+     */
     public SiteEditorController() {
         this.settingsDAO = new SettingsDAO();
         this.fundraiserDAO = new FundraiserDAO();
         this.siteReportDAO = new SiteReportDAO();
     }
 
-    // БЛОК 1: НАЛАШТУВАННЯ ГОЛОВНОЇ СТОРІНКИ
+    /**
+     * Retrieves global site configuration settings stored as key-value pairs.
+     *
+     * @return a {@link ResponseEntity} encapsulating a map of settings
+     */
     @GetMapping("/settings")
     public ResponseEntity<?> getSettings() {
         try {
@@ -39,6 +49,12 @@ public class SiteEditorController {
         }
     }
 
+    /**
+     * Updates targeted configuration variables designated for the website's home page block.
+     *
+     * @param payload a map containing potential updates for 'title', 'description', and 'image'
+     * @return a {@link ResponseEntity} denoting success or returning an error message
+     */
     @PutMapping("/update-home")
     public ResponseEntity<?> updateHomeBlock(@RequestBody Map<String, String> payload) {
         try {
@@ -51,7 +67,11 @@ public class SiteEditorController {
         }
     }
 
-    // БЛОК 2: СТОРІНКА АКТИВНИХ ЗБОРІВ
+    /**
+     * Fetches all registered active and past fundraiser campaigns.
+     *
+     * @return a {@link ResponseEntity} comprising a list of {@link Fundraiser} entries
+     */
     @GetMapping("/fundraisers")
     public ResponseEntity<?> getAllFundraisers() {
         try {
@@ -61,6 +81,12 @@ public class SiteEditorController {
         }
     }
 
+    /**
+     * Performs a bulk save or overwrite operation for the site's fundraisers list.
+     *
+     * @param fundraisers a complete list of {@link Fundraiser} objects representing the desired state
+     * @return a {@link ResponseEntity} denoting success or failure of the batch transaction
+     */
     @PostMapping("/fundraisers/save-all")
     public ResponseEntity<?> saveAllFundraisers(@RequestBody List<Fundraiser> fundraisers) {
         try {
@@ -70,7 +96,11 @@ public class SiteEditorController {
         }
     }
 
-    // БЛОК 3: СТОРІНКА ЗВІТІВ
+    /**
+     * Retrieves all published site reports intended for public view.
+     *
+     * @return a {@link ResponseEntity} comprising a list of {@link SiteReport} instances
+     */
     @GetMapping("/reports")
     public ResponseEntity<?> getReports() {
         try {
@@ -82,6 +112,12 @@ public class SiteEditorController {
         }
     }
 
+    /**
+     * Performs a bulk save or overwrite operation for the site's public reports list.
+     *
+     * @param reports a complete list of {@link SiteReport} objects representing the desired state
+     * @return a {@link ResponseEntity} denoting transaction success or failure
+     */
     @PostMapping("/reports/save-all")
     public ResponseEntity<?> saveAllReports(@RequestBody List<SiteReport> reports) {
         try {

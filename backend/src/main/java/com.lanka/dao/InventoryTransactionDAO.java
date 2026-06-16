@@ -9,8 +9,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Data Access Object for handling inventory history and transactions.
+ */
 public class InventoryTransactionDAO {
 
+    /**
+     * Logs a new inventory transaction (addition or deduction).
+     *
+     * @param transaction The InventoryTransaction to log.
+     * @throws SQLException If a database access error occurs.
+     */
     public void addTransaction(InventoryTransaction transaction) throws SQLException {
         String sql = "INSERT INTO inventory_transactions (id, inventory_id, request_id, user_id, quantity_changed, transaction_date, type, transportation_cost) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?::transaction_type, ?)";
@@ -46,6 +55,13 @@ public class InventoryTransactionDAO {
         }
     }
 
+    /**
+     * Retrieves the complete transaction history for a specific inventory item.
+     *
+     * @param inventoryId The UUID of the inventory item.
+     * @return A list of InventoryTransaction objects sorted by date (descending).
+     * @throws SQLException If a database access error occurs.
+     */
     public List<InventoryTransaction> getTransactionsByInventoryId(UUID inventoryId) throws SQLException {
         String sql = "SELECT t.id, t.inventory_id, t.request_id, t.user_id, t.quantity_changed, " +
                 "t.transaction_date, t.type, t.transportation_cost, " +
