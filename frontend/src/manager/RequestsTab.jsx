@@ -156,7 +156,17 @@ export default function RequestsTab() {
                 const targetRequest = pendingRequests.find(req => req.id === id);
                 if (!targetRequest) return;
 
-                const updatedRequest = { ...targetRequest, status: newStatus };
+                const selectedDepartmentNames = departments
+                    .filter(dep =>
+                        (selectedDepartmentsByRequest[id] || []).includes(dep.id)
+                    )
+                    .map(dep => dep.name);
+
+                const updatedRequest = {
+                    ...targetRequest,
+                    status: newStatus,
+                    departments: selectedDepartmentNames
+                };
 
                 setPendingRequests(prev => prev.filter(req => req.id !== id));
                 setNewCount(prev => Math.max(0, prev - 1));
@@ -548,8 +558,15 @@ export default function RequestsTab() {
                                         <p style={{ color: '#374151' }}><strong>Назва:</strong> {request.title}</p>
 
                                         {request.departments?.length > 0 && (
-                                            <p style={{ color: '#374151', marginTop: '12px', marginBottom: '12px' }}>
+                                            <p
+                                                style={{
+                                                    color: '#374151',
+                                                    marginTop: '12px',
+                                                    marginBottom: '12px'
+                                                }}
+                                            >
                                                 <strong>🏢 Передано у відділи:</strong>
+
                                                 {request.departments.map((department, index) => (
                                                     <span
                                                         key={index}
@@ -564,8 +581,8 @@ export default function RequestsTab() {
                                                             fontWeight: '600'
                                                         }}
                                                     >
-                                                        {department}
-                                                    </span>
+                                                    {department}
+                                                         </span>
                                                 ))}
                                             </p>
                                         )}
