@@ -7,6 +7,18 @@ import SiteEditorTab from './SiteEditorTab';
 import InventoryTab from './InventoryTab';
 import './Manager.css';
 
+/**
+ * Головний компонент панелі менеджера/адміністратора.
+ * Відповідає за навігацію між вкладками (керування, заявки, чати, звіти, сайт, склад),
+ * керування профілем користувача, завантаження/видалення документів
+ * та редагування особистих даних.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {Function} props.onLogOut - Функція виходу з облікового запису.
+ * @param {Function} props.onBackToHome - Функція повернення на головну сторінку.
+ * @returns {JSX.Element} Рендер панелі менеджера.
+ */
 export default function Header({ onLogOut, onBackToHome }) {
     const [activeTab, setActiveTab] = useState('verification');
     const [showDropdown, setShowDropdown] = useState(false);
@@ -20,7 +32,6 @@ export default function Header({ onLogOut, onBackToHome }) {
     const [editingDoc, setEditingDoc] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    // Об'єднаний стейт для редагування додаткових полів профілю
     const [showEditProfileModal, setShowEditProfileModal] = useState(false);
     const [editForm, setEditForm] = useState({
         phone_number: '',
@@ -30,9 +41,14 @@ export default function Header({ onLogOut, onBackToHome }) {
 
     const [uploadingFile, setUploadingFile] = useState(false);
 
-    // --- СТЕЙТ ТА ФУНКЦІЯ ДЛЯ КАСТОМНИХ СПОВІЩЕНЬ (TOASTS) ---
     const [toasts, setToasts] = useState([]);
 
+    /**
+     * Показує сповіщення (тост) користувачеві.
+     *
+     * @param {string} message - Текст повідомлення.
+     * @param {string} [type='info'] - Тип сповіщення ('info', 'success', 'error').
+     */
     const showNotification = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
@@ -42,6 +58,13 @@ export default function Header({ onLogOut, onBackToHome }) {
         }, 4000);
     };
 
+    /**
+     * Завантажує повну інформацію про користувача з бекенду.
+     * У разі успіху відкриває модальне вікно з даними.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const fetchFullProfile = async () => {
         if (!userId) {
             showNotification('🚨 ID користувача не знайдено', 'error');
@@ -67,7 +90,10 @@ export default function Header({ onLogOut, onBackToHome }) {
         setLoading(false);
     };
 
-    // Відкриття модалки редагування із передзаповненими поточними даними
+    /**
+     * Відкриває модальне вікно редагування профілю
+     * та попередньо заповнює форму наявними даними.
+     */
     const openEditProfileModal = () => {
         setEditForm({
             phone_number: fullUserData?.phone_number || '',
@@ -77,7 +103,13 @@ export default function Header({ onLogOut, onBackToHome }) {
         setShowEditProfileModal(true);
     };
 
-    // Функція відправки оновлених даних на бекенд
+    /**
+     * Надсилає оновлені дані профілю на бекенд.
+     * У разі успіху оновлює відображення профілю.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleUpdateProfile = async () => {
         try {
             const res = await fetch('http://localhost:8080/api/profile/update-details', {
@@ -96,7 +128,7 @@ export default function Header({ onLogOut, onBackToHome }) {
             if (res.ok) {
                 showNotification('📝 Профіль успішно оновлено в БД', 'success');
                 setShowEditProfileModal(false);
-                fetchFullProfile(); // Перезавантажуємо інформацію для відображення змін
+                fetchFullProfile();
             } else {
                 showNotification(`🚨 Помилка: ${data.error || 'Не вдалося зберегти дані'}`, 'error');
             }
@@ -106,6 +138,14 @@ export default function Header({ onLogOut, onBackToHome }) {
         }
     };
 
+    /**
+     * Видаляє документ за його ідентифікатором.
+     * Перед видаленням запитує підтвердження у користувача.
+     *
+     * @async
+     * @param {string|number} docId - Ідентифікатор документа.
+     * @returns {Promise<void>}
+     */
     const deleteDocument = async (docId) => {
         if (!confirm('Видалити документ?')) return;
         try {
@@ -124,6 +164,14 @@ export default function Header({ onLogOut, onBackToHome }) {
         }
     };
 
+    /**
+     * Обробляє вибір файлу для завантаження.
+     * Відправляє файл на бекенд разом з ідентифікатором користувача.
+     *
+     * @async
+     * @param {Event} e - Подія вибору файлу з елемента input.
+     * @returns {Promise<void>}
+     */
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -156,7 +204,6 @@ export default function Header({ onLogOut, onBackToHome }) {
 
     return (
         <div className="admin-glass-container">
-            {/* ─── КАНАЛ СПОВІЩЕНЬ ЧЕРЕЗ ЧИСТІ CSS КЛАСИ ─── */}
             <div className="toast-notifications-container">
                 {toasts.map(toast => (
                     <div key={toast.id} className={`toast-item toast-${toast.type}`}>
@@ -302,7 +349,6 @@ export default function Header({ onLogOut, onBackToHome }) {
                 </div>
             )}
 
-            {/* ОНОВЛЕНЕ МОДАЛЬНЕ ВІКНО ДЛЯ РЕДАГУВАННЯ ВСІХ ДОДАТКОВИХ ПОЛІВ ЧЕРЕЗ ОБ'ЄКТНИЙ СТЕЙТ */}
             {showEditProfileModal && (
                 <div className="modal-overlay" onClick={() => setShowEditProfileModal(false)}>
                     <div className="modal-content small-modal" onClick={e => e.stopPropagation()}>

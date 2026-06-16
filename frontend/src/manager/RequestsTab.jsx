@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 
-// Компонент тосту
+/**
+ * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} props.message - Текст сповіщення.
+ * @param {string} props.type - Тип сповіщення ('info', 'success', 'error', 'warning').
+ * @param {Function} props.onClose - Функція закриття сповіщення.
+ * @returns {JSX.Element} Рендер тосту.
+ */
 const Toast = ({ message, type, onClose }) => {
     React.useEffect(() => {
         const timer = setTimeout(() => {
@@ -17,6 +26,14 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
+/**
+ * Головний компонент вкладки "Заявки" для адміністратора.
+ * Відображає нові заявки для розгляду, дозволяє змінювати їх статус,
+ * передавати у відділи, шукати, фільтрувати та видаляти заявки.
+ *
+ * @component
+ * @returns {JSX.Element} Рендер вкладки заявок.
+ */
 export default function RequestsTab() {
     const [requests, setRequests] = useState([]);
     const [newCount, setNewCount] = useState(0);
@@ -35,15 +52,32 @@ export default function RequestsTab() {
     const [departments, setDepartments] = useState([]);
     const [selectedDepartmentsByRequest, setSelectedDepartmentsByRequest] = useState({});
 
+    /**
+     * Додає нове сповіщення до списку.
+     *
+     * @param {string} message - Текст сповіщення.
+     * @param {string} [type='info'] - Тип сповіщення.
+     */
     const addToast = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
+    /**
+     * Видаляє сповіщення зі списку за ідентифікатором.
+     *
+     * @param {number} id - Ідентифікатор сповіщення.
+     */
     const removeToast = (id) => {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
 
+    /**
+     * Повертає текстову мітку пріоритету за його числовим значенням.
+     *
+     * @param {number} priorityLevel - Рівень пріоритету (1-4).
+     * @returns {string} Мітка пріоритету з емодзі.
+     */
     const getPriorityLabel = (priorityLevel) => {
         const labels = {
             1: '🟢 Низький',
@@ -54,7 +88,12 @@ export default function RequestsTab() {
         return labels[priorityLevel] || '⚪ Не вказано';
     };
 
-    // Динамічні стилі для селекта статусів в історії
+    /**
+     * Повертає стилі для відображення статусу заявки.
+     *
+     * @param {string} status - Статус заявки.
+     * @returns {Object} Об'єкт з CSS-стилями.
+     */
     const getStatusStyles = (status) => {
         switch (status) {
             case 'PENDING':
@@ -72,6 +111,9 @@ export default function RequestsTab() {
         }
     };
 
+    /**
+     * Завантажує основні дані (історію заявок) з бекенду.
+     */
     const loadCoreData = () => {
         setLoadingRequests(true);
         fetch('/api/requests')
@@ -130,7 +172,13 @@ export default function RequestsTab() {
         }
     }, [showPendingDropdown, pendingRequests.length]);
 
-    // Обробник зміни статусу для Нових (PENDING) заявок
+    /**
+     * Змінює статус заявки (для нових PENDING заявок).
+     * При затвердженні передає заявку у вибрані відділи.
+     *
+     * @param {string|number} id - Ідентифікатор заявки.
+     * @param {string} newStatus - Новий статус ('APPROVED' або 'REJECTED').
+     */
     const handleStatusChange = (id, newStatus) => {
         if (newStatus === 'APPROVED') {
             const chosenDepts = selectedDepartmentsByRequest[id] || [];
@@ -193,14 +241,19 @@ export default function RequestsTab() {
             });
     };
 
-    // Функція для прямої зміни статусу через випадний список в історії оброблених заявок
+    /**
+     * Оновлює статус заявки з історії через випадний список.
+     *
+     * @param {string|number} id - Ідентифікатор заявки.
+     * @param {string} newStatus - Новий статус.
+     */
     const updateRequestStatus = (id, newStatus) => {
         fetch(`/api/requests/${id}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 status: newStatus,
-                departmentIds: [] // Для зміни вже оброблених статусів (наприклад, переведення в роботі/виконано)
+                departmentIds: []
             })
         })
             .then(res => {
@@ -217,6 +270,12 @@ export default function RequestsTab() {
             });
     };
 
+    /**
+     * Обробляє вибір/зняття відділу для заявки.
+     *
+     * @param {string|number} requestId - Ідентифікатор заявки.
+     * @param {string|number} deptId - Ідентифікатор відділу.
+     */
     const handleCheckboxChange = (requestId, deptId) => {
         setSelectedDepartmentsByRequest(prev => {
             const currentSelected = prev[requestId] || [];
@@ -235,6 +294,11 @@ export default function RequestsTab() {
         });
     };
 
+    /**
+     * Виконує запит на видалення заявки з сервера.
+     *
+     * @param {string|number} id - Ідентифікатор заявки.
+     */
     const executeDeleteFetch = (id) => {
         fetch(`/api/requests/${id}`, { method: 'DELETE' })
             .then(res => {
@@ -251,6 +315,12 @@ export default function RequestsTab() {
             });
     };
 
+    /**
+     * Відкриває модальне вікно підтвердження видалення.
+     * Якщо попередження вимкнено, видаляє одразу.
+     *
+     * @param {string|number} id - Ідентифікатор заявки.
+     */
     const openDeleteModal = (id) => {
         const skipWarning = sessionStorage.getItem('skipDeleteWarning') === 'true';
         if (skipWarning) {
@@ -260,11 +330,17 @@ export default function RequestsTab() {
         }
     };
 
+    /**
+     * Закриває модальне вікно видалення.
+     */
     const closeDeleteModal = () => {
         setDeleteModal({ isOpen: false, requestId: null });
         setDontShowAgain(false);
     };
 
+    /**
+     * Підтверджує видалення заявки та закриває модальне вікно.
+     */
     const confirmDeleteRequest = () => {
         const id = deleteModal.requestId;
         if (!id) return;
@@ -277,6 +353,9 @@ export default function RequestsTab() {
         closeDeleteModal();
     };
 
+    /**
+     * Виконує пошук заявок за ключовими словами.
+     */
     const handleSearch = () => {
         setLoading(true);
         const url = searchQuery.trim()
@@ -298,13 +377,17 @@ export default function RequestsTab() {
             .finally(() => setLoading(false));
     };
 
+    /**
+     * Розгортає/згортає деталі заявки.
+     *
+     * @param {string|number} id - Ідентифікатор заявки.
+     */
     const toggleExpand = (id) => {
         setExpandedRequests(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
     return (
         <div className="admin-tab-content fade-in">
-            {/* Контейнер для тостів */}
             <div className="toast-notifications-container">
                 {toasts.map(toast => (
                     <Toast
@@ -316,7 +399,6 @@ export default function RequestsTab() {
                 ))}
             </div>
 
-            {/* Пошукова строка */}
             <div className="search-main-row">
                 <input
                     type="text"
@@ -329,7 +411,6 @@ export default function RequestsTab() {
                 <button className="main-search-btn" onClick={handleSearch}>Знайти</button>
             </div>
 
-            {/* Блок нових заявок */}
             <div className="tab-header-block" style={{ marginTop: '20px' }}>
                 <div
                     className={`badge-counter badge-counter-clickable ${showPendingDropdown ? 'active-counter' : ''}`}
@@ -371,7 +452,6 @@ export default function RequestsTab() {
                                             <p style={{ color: '#374151' }}><strong>Статус:</strong> <span className="status-badge pending request-pending-badge">{request.status}</span></p>
                                             <p style={{ color: '#374151' }}><strong>⚡ Пріоритет:</strong> {getPriorityLabel(request.priority)}</p>
 
-                                            {/* Вибір відділів */}
                                             <div className="department-selection-block" style={{
                                                 margin: '10px 0 15px 0',
                                                 padding: '10px 16px',
@@ -461,7 +541,6 @@ export default function RequestsTab() {
 
             <hr style={{ border: 'none', borderTop: '1px solid rgba(30, 58, 138, 0.1)', margin: '30px 0' }} />
 
-            {/* Фільтр заявок */}
             <div className="filter-zone" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ color: '#1e3a8a', fontSize: '14px', fontWeight: '700' }}>Фільтр за статусом:</span>
                 <select
@@ -488,7 +567,6 @@ export default function RequestsTab() {
                 </select>
             </div>
 
-            {/* Скляна панель історії */}
             <div className="glass-main-request-panel">
                 {(() => {
                     const filteredRequests = requests.filter(req => {
@@ -516,10 +594,9 @@ export default function RequestsTab() {
                                         </span>
                                     </div>
                                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                        {/* Випадний список (селект) замість звичайного статичного баджа статусу */}
                                         <select
                                             value={request.status || 'PENDING'}
-                                            onClick={(e) => e.stopPropagation()} // Запобігаємо згортанню картки при кліці на селект
+                                            onClick={(e) => e.stopPropagation()}
                                             onChange={(e) => updateRequestStatus(request.id, e.target.value)}
                                             style={{
                                                 ...getStatusStyles(request.status),
@@ -530,7 +607,7 @@ export default function RequestsTab() {
                                                 cursor: 'pointer',
                                                 outline: 'none',
                                                 border: '1px solid rgba(0, 0, 0, 0.15)',
-                                                appearance: 'none', // Приховуємо стандартну стрілочку браузера
+                                                appearance: 'none',
                                                 WebkitAppearance: 'none',
                                                 MozAppearance: 'none',
                                                 paddingRight: '24px',
@@ -606,7 +683,6 @@ export default function RequestsTab() {
                 })()}
             </div>
 
-            {/* Модалка видалення */}
             {deleteModal.isOpen && (
                 <div className="delete-modal-overlay">
                     <div className="delete-modal-card">

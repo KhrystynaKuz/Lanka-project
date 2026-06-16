@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-// Компонент тосту
+/**
+ * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} props.message - Текст сповіщення.
+ * @param {string} props.type - Тип сповіщення ('info', 'success', 'error', 'warning').
+ * @param {Function} props.onClose - Функція закриття сповіщення.
+ * @returns {JSX.Element} Рендер тосту.
+ */
 const Toast = ({ message, type, onClose }) => {
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -18,7 +27,13 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
-// Головний компонент
+/**
+ * Головний компонент вкладки "Редактор сайту" для адміністратора.
+ * Дозволяє керувати вмістом головної сторінки, списком зборів та звітами.
+ *
+ * @component
+ * @returns {JSX.Element} Рендер редактора сайту.
+ */
 export default function SiteEditorTab() {
 
     const [homeTitle, setHomeTitle] = useState('');
@@ -35,19 +50,36 @@ export default function SiteEditorTab() {
     const [reportDocs, setReportDocs] = useState([]);
     const [isReportsUploading, setIsReportsUploading] = useState(false);
 
-    // Стейт для тостів
     const [toasts, setToasts] = useState([]);
 
+    /**
+     * Додає нове сповіщення до списку.
+     *
+     * @param {string} message - Текст сповіщення.
+     * @param {string} [type='info'] - Тип сповіщення.
+     */
     const addToast = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
+    /**
+     * Видаляє сповіщення зі списку за ідентифікатором.
+     *
+     * @param {number} id - Ідентифікатор сповіщення.
+     */
     const removeToast = (id) => {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
 
     useEffect(() => {
+        /**
+         * Завантажує всі дані для редактора: налаштування головної сторінки,
+         * список зборів та звіти.
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         const fetchAllData = async () => {
             try {
                 const res = await fetch('http://localhost:8080/api/site-editor/settings');
@@ -77,7 +109,14 @@ export default function SiteEditorTab() {
         fetchAllData();
     }, []);
 
-    // ЛОГІКА БЛОКУ 1 (ПРО НАС)
+    /**
+     * Обробляє вибір файлу для банера головної сторінки.
+     * Завантажує зображення до Supabase та оновлює стан.
+     *
+     * @async
+     * @param {Event} event - Подія вибору файлу.
+     * @returns {Promise<void>}
+     */
     const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -107,6 +146,12 @@ export default function SiteEditorTab() {
         }
     };
 
+    /**
+     * Зберігає налаштування головного блоку на бекенді.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleSaveHomeBlock = async () => {
         setIsLoading(true);
         try {
@@ -133,7 +178,9 @@ export default function SiteEditorTab() {
         }
     };
 
-    // ЛОГІКА БЛОКУ 2 (ЗБОРИ)
+    /**
+     * Додає новий порожній збір до списку для редагування.
+     */
     const handleAddNewFundraiser = () => {
         const newFundraiser = {
             id: null,
@@ -148,6 +195,14 @@ export default function SiteEditorTab() {
         addToast("📎 Додано новий збір. Заповніть поля та збережіть", "info");
     };
 
+    /**
+     * Завантажує QR-код для збору до Supabase.
+     *
+     * @async
+     * @param {Event} event - Подія вибору файлу.
+     * @param {number} index - Індекс збору в списку.
+     * @returns {Promise<void>}
+     */
     const handleQrUpload = async (event, index) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -177,6 +232,12 @@ export default function SiteEditorTab() {
         }
     };
 
+    /**
+     * Зберігає всі збори на бекенді.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleSaveAllFundraisers = async () => {
         setIsFundraisersLoading(true);
         try {
@@ -204,7 +265,15 @@ export default function SiteEditorTab() {
         }
     };
 
-    // ЛОГІКА БЛОКУ 3 (ЗВІТИ)
+    /**
+     * Завантажує файл звіту до Supabase.
+     * Перевіряє, щоб назва файлу не містила кириличних символів.
+     *
+     * @async
+     * @param {Event} event - Подія вибору файлу.
+     * @param {string} type - Тип файлу ('photo' або 'doc').
+     * @returns {Promise<void>}
+     */
     const handleUploadReport = async (event, type) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -247,6 +316,12 @@ export default function SiteEditorTab() {
         }
     };
 
+    /**
+     * Зберігає всі звіти (фото та документи) на бекенді.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleSaveReports = async () => {
         setIsReportsUploading(true);
 
@@ -278,7 +353,6 @@ export default function SiteEditorTab() {
 
     return (
         <div className="admin-tab-content fade-in site-editor-layout">
-            {/* Контейнер для тостів */}
             <div className="toast-notifications-container">
                 {toasts.map(toast => (
                     <Toast
@@ -292,7 +366,6 @@ export default function SiteEditorTab() {
 
             <h2 className="editor-title">Редактор сайту</h2>
 
-            {/* БЛОК 1 : ГОЛОВНА СТОРІНКА */}
             <div className="editor-glass-block">
                 <span className="block-badge">Блок 1 : ГОЛОВНА СТОРІНКА</span>
 
@@ -349,7 +422,6 @@ export default function SiteEditorTab() {
                 </div>
             </div>
 
-            {/* БЛОК 2 : СТОРІНКА ЗБОРІВ */}
             <div className="editor-glass-block">
                 <span className="block-badge">Блок 2 : СТОРІНКА ЗБОРІВ</span>
                 <h4 className="sub-block-title">Активні збори</h4>
@@ -419,7 +491,6 @@ export default function SiteEditorTab() {
                 </div>
             </div>
 
-            {/* БЛОК 3 : СТОРІНКА ЗВІТІВ */}
             <div className="editor-glass-block">
                 <span className="block-badge">Блок 3 : СТОРІНКА ЗВІТІВ</span>
 
@@ -441,7 +512,7 @@ export default function SiteEditorTab() {
                         style={{
                             cursor: 'pointer',
                             display: 'inline-block',
-                            width: 'max-content', // Забороняє кнопці розтягуватися більше, ніж довжина тексту
+                            width: 'max-content',
                             textTransform: 'uppercase',
                             transition: 'opacity 0.2s ease'
                         }}
@@ -470,7 +541,7 @@ export default function SiteEditorTab() {
                         style={{
                             cursor: 'pointer',
                             display: 'inline-block',
-                            width: 'max-content', // Забороняє кнопці розтягуватися більше, ніж довжина тексту
+                            width: 'max-content',
                             textTransform: 'uppercase',
                             transition: 'opacity 0.2s ease'
                         }}

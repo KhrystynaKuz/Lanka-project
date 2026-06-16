@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 
-// Компонент модального вікна підтвердження (як у замовника)
+/**
+ * Компонент модального вікна підтвердження дії.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {boolean} props.isOpen - Чи відкрито модальне вікно.
+ * @param {Function} props.onClose - Функція закриття вікна.
+ * @param {Function} props.onConfirm - Функція підтвердження дії.
+ * @param {string} props.title - Заголовок модального вікна.
+ * @param {string} props.message - Текст повідомлення.
+ * @param {string} [props.confirmText="Так, видалити"] - Текст кнопки підтвердження.
+ * @param {string} [props.cancelText="Скасувати"] - Текст кнопки скасування.
+ * @param {boolean} [props.isDanger=true] - Чи є дія небезпечною.
+ * @returns {JSX.Element|null} Рендер модального вікна або null, якщо закрито.
+ */
 const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Так, видалити", cancelText = "Скасувати", isDanger = true }) => {
     if (!isOpen) return null;
 
@@ -27,6 +41,16 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
     );
 };
 
+/**
+ * Головний компонент вкладки "Склад" для керівника/адміністратора.
+ * Відповідає за управління складськими ресурсами: додавання, редагування,
+ * видалення товарів, перегляд історії транзакцій та пошук.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {Function} props.showNotification - Функція для показу сповіщень.
+ * @returns {JSX.Element} Рендер вкладки складу.
+ */
 export default function InventoryTab({ showNotification }) {
     const [warehouseItems, setWarehouseItems] = useState([]);
     const [editingItem, setEditingItem] = useState(null);
@@ -36,6 +60,12 @@ export default function InventoryTab({ showNotification }) {
     const [itemHistory, setItemHistory] = useState([]);
     const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, itemId: null });
 
+    /**
+     * Завантажує список товарів зі складу з бекенду.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const loadInventory = async () => {
         try {
             const res = await fetch('/api/head/warehouse');
@@ -55,6 +85,12 @@ export default function InventoryTab({ showNotification }) {
         loadInventory();
     }, []);
 
+    /**
+     * Зберігає новий або оновлює існуючий товар на складі.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const saveItem = async () => {
         if (!editingItem.item_name || editingItem.item_name.trim() === '') {
             showNotification("⚠️ Будь ласка, введіть назву ресурсу.", "warning");
@@ -93,6 +129,13 @@ export default function InventoryTab({ showNotification }) {
         }
     };
 
+    /**
+     * Завантажує історію транзакцій для конкретного товару.
+     *
+     * @async
+     * @param {string|number} itemId - Ідентифікатор товару.
+     * @returns {Promise<void>}
+     */
     const fetchHistory = async (itemId) => {
         try {
             const res = await fetch(`/api/warehouse/history/${itemId}`);
@@ -109,10 +152,19 @@ export default function InventoryTab({ showNotification }) {
         }
     };
 
+    /**
+     * Відкриває модальне вікно підтвердження видалення товару.
+     */
     const handleDeleteClick = () => {
         setConfirmDelete({ isOpen: true, itemId: editingItem.id });
     };
 
+    /**
+     * Виконує видалення товару з бекенду.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const executeDelete = async () => {
         try {
             const response = await fetch(`/api/head/warehouse/${confirmDelete.itemId}`, { method: 'DELETE' });
@@ -193,7 +245,6 @@ export default function InventoryTab({ showNotification }) {
                 </table>
             </div>
 
-            {/* Модальне вікно */}
             {editingItem && (
                 <div className="modal-overlay" onClick={(e) => {
                     if (e.target === e.currentTarget) setEditingItem(null);

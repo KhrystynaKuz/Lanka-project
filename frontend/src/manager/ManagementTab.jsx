@@ -1,6 +1,16 @@
 import React, {useState, useEffect} from 'react';
 import './Manager.css';
 
+/**
+ * Головний компонент вкладки "Керування" для адміністратора/менеджера.
+ * Відповідає за верифікацію користувачів, управління відділами,
+ * волонтерами, замовниками та документами.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {Function} props.showNotification - Функція для показу сповіщень.
+ * @returns {JSX.Element} Рендер вкладки керування.
+ */
 export default function ManagementTab({showNotification}) {
     const API_BASE_URL = 'http://localhost:8080';
 
@@ -48,6 +58,12 @@ export default function ManagementTab({showNotification}) {
         onConfirm: null
     });
 
+    /**
+     * Завантажує список користувачів, які очікують верифікації.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const fetchPendingUsers = async () => {
         try {
             const response = await fetch('http://localhost:8080/api/management/volunteers/pending');
@@ -63,6 +79,12 @@ export default function ManagementTab({showNotification}) {
         fetchPendingUsers();
     }, []);
 
+    /**
+     * Завантажує список документів, які очікують перевірки.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const fetchPendingDocuments = async () => {
         try {
             const response = await fetch('http://localhost:8080/api/management/documents/pending-all');
@@ -78,6 +100,9 @@ export default function ManagementTab({showNotification}) {
         fetchPendingDocuments();
     }, []);
 
+    /**
+     * Закриває модальне вікно підтвердження.
+     */
     const closeConfirmModal = () => {
         setConfirmModal({
             isOpen: false,
@@ -88,6 +113,12 @@ export default function ManagementTab({showNotification}) {
         });
     };
 
+    /**
+     * Завантажує список замовників з бекенду.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const fetchCustomers = async () => {
         try {
             const response = await fetch('http://localhost:8080/api/management/customers');
@@ -110,6 +141,12 @@ export default function ManagementTab({showNotification}) {
     }, []);
 
     useEffect(() => {
+        /**
+         * Завантажує список відділів з бекенду.
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         const fetchDepartments = async () => {
             setLoading(true);
             try {
@@ -129,6 +166,12 @@ export default function ManagementTab({showNotification}) {
     }, []);
 
     useEffect(() => {
+        /**
+         * Завантажує список волонтерів (всіх або для конкретного відділу).
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         const fetchVolunteers = async () => {
             setVolunteersLoading(true);
             let url = 'http://localhost:8080/api/management/volunteers';
@@ -152,6 +195,12 @@ export default function ManagementTab({showNotification}) {
         fetchVolunteers();
     }, [selectedDept]);
 
+    /**
+     * Розгортає/згортає список документів користувача.
+     *
+     * @param {string|number} userId - Ідентифікатор користувача.
+     * @returns {Promise<void>}
+     */
     const toggleDocs = async (userId) => {
         if (expandedUser === userId) {
             setExpandedUser(null);
@@ -169,6 +218,12 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Отримує ім'я файлу з URL-посилання.
+     *
+     * @param {string} url - URL-посилання на файл.
+     * @returns {string} Ім'я файлу або "Без назви".
+     */
     const getFileNameFromUrl = (url) => {
         if (!url) return "Без назви";
         const decodedUrl = decodeURIComponent(url);
@@ -176,6 +231,12 @@ export default function ManagementTab({showNotification}) {
         return fileName;
     };
 
+    /**
+     * Затверджує документ.
+     *
+     * @param {string|number} docId - Ідентифікатор документа.
+     * @returns {Promise<void>}
+     */
     const handleApprove = async (docId) => {
         const success = await sendDocStatus(docId, 'APPROVED', null);
         if (success) {
@@ -191,16 +252,32 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Відкриває модальне вікно для введення причини відхилення документа.
+     *
+     * @param {string|number} docId - Ідентифікатор документа.
+     */
     const handleReject = (docId) => {
         setActiveDocId(docId);
         setShowRejectModal(true);
     };
 
+    /**
+     * Відкриває модальне вікно для введення причини відхилення документа.
+     *
+     * @param {string|number} docId - Ідентифікатор документа.
+     */
     const handleRejectClick = (docId) => {
         setActiveDocId(docId);
         setShowRejectModal(true);
     };
 
+    /**
+     * Надсилає причину відхилення документа на бекенд.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleSendRejectReason = async () => {
         const endpoint = isInitialVerification
             ? `${API_BASE_URL}/api/management/documents/reject`
@@ -233,6 +310,15 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Надсилає новий статус документа на бекенд.
+     *
+     * @async
+     * @param {string|number} docId - Ідентифікатор документа.
+     * @param {string} status - Новий статус ('APPROVED' або 'REJECTED').
+     * @param {string|null} reason - Причина відхилення (якщо є).
+     * @returns {Promise<boolean>} true, якщо операція успішна.
+     */
     const sendDocStatus = async (docId, status, reason) => {
         try {
             const response = await fetch('http://localhost:8080/api/management/documents/status', {
@@ -251,6 +337,12 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Додає новий відділ до системи.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleAddDepartment = async () => {
         if (!newDeptName.trim()) return;
 
@@ -285,6 +377,9 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Відкриває модальне вікно для підтвердження видалення відділу.
+     */
     const handleDeleteDepartmentClick = () => {
         if (!editingDept || !editingDept.id) return;
 
@@ -297,6 +392,12 @@ export default function ManagementTab({showNotification}) {
         });
     };
 
+    /**
+     * Виконує видалення відділу з бекенду.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const executeDeleteDepartment = async () => {
         try {
             const response = await fetch(`http://localhost:8080/api/management/departments/${editingDept.id}`, {
@@ -318,6 +419,12 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Зберігає зміни відділу на бекенді.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleSaveDepartment = async () => {
         if (!editingDept) return;
 
@@ -338,6 +445,12 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Відкриває модальне вікно для підтвердження призначення координатора відділу.
+     *
+     * @param {string|number} deptId - Ідентифікатор відділу.
+     * @param {string|number} userId - Ідентифікатор користувача.
+     */
     const handleSetCoordinatorClick = (deptId, userId) => {
         if (!userId) return;
 
@@ -350,6 +463,14 @@ export default function ManagementTab({showNotification}) {
         });
     };
 
+    /**
+     * Виконує призначення координатора відділу.
+     *
+     * @async
+     * @param {string|number} deptId - Ідентифікатор відділу.
+     * @param {string|number} userId - Ідентифікатор користувача.
+     * @returns {Promise<void>}
+     */
     const executeSetCoordinator = async (deptId, userId) => {
         try {
             const response = await fetch(`http://localhost:8080/api/management/departments/${deptId}/set-coordinator`, {
@@ -380,6 +501,12 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Відкриває модальне вікно для додавання волонтера до відділу.
+     *
+     * @param {Object} dept - Об'єкт відділу.
+     * @returns {Promise<void>}
+     */
     const handleOpenAddVolModal = async (dept) => {
         setSelectedDept(dept);
 
@@ -400,6 +527,12 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Додає волонтера до відділу.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleAddVolunteerToDept = async () => {
         if (!selectedUserId || !selectedDept) return;
 
@@ -425,6 +558,12 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Відкриває модальне вікно з детальною інформацією про волонтера.
+     *
+     * @param {Object} vol - Об'єкт волонтера.
+     * @returns {Promise<void>}
+     */
     const handleOpenVolInfo = async (vol) => {
         try {
             const response = await fetch(`http://localhost:8080/api/management/volunteers/${vol.id}/details`);
@@ -436,6 +575,12 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Відкриває модальне вікно з детальною інформацією про замовника.
+     *
+     * @param {Object} customer - Об'єкт замовника.
+     * @returns {Promise<void>}
+     */
     const handleOpenCustomerInfo = async (customer) => {
         try {
             const response = await fetch(`http://localhost:8080/api/management/customers/${customer.id}/details`);
@@ -449,6 +594,12 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Відкриває модальне вікно редагування відділу та завантажує координатора.
+     *
+     * @param {Object} dept - Об'єкт відділу.
+     * @returns {Promise<void>}
+     */
     const handleDeptClick = async (dept) => {
         setSelectedDept(dept);
 
@@ -473,6 +624,11 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Відкриває модальне вікно для підтвердження видалення волонтера з відділу.
+     *
+     * @param {string|number} userId - Ідентифікатор волонтера.
+     */
     const handleRemoveVolunteerClick = (userId) => {
         setConfirmModal({
             isOpen: true,
@@ -483,6 +639,13 @@ export default function ManagementTab({showNotification}) {
         });
     };
 
+    /**
+     * Оновлює статус документа зі списку очікування.
+     *
+     * @param {string|number} docId - Ідентифікатор документа.
+     * @param {string} status - Новий статус.
+     * @returns {Promise<void>}
+     */
     const handleUpdateDocStatus = async (docId, status) => {
         const success = await sendDocStatus(docId, status, null);
         if (success) {
@@ -490,6 +653,13 @@ export default function ManagementTab({showNotification}) {
         }
     };
 
+    /**
+     * Виконує видалення волонтера з відділу.
+     *
+     * @async
+     * @param {string|number} userId - Ідентифікатор волонтера.
+     * @returns {Promise<void>}
+     */
     const executeRemoveVolunteer = async (userId) => {
         try {
             const response = await fetch(`http://localhost:8080/api/management/departments/${selectedDept.id}/remove-volunteer?userId=${userId}`, {
@@ -519,7 +689,6 @@ export default function ManagementTab({showNotification}) {
     return (
         <div className="admin-tab-content fade-in">
 
-            {/* СЕКЦІЯ ВЕРИФІКАЦІЇ */}
             <div className="glass-sub-section" style={{marginBottom: '25px'}}>
                 <h3 className="tab-title" style={{fontSize: '20px', marginBottom: '15px'}}>Верифікація</h3>
 
@@ -581,7 +750,6 @@ export default function ManagementTab({showNotification}) {
                                             </div>
                                         </div>
 
-                                        {/* Важливо: передаємо user.id */}
                                         <div onClick={() => toggleDocs(user.id)} style={{
                                             cursor: 'pointer',
                                             display: 'flex',
@@ -740,11 +908,9 @@ export default function ManagementTab({showNotification}) {
                 </div>
             </div>
 
-            {/* НИЖНІ СЕКЦІЇ */}
             <div className="grid-split-sections"
                  style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start'}}>
 
-                {/* Блок ВІДДІЛИ */}
                 <div className="glass-sub-section"
                      style={{display: 'flex', flexDirection: 'column', minHeight: '300px'}}>
                     <div className="sub-section-header">
@@ -787,7 +953,6 @@ export default function ManagementTab({showNotification}) {
                         Додати відділ
                     </button>
 
-                    {/* Модальне вікно для додавання ВІДДІЛУ */}
                     {showAddDeptModal && (
                         <div className="modal-overlay" style={{
                             zIndex: 2000,
@@ -925,7 +1090,6 @@ export default function ManagementTab({showNotification}) {
                         </div>
                     )}
 
-                    {/* Модальне вікно для редагування ВІДДІЛУ */}
                     {isEditModalOpen && editingDept && (
                         <div className="modal-overlay" style={{
                             zIndex: 2000,
@@ -1078,7 +1242,6 @@ export default function ManagementTab({showNotification}) {
                     )}
                 </div>
 
-                {/* Блок ВОЛОНТЕРИ */}
                 <div className="glass-sub-section"
                      style={{display: 'flex', flexDirection: 'column', minHeight: '300px'}}>
                     <div className="sub-section-header">
@@ -1141,7 +1304,6 @@ export default function ManagementTab({showNotification}) {
                         </button>
                     )}
 
-                    {/* Модальне вікно: ДОДАТИ ВОЛОНТЕРА ДО ВІДДІЛУ (БЕЗ ПОШУКУ) */}
                     {showAddVolModal && (
                         <div className="modal-overlay" style={{
                             zIndex: 2000,
@@ -1254,7 +1416,6 @@ export default function ManagementTab({showNotification}) {
                         </div>
                     )}
 
-                    {/* Модальне вікно: ПРОФІЛЬ ВОЛОНТЕРА */}
                     {viewingVol && (
                         <div className="modal-overlay" style={{
                             zIndex: 2000,
@@ -1423,7 +1584,6 @@ export default function ManagementTab({showNotification}) {
                 </div>
             )}
 
-            {/* Секція Замовників */}
             <div className="glass-sub-section" style={{marginTop: '40px', marginBottom: '25px', padding: '20px'}}>
                 <div className="sub-section-header" style={{
                     display: 'flex',
@@ -1506,7 +1666,6 @@ export default function ManagementTab({showNotification}) {
                             </div>
 
                             <div style={{padding: '24px'}}>
-                                {/* Тепер використовуємо viewingCustomer.user */}
                                 <div style={{
                                     background: '#f0f7ff',
                                     border: '1px solid #cbd5e1',

@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 
-// Утиліта для гарного форматування грошей (напр. 1 250,00 ₴)
+/**
+ * Форматує числове значення як грошову суму в гривнях.
+ *
+ * @param {number|string} amount - Сума для форматування.
+ * @returns {string} Відформатована сума з символом гривні.
+ */
 const formatMoney = (amount) => {
     return Number(amount || 0).toLocaleString('uk-UA', {
         minimumFractionDigits: 2,
@@ -9,7 +14,12 @@ const formatMoney = (amount) => {
     }) + ' ₴';
 };
 
-// Утиліта для перекладу статусів
+/**
+ * Перекладає статус заявки з англійської на українську.
+ *
+ * @param {string} status - Статус заявки (PENDING, APPROVED, IN_PROGRESS, FULFILLED, REJECTED).
+ * @returns {string} Перекладений статус українською.
+ */
 const translateStatus = (status) => {
     const statuses = {
         'PENDING': 'В очікуванні',
@@ -21,6 +31,16 @@ const translateStatus = (status) => {
     return statuses[status] || status;
 };
 
+/**
+ * Головний компонент вкладки "Фінансові звіти" для адміністратора.
+ * Дозволяє генерувати звіти за період та відділом,
+ * переглядати дані у таблиці та експортувати в Excel.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {Function} props.showNotification - Функція для показу сповіщень.
+ * @returns {JSX.Element} Рендер вкладки звітів.
+ */
 export default function ReportsTab({ showNotification }) {
     const [startDate, setStartDate] = useState('2026-05-01');
     const [endDate, setEndDate] = useState('2026-06-30');
@@ -32,6 +52,12 @@ export default function ReportsTab({ showNotification }) {
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
+        /**
+         * Завантажує список відділів з бекенду для фільтрації.
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         const fetchDepartments = async () => {
             try {
                 const response = await fetch('http://localhost:8080/api/management/departments');
@@ -46,6 +72,12 @@ export default function ReportsTab({ showNotification }) {
         fetchDepartments();
     }, []);
 
+    /**
+     * Генерує звіт на основі вибраних параметрів (період, відділ).
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleGenerateReport = async () => {
         setIsLoading(true);
         showNotification("📊 Формування звіту...", "info");
@@ -79,6 +111,9 @@ export default function ReportsTab({ showNotification }) {
     const grandTotalTransport = reportData.reduce((sum, req) => sum + Number(req.totalTransportCost || 0), 0);
     const grandTotal = grandTotalItems + grandTotalTransport;
 
+    /**
+     * Експортує згенерований звіт у файл Excel (.xlsx).
+     */
     const handleDownloadExcel = () => {
         if (!reportData || reportData.length === 0) {
             showNotification("Немає даних для завантаження", "error");
@@ -141,7 +176,6 @@ export default function ReportsTab({ showNotification }) {
 
     return (
         <div className="admin-tab-content fade-in reports-container">
-            {/* Блок заголовку */}
             <div className="reports-header-block">
                 <h2 className="reports-title">Фінансові звіти</h2>
                 <p className="reports-subtitle">
@@ -149,7 +183,6 @@ export default function ReportsTab({ showNotification }) {
                 </p>
             </div>
 
-            {/* Панель параметрів та фільтрації */}
             <div className="reports-filter-panel">
                 <div className="filter-group">
                     <label className="filter-label">Відділ</label>
@@ -196,7 +229,6 @@ export default function ReportsTab({ showNotification }) {
                 </button>
             </div>
 
-            {/* Панель додаткових дій (Експорт) */}
             {isReportGenerated && reportData.length > 0 && (
                 <div className="export-btn-wrapper">
                     <button
@@ -214,7 +246,6 @@ export default function ReportsTab({ showNotification }) {
                 </div>
             )}
 
-            {/* Таблиця звітів */}
             {isReportGenerated && (
                 <div className="table-glass-wrapper">
                     <table className="reports-table">
