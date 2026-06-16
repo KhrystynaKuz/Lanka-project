@@ -163,8 +163,17 @@ export default function ArchiveTab() {
     };
 
     if (loading) return (
-        <div className="volunteer-archive-loading">
-            Завантаження завдань...
+        <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            paddingTop: '30px',
+            width: '100%',
+            color: '#1e3a8a',
+            fontWeight: 'bold',
+            fontSize: '16px'
+        }}>
+            Завантаження...
         </div>
     );
 
