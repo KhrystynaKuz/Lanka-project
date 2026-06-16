@@ -228,6 +228,28 @@ export default function DepartmentTasksTab() {
         }
     };
 
+    // ФУНКЦІЯ: Зміна статусу материнської заявки Координатором
+    const handleRequestStatusChange = async (reqId, newStatus) => {
+        try {
+            // Передаємо порожній масив departmentIds, щоб уникнути NullPointerException на бекенді
+            const res = await fetch(`http://localhost:8080/api/requests/${reqId}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus, departmentIds: [] })
+            });
+
+            if (res.ok) {
+                setRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: newStatus } : r));
+                addToast(`✅ Статус заявки успішно змінено на ${newStatus}`, "success");
+            } else {
+                throw new Error(`Сервер повернув помилку: ${res.status}`);
+            }
+        } catch (err) {
+            console.error("Помилка зміни статусу заявки:", err);
+            addToast("🚨 Не вдалося змінити статус заявки", "error");
+        }
+    };
+
     const renderTaskStatusBadge = (status) => {
         switch (status) {
             case 'ASSIGNED': return <span style={{ fontSize: '0.75rem', padding: '5px 12px', backgroundColor: 'rgba(254, 240, 138, 0.25)', color: '#854d0e', borderRadius: '8px', fontWeight: 'bold', border: '1px solid rgba(133, 77, 14, 0.2)' }}>Призначено</span>;
@@ -238,29 +260,22 @@ export default function DepartmentTasksTab() {
         }
     };
 
-    const renderRequestStatusBadge = (status) => {
-        let config = { bg: 'rgba(241, 245, 249, 0.6)', color: '#475569', text: status };
+    // Хелпер для отримання конфігурації кольорів статусу заявки
+    const getRequestStatusConfig = (status) => {
         switch (status) {
-            case 'IN_PROGRESS': config = { bg: 'rgba(254, 243, 199, 0.6)', color: '#b45309', icon: '⚙️', text: 'В ПРОЦЕСІ' }; break;
-            case 'APPROVED': config = { bg: 'rgba(224, 231, 255, 0.6)', color: '#4338ca', icon: '👍', text: 'ЗАТВЕРДЖЕНО' }; break;
-            case 'REJECTED': config = { bg: 'rgba(254, 226, 226, 0.6)', color: '#b91c1c', icon: '❌', text: 'ВІДХИЛЕНО' }; break;
-            case 'FULFILLED': config = { bg: 'rgba(209, 250, 229, 0.6)', color: '#047857', icon: '✅', text: 'ВИКОНАНО' }; break;
-            default: break;
+            case 'IN_PROGRESS': return { bg: 'rgba(254, 243, 199, 0.9)', color: '#b45309', icon: '⚙️', text: 'В ПРОЦЕСІ' };
+            case 'APPROVED': return { bg: 'rgba(224, 231, 255, 0.9)', color: '#4338ca', icon: '👍', text: 'ЗАТВЕРДЖЕНО' };
+            case 'REJECTED': return { bg: 'rgba(254, 226, 226, 0.9)', color: '#b91c1c', icon: '❌', text: 'ВІДХИЛЕНО' };
+            case 'FULFILLED': return { bg: 'rgba(209, 250, 229, 0.9)', color: '#047857', icon: '✅', text: 'ВИКОНАНО' };
+            case 'PENDING': return { bg: 'rgba(241, 245, 249, 0.9)', color: '#475569', icon: '⏳', text: 'ОЧІКУЄ' };
+            default: return { bg: 'rgba(241, 245, 249, 0.9)', color: '#475569', icon: '📝', text: status };
         }
-        return (
-            <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                padding: '6px 14px', borderRadius: '10px',
-                backgroundColor: config.bg, color: config.color,
-                fontWeight: '700', fontSize: '0.85rem', border: `1px solid ${config.color}30`,
-                backdropFilter: 'blur(4px)'
-            }}>
-                {config.icon} {config.text}
-            </span>
-        );
     };
 
     if (loading) return <div className="coord-tasks-section" style={{ padding: '40px', textAlign: 'center', color: '#1e3a8a', fontWeight: '600' }}><p>Завантаження даних координатора...</p></div>;
+
+    // Статуси, які дозволено обирати координатору
+    const allowedRequestStatuses = ['APPROVED', 'IN_PROGRESS', 'FULFILLED'];
 
     return (
         <div className="coord-tasks-section" style={{ padding: '5px 0' }}>
@@ -328,6 +343,12 @@ export default function DepartmentTasksTab() {
                         const reqTasks = tasksByRequest[request.id] || [];
                         const isRequestLocked = request.status === 'FULFILLED' || request.status === 'REJECTED';
 
+                        const reqStatusConfig = getRequestStatusConfig(request.status);
+
+                        // Формуємо опції для селекту статусу заявки:
+                        // Дозволені координатору + поточний статус (щоб він відображався коректно, навіть якщо це PENDING)
+                        const statusOptions = [...new Set([request.status, ...allowedRequestStatuses])];
+
                         return (
                             <div className="glass-main-request-panel fade-in" key={request.id} style={{
                                 padding: '20px',
@@ -345,7 +366,45 @@ export default function DepartmentTasksTab() {
                                         <h3 style={{ color: '#1e3a8a', margin: 0, fontSize: '16px', fontWeight: '800', letterSpacing: '0.5px' }}>
                                             ЗАЯВКА №{request.id.toString().slice(0, 8).toUpperCase()}
                                         </h3>
-                                        {renderRequestStatusBadge(request.status)}
+
+                                        {/* ІНТЕРАКТИВНИЙ БЕЙДЖ СТАТУСУ ЗАЯВКИ */}
+                                        <select
+                                            value={request.status}
+                                            onClick={(e) => e.stopPropagation()}
+                                            onChange={(e) => handleRequestStatusChange(request.id, e.target.value)}
+                                            style={{
+                                                appearance: 'none',
+                                                backgroundColor: reqStatusConfig.bg,
+                                                color: reqStatusConfig.color,
+                                                border: `1px solid ${reqStatusConfig.color}40`,
+                                                padding: '6px 28px 6px 14px',
+                                                borderRadius: '10px',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '700',
+                                                cursor: 'pointer',
+                                                outline: 'none',
+                                                backdropFilter: 'blur(4px)',
+                                                backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23${reqStatusConfig.color.replace('#', '')}%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")`,
+                                                backgroundRepeat: 'no-repeat',
+                                                backgroundPosition: 'right .6rem top 50%',
+                                                backgroundSize: '.65rem auto',
+                                                transition: 'all 0.2s',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                            }}
+                                        >
+                                            {statusOptions.map(st => {
+                                                const stConfig = getRequestStatusConfig(st);
+                                                return (
+                                                    <option
+                                                        key={st}
+                                                        value={st}
+                                                        disabled={!allowedRequestStatuses.includes(st)}
+                                                    >
+                                                        {stConfig.icon} {stConfig.text} {(!allowedRequestStatuses.includes(st) ? '(Тільки Голова)' : '')}
+                                                    </option>
+                                                );
+                                            })}
+                                        </select>
                                     </div>
                                     <button
                                         className="main-search-btn"
