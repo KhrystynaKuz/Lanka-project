@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import './Coordinator.css';
 
-// Компонент тосту
+/**
+ * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} props.message - Текст сповіщення.
+ * @param {string} props.type - Тип сповіщення ('info', 'success', 'error', 'warning').
+ * @param {Function} props.onClose - Функція закриття сповіщення.
+ * @returns {JSX.Element} Рендер тосту.
+ */
 const Toast = ({ message, type, onClose }) => {
     React.useEffect(() => {
         const timer = setTimeout(() => {
@@ -18,7 +27,21 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
-// Компонент модального вікна підтвердження
+/**
+ * Компонент модального вікна підтвердження дії.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {boolean} props.isOpen - Чи відкрито модальне вікно.
+ * @param {Function} props.onClose - Функція закриття вікна.
+ * @param {Function} props.onConfirm - Функція підтвердження дії.
+ * @param {string} props.title - Заголовок модального вікна.
+ * @param {string} props.message - Текст повідомлення.
+ * @param {string} [props.confirmText="Так, зберегти"] - Текст кнопки підтвердження.
+ * @param {string} [props.cancelText="Скасувати"] - Текст кнопки скасування.
+ * @param {boolean} [props.isDanger=false] - Чи є дія небезпечною.
+ * @returns {JSX.Element|null} Рендер модального вікна або null, якщо закрито.
+ */
 const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Так, зберегти", cancelText = "Скасувати", isDanger = false }) => {
     if (!isOpen) return null;
 
@@ -45,6 +68,15 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
     );
 };
 
+/**
+ * Головний компонент вкладки "Завдання відділу" для координатора.
+ * Відображає заявки, призначені на відділ координатора, дозволяє
+ * створювати, редагувати, видаляти підзавдання, призначати волонтерів,
+ * змінювати статус заявки та зберігати зміни.
+ *
+ * @component
+ * @returns {JSX.Element} Рендер вкладки завдань відділу.
+ */
 export default function DepartmentTasksTab() {
     const [requests, setRequests] = useState([]);
     const [departmentVolunteers, setDepartmentVolunteers] = useState([]);
@@ -59,11 +91,22 @@ export default function DepartmentTasksTab() {
 
     const userId = localStorage.getItem('userId');
 
+    /**
+     * Додає нове сповіщення до списку.
+     *
+     * @param {string} message - Текст сповіщення.
+     * @param {string} [type='info'] - Тип сповіщення.
+     */
     const addToast = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
+    /**
+     * Видаляє сповіщення зі списку за ідентифікатором.
+     *
+     * @param {number} id - Ідентифікатор сповіщення.
+     */
     const removeToast = (id) => {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
@@ -71,6 +114,12 @@ export default function DepartmentTasksTab() {
     useEffect(() => {
         if (!userId) return;
 
+        /**
+         * Завантажує дані координатора: список волонтерів відділу та заявки.
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         const loadCoordinatorData = async () => {
             setLoading(true);
             try {
@@ -109,10 +158,20 @@ export default function DepartmentTasksTab() {
         loadCoordinatorData();
     }, [userId]);
 
+    /**
+     * Розгортає або згортає деталі заявки.
+     *
+     * @param {string|number} id - Ідентифікатор заявки.
+     */
     const toggleExpand = (id) => {
         setExpandedRequests(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
+    /**
+     * Додає нове порожнє підзавдання до заявки.
+     *
+     * @param {string|number} reqId - Ідентифікатор заявки.
+     */
     const handleAddSubTask = (reqId) => {
         const newTask = {
             id: `temp-${Date.now()}`,
@@ -132,6 +191,14 @@ export default function DepartmentTasksTab() {
         addToast("📎 Додано нове підзавдання", "info");
     };
 
+    /**
+     * Оновлює поле підзавдання.
+     *
+     * @param {string|number} reqId - Ідентифікатор заявки.
+     * @param {string|number} taskId - Ідентифікатор підзавдання.
+     * @param {string} field - Назва поля для оновлення.
+     * @param {*} value - Нове значення поля.
+     */
     const handleUpdateSubTask = (reqId, taskId, field, value) => {
         setTasksByRequest(prev => ({
             ...prev,
@@ -139,6 +206,15 @@ export default function DepartmentTasksTab() {
         }));
     };
 
+    /**
+     * Видаляє підзавдання. Якщо це останнє завдання, створює нове порожнє.
+     *
+     * @async
+     * @param {string|number} reqId - Ідентифікатор заявки.
+     * @param {string|number} taskId - Ідентифікатор підзавдання.
+     * @param {boolean} isNew - Чи є завдання новим (ще не збереженим у БД).
+     * @returns {Promise<void>}
+     */
     const handleDeleteSubTask = async (reqId, taskId, isNew) => {
         const reqTasks = tasksByRequest[reqId] || [];
 
@@ -178,6 +254,11 @@ export default function DepartmentTasksTab() {
         }
     };
 
+    /**
+     * Відкриває модальне вікно підтвердження збереження завдань.
+     *
+     * @param {string|number} reqId - Ідентифікатор заявки.
+     */
     const handleSaveTasksTrigger = (reqId) => {
         const tasks = tasksByRequest[reqId] || [];
         const emptyTasks = tasks.filter(t => !t.title.trim());
@@ -191,6 +272,12 @@ export default function DepartmentTasksTab() {
         setShowConfirm(true);
     };
 
+    /**
+     * Підтверджує та виконує збереження завдань на бекенді.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const confirmSave = async () => {
         if (!pendingSaveReqId) return;
         const rawTasks = tasksByRequest[pendingSaveReqId] || [];
@@ -228,10 +315,16 @@ export default function DepartmentTasksTab() {
         }
     };
 
-    // ФУНКЦІЯ: Зміна статусу материнської заявки Координатором
+    /**
+     * Змінює статус материнської заявки координатором.
+     *
+     * @async
+     * @param {string|number} reqId - Ідентифікатор заявки.
+     * @param {string} newStatus - Новий статус заявки.
+     * @returns {Promise<void>}
+     */
     const handleRequestStatusChange = async (reqId, newStatus) => {
         try {
-            // Передаємо порожній масив departmentIds, щоб уникнути NullPointerException на бекенді
             const res = await fetch(`http://localhost:8080/api/requests/${reqId}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -250,6 +343,12 @@ export default function DepartmentTasksTab() {
         }
     };
 
+    /**
+     * Рендерить бейдж статусу підзавдання.
+     *
+     * @param {string} status - Статус підзавдання.
+     * @returns {JSX.Element} Бейдж з відповідним статусом.
+     */
     const renderTaskStatusBadge = (status) => {
         switch (status) {
             case 'ASSIGNED': return <span style={{ fontSize: '0.75rem', padding: '5px 12px', backgroundColor: 'rgba(254, 240, 138, 0.25)', color: '#854d0e', borderRadius: '8px', fontWeight: 'bold', border: '1px solid rgba(133, 77, 14, 0.2)' }}>Призначено</span>;
@@ -260,7 +359,12 @@ export default function DepartmentTasksTab() {
         }
     };
 
-    // Хелпер для отримання конфігурації кольорів статусу заявки
+    /**
+     * Повертає конфігурацію для відображення статусу заявки.
+     *
+     * @param {string} status - Статус заявки.
+     * @returns {Object} Об'єкт з кольорами, іконкою та текстом.
+     */
     const getRequestStatusConfig = (status) => {
         switch (status) {
             case 'IN_PROGRESS': return { bg: 'rgba(254, 243, 199, 0.9)', color: '#b45309', icon: '⚙️', text: 'В ПРОЦЕСІ' };
@@ -274,7 +378,6 @@ export default function DepartmentTasksTab() {
 
     if (loading) return <div className="coord-tasks-section" style={{ padding: '40px', textAlign: 'center', color: '#1e3a8a', fontWeight: '600' }}><p>Завантаження даних координатора...</p></div>;
 
-    // Статуси, які дозволено обирати координатору
     const allowedRequestStatuses = ['APPROVED', 'IN_PROGRESS', 'FULFILLED'];
 
     return (
@@ -345,8 +448,6 @@ export default function DepartmentTasksTab() {
 
                         const reqStatusConfig = getRequestStatusConfig(request.status);
 
-                        // Формуємо опції для селекту статусу заявки:
-                        // Дозволені координатору + поточний статус (щоб він відображався коректно, навіть якщо це PENDING)
                         const statusOptions = [...new Set([request.status, ...allowedRequestStatuses])];
 
                         return (
@@ -367,7 +468,6 @@ export default function DepartmentTasksTab() {
                                             ЗАЯВКА №{request.id.toString().slice(0, 8).toUpperCase()}
                                         </h3>
 
-                                        {/* ІНТЕРАКТИВНИЙ БЕЙДЖ СТАТУСУ ЗАЯВКИ */}
                                         <select
                                             value={request.status}
                                             onClick={(e) => e.stopPropagation()}

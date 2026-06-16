@@ -69,7 +69,6 @@
     background: rgba(255, 255, 255, 0.6);
 }
 
-/* ===== ПРОФІЛЬ ТА ВИПАДАЮЧЕ МЕНЮ (ЯК У MANAGER) ===== */
 .coord-profile-zone {
     position: relative;
     overflow: visible;
@@ -835,7 +834,6 @@
     }
 }
 
-/* ===== СТИЛІ ДЛЯ ТОСТ-СПОВІЩЕНЬ (ПОВЕРХ МОДАЛКИ) ===== */
 .toast-notifications-container {
     position: fixed;
     bottom: 24px;
@@ -907,7 +905,6 @@
     }
 }
 
-/* ===== МОДАЛЬНІ ВІКНА (ЯК У MANAGER) ===== */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -1091,7 +1088,6 @@
     box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
-/* Документи */
 .documents-section {
     padding: 0 24px 20px 24px;
 }
@@ -1247,7 +1243,6 @@
     border-color: #3b82f6;
 }
 
-/* Форма телефону */
 .phone-form {
     padding: 24px;
 }
@@ -1327,7 +1322,6 @@
     background: linear-gradient(90deg, transparent, #bfdbfe, #bfdbfe, transparent);
 }
 
-/* Фонова підкладка */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -1339,7 +1333,6 @@
     z-index: 10000;
 }
 
-/* Вікно як у Голови */
 .coord-modal-content {
     background: #ffffff;
     padding: 30px;
@@ -1374,7 +1367,6 @@
     margin-top: 10px;
 }
 
-/* Кнопки стилізовані */
 .btn-save { background: #1e40af; color: white; border: none; padding: 12px; border-radius: 10px; flex: 1; cursor: pointer; }
 .btn-delete { background: #ff4d4d; color: white; border: none; padding: 12px; border-radius: 10px; flex: 1; cursor: pointer; }
 .btn-cancel { background: transparent; color: #6b7280; border: none; padding: 12px; border-radius: 10px; flex: 1; cursor: pointer; }
@@ -1383,7 +1375,6 @@
     margin-bottom: 10px;
 }
 
-/* Додаткові стилі для кнопок у модалці */
 .btn-save {
     background: #1e40af;
     color: white;
