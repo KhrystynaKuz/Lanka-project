@@ -1,6 +1,18 @@
 import React, {useState, useEffect} from 'react';
 import './Home.css';
 
+/**
+ * Головна публічна сторінка додатку.
+ * Відображає інформацію про організацію, активні збори,
+ * звіти та фотографії з виконаних робіт.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {boolean} props.isLoggedIn - Стан автентифікації користувача.
+ * @param {Function} props.onLogOut - Функція виходу з облікового запису.
+ * @param {Function} props.onNavigateToLogin - Функція переходу на сторінку входу.
+ * @returns {JSX.Element} Рендер головної сторінки.
+ */
 export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
     const [showDropdown, setShowDropdown] = useState(false);
     const [reports, setReports] = useState([]);
@@ -14,6 +26,12 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
     const [fundraisers, setFundraisers] = useState([]);
 
     useEffect(() => {
+        /**
+         * Завантажує налаштування головної сторінки з бекенду.
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         const fetchSettings = async () => {
             try {
                 const response = await fetch('http://localhost:8080/api/site-editor/settings');
@@ -30,6 +48,12 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
             }
         };
 
+        /**
+         * Завантажує список активних зборів з бекенду.
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         const fetchActiveFundraisers = async () => {
             try {
                 const response = await fetch('http://localhost:8080/api/site-editor/fundraisers');
@@ -43,6 +67,12 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
             }
         };
 
+        /**
+         * Завантажує список звітів (фото та документи) з бекенду.
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         const fetchReports = async () => {
             try {
                 const response = await fetch('http://localhost:8080/api/site-editor/reports');
@@ -121,7 +151,6 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
             </header>
 
             <main className="home-glass-content">
-                {/* СЕКЦІЯ 1: ПРО НАС */}
                 <section id="about" className="about-hero-section">
                     <div className="about-text-block">
                         <h1 className="about-main-title">{siteContent.home_title}</h1>
@@ -145,7 +174,6 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
 
                 <hr className="section-divider"/>
 
-                {/* СЕКЦІЯ 2: АКТИВНІ ЗБОРИ */}
                 <section id="donate" className="fundraisers-public-section">
                     <div className="content-intro">
                         <h2 className="main-title">Активні термінові збори</h2>
@@ -170,7 +198,6 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
                                         <span className="status-indicator">● Терміновий збір</span>
                                     </div>
 
-                                    {/* Новий контейнер для правильного розподілу простору */}
                                     <div className="fundraiser-main-content">
                                         <div className="fundraiser-text-side">
                                             <h2 className="card-title">{fundraiser.title}</h2>
@@ -209,7 +236,6 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
 
                 <hr className="section-divider"/>
 
-                {/* СЕКЦІЯ 3: ЗВІТИ ТА ФОТО */}
                 <section id="reports" className="completed-tasks-section">
                     <div className="content-intro">
                         <h2 className="main-title">Звіти про виконану роботу</h2>
@@ -217,7 +243,6 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
                             підтримці.</p>
                     </div>
 
-                    {/* БЛОК 1: ФОТО ЗВІТІВ */}
                     <div className="reports-sub-section" style={{marginTop: '30px'}}>
                         <h3 className="section-subtitle" style={{color: '#fff', marginBottom: '15px'}}>Фотозвіти</h3>
                         <div className="glass-photo-grid" style={{
@@ -244,7 +269,6 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
                         </div>
                     </div>
 
-                    {/* БЛОК 2: ДОКУМЕНТИ */}
                     <div className="reports-sub-section" style={{marginTop: '40px'}}>
                         <h3 className="section-subtitle" style={{color: '#fff', marginBottom: '15px'}}>Офіційні
                             документи</h3>
