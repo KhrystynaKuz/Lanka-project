@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import './Register.css';
 
+/**
+ * Головний компонент сторінки реєстрації.
+ * Відповідає за вибір ролі (волонтер/замовник), введення особистих даних,
+ * завантаження документів та створення облікового запису через Supabase.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {Function} props.onRegisterSuccess - Функція, що викликається після успішної реєстрації.
+ * @param {Function} props.onBackToLogin - Функція переходу на сторінку входу.
+ * @param {Function} props.onBackToHome - Функція переходу на головну сторінку.
+ * @returns {JSX.Element} Рендер сторінки реєстрації.
+ */
 export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHome }) {
     const [step, setStep] = useState(1);
     const [role, setRole] = useState('');
@@ -25,6 +37,12 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
     const SUPABASE_KEY = 'sb_publishable_avyWvNv3SrmJZGmaMszNrw_AGJptVhK';
     const API_BASE_URL = 'http://localhost:8080';
 
+    /**
+     * Завантажує список відділів з бекенду.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const fetchDepartments = async () => {
         setLoadingDepartments(true);
         try {
@@ -48,12 +66,23 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
         }
     }, [role]);
 
+    /**
+     * Обробляє вибір ролі користувача та переходить до кроку заповнення даних.
+     *
+     * @param {string} selectedRole - Обрана роль ('volunteer' або 'customer').
+     */
     const handleSelectRole = (selectedRole) => {
         setRole(selectedRole.toUpperCase());
         setDocuments([]);
         setStep(2);
     };
 
+    /**
+     * Обробляє вибір файлів для завантаження.
+     * Перевіряє розмір кожного файлу та сумарний об'єм.
+     *
+     * @param {Event} e - Подія вибору файлу.
+     */
     const handleFileChange = (e) => {
         if (e.target.files) {
             const newFiles = Array.from(e.target.files);
@@ -74,10 +103,24 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
         }
     };
 
+    /**
+     * Видаляє файл зі списку за індексом.
+     *
+     * @param {number} index - Індекс файлу в списку.
+     */
     const removeFile = (index) => {
         setDocuments(prev => prev.filter((_, i) => i !== index));
     };
 
+    /**
+     * Завантажує документ на бекенд.
+     *
+     * @async
+     * @param {string} userId - Ідентифікатор користувача.
+     * @param {File} file - Файл для завантаження.
+     * @param {string} token - Токен доступу Supabase.
+     * @returns {Promise<Object|boolean>} Результат завантаження або false у разі помилки.
+     */
     const uploadDocument = async (userId, file, token) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -104,6 +147,15 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
         }
     };
 
+    /**
+     * Обробляє відправку форми реєстрації.
+     * Створює користувача в Supabase, додає дані в таблиці users та user_details,
+     * завантажує документи.
+     *
+     * @async
+     * @param {Event} e - Подія відправки форми.
+     * @returns {Promise<void>}
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (documents.length === 0) {

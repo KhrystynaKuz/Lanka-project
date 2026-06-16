@@ -2,6 +2,19 @@ import React, { useState, useEffect } from 'react';
 import './Login.css';
 import { supabase } from '../supabaseClient';
 
+/**
+ * Головний компонент сторінки входу.
+ * Відповідає за автентифікацію користувача через Supabase,
+ * відновлення пароля, встановлення нового пароля
+ * та передачу даних успішного входу в додаток.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {Function} props.onLoginSuccess - Функція, що викликається після успішного входу.
+ * @param {Function} props.onBackToHome - Функція переходу на головну сторінку.
+ * @param {Function} props.onNavigateToRegister - Функція переходу на сторінку реєстрації.
+ * @returns {JSX.Element} Рендер сторінки входу.
+ */
 export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegister }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -33,6 +46,15 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
         }
     }, []);
 
+    /**
+     * Обробляє вхід користувача.
+     * Виконує автентифікацію через Supabase, отримує роль користувача
+     * та викликає onLoginSuccess.
+     *
+     * @async
+     * @param {Event} e - Подія відправки форми.
+     * @returns {Promise<void>}
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -64,7 +86,6 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
             });
             console.log('Session set, now:', await supabase.auth.getSession());
 
-            // Now fetch user role from your 'users' table
             const dbResponse = await fetch(`${SUPABASE_BASE_URL}/rest/v1/users?id=eq.${userId}&select=role`, {
                 method: 'GET',
                 headers: {
@@ -98,6 +119,14 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
         }
     };
 
+    /**
+     * Обробляє відновлення пароля.
+     * Надсилає запит на відновлення пароля на вказану електронну пошту.
+     *
+     * @async
+     * @param {Event} e - Подія відправки форми.
+     * @returns {Promise<void>}
+     */
     const handleResetPassword = async (e) => {
         e.preventDefault();
         setError('');
@@ -128,6 +157,13 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
         }
     };
 
+    /**
+     * Обробляє збереження нового пароля після відновлення.
+     *
+     * @async
+     * @param {Event} e - Подія відправки форми.
+     * @returns {Promise<void>}
+     */
     const handleSaveNewPassword = async (e) => {
         e.preventDefault();
         setError('');

@@ -3,6 +3,18 @@ import './EditDocuments.css';
 
 const API_BASE_URL = 'http://localhost:8080';
 
+/**
+ * Компонент сторінки редагування документів після відхилення.
+ * Дозволяє користувачеві завантажити нові документи для повторної перевірки
+ * після отримання причини відхилення від менеджера.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string|number} props.userId - Ідентифікатор поточного користувача.
+ * @param {Function} props.onBackToDashboard - Функція повернення на головну сторінку.
+ * @param {string} props.token - Токен доступу для авторизації запитів.
+ * @returns {JSX.Element} Рендер сторінки редагування документів.
+ */
 const EditDocuments = ({ userId, onBackToDashboard, token }) => {
     const [rejectionData, setRejectionData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -13,6 +25,12 @@ const EditDocuments = ({ userId, onBackToDashboard, token }) => {
     useEffect(() => {
         if (!userId) return;
 
+        /**
+         * Завантажує інформацію про відхилення документів для користувача.
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         fetch(`${API_BASE_URL}/api/documents/rejection-info/${userId}`)
             .then(res => {
                 if (!res.ok) throw new Error('Сервер повернув помилку: ' + res.status);
@@ -29,6 +47,12 @@ const EditDocuments = ({ userId, onBackToDashboard, token }) => {
             });
     }, [userId]);
 
+    /**
+     * Обробляє вибір файлів для завантаження.
+     * Перевіряє розмір кожного файлу та сумарний об'єм.
+     *
+     * @param {Event} e - Подія вибору файлу.
+     */
     const handleFileChange = (e) => {
         if (e.target.files) {
             const newFiles = Array.from(e.target.files);
@@ -55,10 +79,23 @@ const EditDocuments = ({ userId, onBackToDashboard, token }) => {
         }
     };
 
+    /**
+     * Видаляє файл зі списку за індексом.
+     *
+     * @param {number} index - Індекс файлу в списку.
+     */
     const removeFile = (index) => {
         setDocuments(prev => prev.filter((_, i) => i !== index));
     };
 
+    /**
+     * Завантажує окремий документ на бекенд.
+     *
+     * @async
+     * @param {File} file - Файл для завантаження.
+     * @returns {Promise<Object>} Результат завантаження.
+     * @throws {Error} Помилка при завантаженні.
+     */
     const uploadDocument = async (file) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -80,6 +117,14 @@ const EditDocuments = ({ userId, onBackToDashboard, token }) => {
         return await response.json();
     };
 
+    /**
+     * Обробляє відправку форми з новими документами.
+     * Завантажує всі файли та оновлює статус заявки.
+     *
+     * @async
+     * @param {Event} e - Подія відправки форми.
+     * @returns {Promise<void>}
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (documents.length === 0) {

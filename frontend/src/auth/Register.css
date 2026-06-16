@@ -252,7 +252,6 @@
     }
 }
 
-/* Стилі для поля завантаження документа у волонтера */
 #volunteerDocument {
     position: absolute;
     left: 0;
@@ -263,7 +262,7 @@
     cursor: pointer;
 }
 
-/* Адаптивність для мобільних пристроїв */
+
 @media (max-width: 640px) {
     .role-selection-wrapper {
         gap: 12px;

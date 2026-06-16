@@ -1,9 +1,8 @@
-/* Контейнер сторінки редагування повторює стилі реєстрації */
+
 .edit-docs-card {
     border-top: 4px solid #ef4444;
 }
 
-/* Красиве сповіщення про причину відхилення */
 .rejection-alert-box {
     background: rgba(254, 242, 242, 0.7);
     border: 1px solid rgba(239, 68, 68, 0.25);
@@ -67,14 +66,12 @@
     text-align: left;
 }
 
-/* Примусове розтягування обгортки на всю ширину у CSS */
 .edit-docs-fullwidth-group {
     grid-column: span 2 / span 2 !important;
     width: 100% !important;
     box-sizing: border-box;
 }
 
-/* Інтерактивна зона завантаження документів розтягнута на 100% */
 .file-upload-interactive-zone-full {
     position: relative;
     width: 100% !important;
@@ -107,7 +104,6 @@
     box-sizing: border-box !important;
 }
 
-/* Ефекти наведення */
 .file-hidden-input-field:hover + .file-dropzone-view-card-full {
     border-color: #2563eb;
     background: #ffffff;
@@ -148,7 +144,6 @@
     color: #9ca3af;
 }
 
-/* Список доданих файлів */
 .selected-files-container-list {
     margin-top: 14px;
     display: flex;
@@ -209,7 +204,6 @@
     background: rgba(239, 68, 68, 0.05);
 }
 
-/* Нижні кнопки дій */
 .edit-buttons-actions {
     display: flex;
     flex-direction: column;
@@ -241,7 +235,6 @@
     border-color: #94a3b8 !important;
 }
 
-/* Спінер завантаження інформації */
 .loading-spinner-box {
     display: flex;
     flex-direction: column;
