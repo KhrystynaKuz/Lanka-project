@@ -5,6 +5,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+/**
+ * Клас конфігурації підключення до бази даних PostgreSQL.
+ * Використовує змінні середовища для налаштування з'єднання через Supabase.
+ */
 public class DatabaseConfig {
 
     private static final String DB_URL;
@@ -26,6 +30,11 @@ public class DatabaseConfig {
         }
     }
 
+    /**
+     * Створює нове з'єднання з базою даних.
+     * @return об'єкт {@link Connection}.
+     * @throws SQLException у разі помилки підключення.
+     */
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
