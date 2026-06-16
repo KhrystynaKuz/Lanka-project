@@ -1,8 +1,21 @@
-// frontend/src/hooks/useMessages.js
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from './useAuth';
 
+/**
+ * Кастомний хук для управління повідомленнями в чаті.
+ * Завантажує історію повідомлень з пагінацією, відстежує нові повідомлення
+ * в реальному часі та дозволяє надсилати текстові повідомлення або файли.
+ *
+ * @function
+ * @param {string|number} chatId - Ідентифікатор чату.
+ * @returns {Object} Об'єкт з полями:
+ *   - {Array} messages - Масив повідомлень чату.
+ *   - {boolean} loading - Стан завантаження повідомлень.
+ *   - {boolean} hasMore - Чи є ще повідомлення для завантаження.
+ *   - {Function} loadMore - Функція завантаження наступної порції повідомлень.
+ *   - {Function} sendMessage - Функція надсилання повідомлення (приймає текст або об'єкт з content та attachment_url).
+ */
 export function useMessages(chatId) {
     const { user } = useAuth();
     const [messages, setMessages] = useState([]);
@@ -11,6 +24,14 @@ export function useMessages(chatId) {
     const [page, setPage] = useState(0);
     const LIMIT = 50;
 
+    /**
+     * Завантажує повідомлення чату з пагінацією.
+     *
+     * @async
+     * @param {number} [pageNumber=0] - Номер сторінки для завантаження.
+     * @param {boolean} [append=false] - Чи додавати повідомлення до існуючого списку.
+     * @returns {Promise<void>}
+     */
     const fetchMessages = useCallback(async (pageNumber = 0, append = false) => {
         if (!chatId) return;
         setLoading(true);
@@ -55,6 +76,9 @@ export function useMessages(chatId) {
         return () => supabase.removeChannel(channel);
     }, [chatId, fetchMessages]);
 
+    /**
+     * Завантажує наступну порцію повідомлень.
+     */
     const loadMore = () => {
         if (!loading && hasMore) {
             const nextPage = page + 1;
@@ -63,7 +87,14 @@ export function useMessages(chatId) {
         }
     };
 
-    // UPDATED: Now accepts an object or a string
+    /**
+     * Надсилає нове повідомлення в чат.
+     * Приймає текстовий рядок або об'єкт з полями content та attachment_url.
+     *
+     * @async
+     * @param {string|Object} payload - Текст повідомлення або об'єкт { content: string, attachment_url: string }.
+     * @returns {Promise<void>}
+     */
     const sendMessage = async (payload) => {
         if (!chatId || !user) return;
 
@@ -77,7 +108,6 @@ export function useMessages(chatId) {
             attachment_url = payload.attachment_url;
         }
 
-        // Prevent sending completely empty messages
         if (!content?.trim() && !attachment_url) return;
 
         await supabase.from('messages').insert({

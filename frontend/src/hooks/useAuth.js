@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 
+/**
+ * Кастомний хук для управління станом автентифікації.
+ * Завантажує поточного користувача, його роль та особисті дані
+ * з бази даних Supabase, а також відстежує зміни стану автентифікації.
+ *
+ * @function
+ * @returns {Object} Об'єкт з двома полями:
+ *   - {Object|null} user - Об'єкт поточного користувача з додатковими полями (role, first_name, last_name)
+ *   - {boolean} loading - Стан завантаження даних користувача
+ */
 export function useAuth() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -11,7 +21,6 @@ export function useAuth() {
             let currentUser = session?.user ?? null;
 
             if (currentUser) {
-                // Fetch the role, first name, and last name
                 const { data: publicUserData } = await supabase
                     .from('users')
                     .select('role, first_name, last_name')
