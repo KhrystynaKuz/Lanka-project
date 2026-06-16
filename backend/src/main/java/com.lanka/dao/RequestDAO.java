@@ -252,6 +252,7 @@ public class RequestDAO {
 
     public List<Request> getAllRequestsWithCustomerName() throws SQLException {
         List<Request> requests = new ArrayList<>();
+
         String sql = "SELECT r.id, r.customer_id, r.title, r.description, r.status::text, r.priority, r.created_at, r.updated_at, r.manager_id, u.first_name, u.last_name " +
                 "FROM requests r " +
                 "LEFT JOIN users u ON r.customer_id = u.id " +
@@ -262,9 +263,16 @@ public class RequestDAO {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                requests.add(mapRowToRequest(rs));
+                Request request = mapRowToRequest(rs);
+
+                request.setDepartments(
+                        getDepartmentsByRequestId(request.getId())
+                );
+
+                requests.add(request);
             }
         }
+
         return requests;
     }
 
@@ -280,7 +288,13 @@ public class RequestDAO {
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                list.add(mapRowToRequest(rs));
+                Request request = mapRowToRequest(rs);
+
+                request.setDepartments(
+                        getDepartmentsByRequestId(request.getId())
+                );
+
+                list.add(request);
             }
         }
         return list;
