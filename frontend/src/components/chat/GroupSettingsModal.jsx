@@ -2,6 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
 
+/**
+ * Компонент модального вікна налаштувань групового чату.
+ * Дозволяє змінювати назву групи, додавати та видаляти учасників,
+ * зберігати зміни та надсилати системні повідомлення про зміни.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string|number} props.chatId - Ідентифікатор групового чату.
+ * @param {Function} props.onClose - Функція закриття модального вікна.
+ * @returns {JSX.Element} Рендер модального вікна налаштувань групи.
+ */
 export default function GroupSettingsModal({ chatId, onClose }) {
     const { user } = useAuth();
 
@@ -15,7 +26,12 @@ export default function GroupSettingsModal({ chatId, onClose }) {
     const [saving, setSaving] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
 
-    // Функція для відображення ролі
+    /**
+     * Повертає інформацію про роль користувача для відображення.
+     *
+     * @param {string} role - Роль користувача.
+     * @returns {Object} Об'єкт з іконкою, міткою та кольором ролі.
+     */
     const getRoleLabel = (role) => {
         const roles = {
             'HEAD': { icon: '👑', label: 'Голова', color: '#8b5cf6' },
@@ -26,18 +42,26 @@ export default function GroupSettingsModal({ chatId, onClose }) {
         return roles[role] || { icon: '👤', label: role || 'Користувач', color: '#64748b' };
     };
 
-    // Анімація при відкритті
     useEffect(() => {
         setIsVisible(true);
         return () => setIsVisible(false);
     }, []);
 
+    /**
+     * Закриває модальне вікно з анімацією.
+     */
     const handleClose = () => {
         setIsVisible(false);
         setTimeout(onClose, 200);
     };
 
     useEffect(() => {
+        /**
+         * Завантажує дані групи: назву та список учасників.
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         const fetchDetails = async () => {
             const { data: chatData } = await supabase
                 .from('chats')
@@ -67,6 +91,13 @@ export default function GroupSettingsModal({ chatId, onClose }) {
     }, [chatId]);
 
     useEffect(() => {
+        /**
+         * Виконує пошук користувачів для додавання до групи.
+         * Пошук запускається після затримки для оптимізації.
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         const delayDebounce = setTimeout(async () => {
             if (search.length < 2) {
                 setSearchResults([]);
@@ -85,16 +116,33 @@ export default function GroupSettingsModal({ chatId, onClose }) {
         return () => clearTimeout(delayDebounce);
     }, [search, members]);
 
+    /**
+     * Додає користувача до списку учасників групи.
+     *
+     * @param {Object} newUser - Об'єкт користувача для додавання.
+     */
     const handleAddUser = (newUser) => {
         setMembers([...members, newUser]);
         setSearch('');
         setSearchResults([]);
     };
 
+    /**
+     * Видаляє користувача зі списку учасників групи.
+     *
+     * @param {string|number} userId - Ідентифікатор користувача.
+     */
     const handleRemoveUser = (userId) => {
         setMembers(members.filter(m => m.id !== userId));
     };
 
+    /**
+     * Зберігає всі зміни: назву групи, додавання та видалення учасників.
+     * Надсилає системні повідомлення про зміни.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleSaveAll = async () => {
         setSaving(true);
         try {
@@ -219,7 +267,6 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                     }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Header */}
                     <div style={{
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -265,7 +312,6 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                         </button>
                     </div>
 
-                    {/* Назва групи */}
                     <div style={{ marginBottom: '24px' }}>
                         <label style={{
                             fontSize: '12px',
@@ -306,7 +352,6 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                         />
                     </div>
 
-                    {/* Учасники */}
                     <div style={{ marginBottom: '20px' }}>
                         <label style={{
                             fontSize: '12px',
@@ -389,7 +434,6 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                         </div>
                     </div>
 
-                    {/* Пошук та додавання */}
                     <div style={{ marginBottom: '20px' }}>
                         <label style={{
                             fontSize: '12px',
@@ -503,7 +547,6 @@ export default function GroupSettingsModal({ chatId, onClose }) {
                         )}
                     </div>
 
-                    {/* Кнопки дій */}
                     <div style={{
                         display: 'flex',
                         gap: '12px',

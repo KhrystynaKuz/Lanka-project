@@ -129,7 +129,6 @@
     box-sizing: border-box;
 }
 
-/* ========== CHAT STYLES (BLUE THEME) ========== */
 
 .fullscreen-chat {
     width: 100vw;
@@ -152,7 +151,6 @@
     width: 100%;
 }
 
-/* Sidebar - синя тема */
 .chat-sidebar {
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(14px);
@@ -184,7 +182,6 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Вкладки Активні / Архів */
 .chat-sidebar > div:first-of-type {
     background: rgba(59, 130, 246, 0.06);
     border-radius: 14px;
@@ -202,7 +199,6 @@
     color: white !important;
 }
 
-/* Новий чат - кнопка */
 .new-chat-btn {
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
     color: white !important;
@@ -277,7 +273,6 @@
     text-overflow: ellipsis;
 }
 
-/* Main Chat Area - синя тема */
 .chat-main {
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(14px);
@@ -433,7 +428,6 @@
     padding: 0 8px;
 }
 
-/* System message */
 .chat-messages > div[style*="text-align: center"] span {
     background: rgba(59, 130, 246, 0.1) !important;
     color: #3b82f6 !important;
@@ -442,7 +436,6 @@
     font-size: 12px !important;
 }
 
-/* Chat Footer */
 .chat-footer {
     padding: 16px 20px;
     background: rgba(255, 255, 255, 0.8);
@@ -518,7 +511,6 @@
     transform: none;
 }
 
-/* Modals - синя тема */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -631,7 +623,6 @@
     margin-bottom: 12px;
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
     width: 6px;
 }
@@ -650,7 +641,6 @@
     background: rgba(59, 130, 246, 0.5);
 }
 
-/* Анімації */
 .fade-in {
     animation: cFade 0.3s ease-in-out;
 }

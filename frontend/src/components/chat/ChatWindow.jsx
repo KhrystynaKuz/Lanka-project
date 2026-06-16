@@ -1,8 +1,17 @@
-// frontend/src/components/chat/ChatWindow.jsx
 import { useState, useEffect, useRef } from 'react';
 import { useMessages } from '../../hooks/useMessages';
 import { useAuth } from '../../hooks/useAuth';
 
+/**
+ * Компонент вікна чату для відображення повідомлень.
+ * Відображає список повідомлень обраного чату, дозволяє надсилати
+ * нові повідомлення та автоматично прокручує до останнього.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string|number} props.chatId - Ідентифікатор чату для відображення.
+ * @returns {JSX.Element} Рендер вікна чату.
+ */
 export default function ChatWindow({ chatId }) {
     const { user } = useAuth();
     const { messages, loading, sendMessage } = useMessages(chatId);
@@ -17,6 +26,11 @@ export default function ChatWindow({ chatId }) {
         return <div className="flex-1 flex items-center justify-center text-gray-500">Select a chat</div>;
     }
 
+    /**
+     * Обробляє відправку повідомлення.
+     *
+     * @param {Event} e - Подія відправки форми.
+     */
     const handleSend = (e) => {
         e.preventDefault();
         if (newMsg.trim()) {
@@ -30,7 +44,6 @@ export default function ChatWindow({ chatId }) {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {loading && <p>Loading messages...</p>}
                 {messages.map((msg) => {
-                    // 1. Handle System Messages
                     if (msg.is_system_message) {
                         return (
                             <div key={msg.id} className="flex justify-center my-4">
@@ -41,7 +54,6 @@ export default function ChatWindow({ chatId }) {
                         );
                     }
 
-                    // 2. Handle Regular Messages
                     const isOwn = msg.sender_id === user?.id;
                     return (
                         <div

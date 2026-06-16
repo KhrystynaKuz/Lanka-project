@@ -1,4 +1,3 @@
-// frontend/src/components/chat/ChatsTab.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import './Chats.css';
 import { useChats } from '../../hooks/useChats';
@@ -8,6 +7,17 @@ import GroupSettingsModal from '../../components/chat/GroupSettingsModal';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../supabaseClient';
 
+/**
+ * Головний компонент вкладки "Чати".
+ * Відображає список чатів користувача, повідомлення в обраному чаті,
+ * дозволяє надсилати повідомлення, файли, архівувати/розархівувати чати,
+ * створювати нові чати та керувати груповими налаштуваннями.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string|number} [props.initialChatId] - Ідентифікатор чату для попереднього вибору.
+ * @returns {JSX.Element} Рендер вкладки чатів.
+ */
 export default function ChatsTab({ initialChatId }) {
     const { user, loading: authLoading } = useAuth();
     const userId = user?.id;
@@ -30,8 +40,6 @@ export default function ChatsTab({ initialChatId }) {
     const [showGroupSettings, setShowGroupSettings] = useState(false);
 
     const [newMessage, setNewMessage] = useState('');
-
-    // NEW: File upload state and ref
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -59,12 +67,22 @@ export default function ChatsTab({ initialChatId }) {
         }
     }, [selectedChatId, userId, messages.length]);
 
+    /**
+     * Обробляє прокрутку контейнера повідомлень для завантаження історії.
+     *
+     * @param {Event} e - Подія прокрутки.
+     */
     const handleScroll = (e) => {
         if (e.target.scrollTop === 0 && hasMore && !msgsLoading) {
             loadMore();
         }
     };
 
+    /**
+     * Надсилає повідомлення.
+     *
+     * @param {Event} [e] - Подія відправки форми.
+     */
     const handleSend = (e) => {
         if (e) e.preventDefault();
         if (newMessage.trim()) {
@@ -73,6 +91,15 @@ export default function ChatsTab({ initialChatId }) {
         }
     };
 
+    /**
+     * Змінює статус архівації чату для поточного користувача.
+     *
+     * @async
+     * @param {string|number} chatId - Ідентифікатор чату.
+     * @param {boolean} willArchive - Чи архівувати чат (true) або розархівувати (false).
+     * @param {Object} currentUser - Об'єкт поточного користувача.
+     * @returns {Promise<void>}
+     */
     const toggleArchiveChat = async (chatId, willArchive, currentUser) => {
         try {
             const { error: updateError } = await supabase
@@ -88,13 +115,22 @@ export default function ChatsTab({ initialChatId }) {
         }
     };
 
+    /**
+     * Обробляє архівацію/розархівацію обраного чату.
+     */
     const handleToggleArchive = () => {
         if (!selectedChat || !user) return;
         const willArchive = !selectedChat.is_archived;
         toggleArchiveChat(selectedChat.id, willArchive, user);
     };
 
-    // FIXED: File upload function
+    /**
+     * Завантажує файл до Supabase Storage та надсилає повідомлення з посиланням.
+     *
+     * @async
+     * @param {Event} e - Подія вибору файлу.
+     * @returns {Promise<void>}
+     */
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -102,26 +138,22 @@ export default function ChatsTab({ initialChatId }) {
         try {
             setIsUploading(true);
 
-            // Create a unique file name
             const fileExt = file.name.split('.').pop();
             const fileName = `${userId}-${Date.now()}.${fileExt}`;
             const filePath = `${selectedChatId}/${fileName}`;
 
-            // Upload to Supabase Storage
             const { error: uploadError } = await supabase.storage
                 .from('chat-attachments')
                 .upload(filePath, file);
 
             if (uploadError) throw uploadError;
 
-            // Get public URL
             const { data: { publicUrl } } = supabase.storage
                 .from('chat-attachments')
                 .getPublicUrl(filePath);
 
-            // Send message with attachment
             await sendMessage({
-                content: newMessage.trim(), // Keep typed text if any
+                content: newMessage.trim(),
                 attachment_url: publicUrl
             });
 
@@ -135,7 +167,12 @@ export default function ChatsTab({ initialChatId }) {
         }
     };
 
-    // Helper to check if file is an image based on URL extension
+    /**
+     * Перевіряє, чи є URL посиланням на зображення.
+     *
+     * @param {string} url - URL-адреса для перевірки.
+     * @returns {boolean} true, якщо URL вказує на зображення.
+     */
     const isImageUrl = (url) => {
         if (!url) return false;
         return url.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) != null;
@@ -147,7 +184,6 @@ export default function ChatsTab({ initialChatId }) {
     return (
         <div className="fullscreen-chat fade-in">
             <div className="chat-layout">
-                {/* Sidebar */}
                 <div className="chat-sidebar">
                     <div className="chat-search">
                         <input
@@ -205,7 +241,6 @@ export default function ChatsTab({ initialChatId }) {
                     </div>
                 </div>
 
-                {/* Main Chat Area */}
                 <div className="chat-main">
                     {selectedChat ? (
                         <>
@@ -221,13 +256,13 @@ export default function ChatsTab({ initialChatId }) {
                                         <button
                                             onClick={handleToggleArchive}
                                             style={{ fontSize: '0.8rem', cursor: 'pointer', padding: '4px 8px', borderRadius: '12px', border: 'none', background: selectedChat.is_archived ? '#4caf50' : '#ff9800', color: 'white' }}
-                                            >
+                                        >
                                             {selectedChat.is_archived ? '⬆️ Розархівувати' : '⬇️ В архів'}
                                             </button>
-                                            {selectedChat.type === 'GROUP' && (
+                                        {selectedChat.type === 'GROUP' && (
                                             <button onClick={() => setShowGroupSettings(true)} style={{fontSize: '0.8rem', cursor: 'pointer', border: 'none', background: 'none'}}>
-                                            ⚙️ Налаштування
-                                        </button>
+                                                ⚙️ Налаштування
+                                            </button>
                                         )}
                                     </span>
                                 </div>
@@ -268,10 +303,8 @@ export default function ChatsTab({ initialChatId }) {
                                                 {!isOwn && <span className="msg-author">{senderName}</span>}
 
                                                 <div className="msg-bubble" style={{ whiteSpace: 'pre-wrap', position: 'relative' }}>
-                                                    {/* Text content if available */}
                                                     {msg.content && <div>{msg.content}</div>}
 
-                                                    {/* Attachment Rendering */}
                                                     {msg.attachment_url && (
                                                         <div style={{ marginTop: msg.content ? '8px' : '0' }}>
                                                             {isImageUrl(msg.attachment_url) ? (
@@ -314,7 +347,6 @@ export default function ChatsTab({ initialChatId }) {
                                     <form style={{ display: 'flex', width: '100%', gap: '8px' }}>
                                         <div className="input-wrap" style={{ display: 'flex', flex: 1, alignItems: 'center', background: '#f1f1f1', borderRadius: '20px', padding: '5px 15px', gap: '8px' }}>
 
-                                            {/* NEW: Hidden file input and visible Paperclip button */}
                                             <input
                                                 type="file"
                                                 ref={fileInputRef}

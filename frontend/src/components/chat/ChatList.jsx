@@ -1,7 +1,15 @@
-// frontend/src/components/chat/ChatList.jsx
 import { useChats } from '../../hooks/useChats';
 import { useAuth } from '../../hooks/useAuth';
 
+/**
+ * Компонент списку чатів користувача.
+ * Відображає всі доступні чати (прямі та групові) з можливістю вибору.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {Function} props.onSelect - Функція, що викликається при виборі чату з передачею його ідентифікатора.
+ * @returns {JSX.Element} Рендер списку чатів.
+ */
 export default function ChatList({ onSelect }) {
     const { user, loading: authLoading } = useAuth();
     const userId = user?.id;

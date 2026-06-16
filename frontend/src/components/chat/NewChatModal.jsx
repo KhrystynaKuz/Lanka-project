@@ -2,6 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
 
+/**
+ * Компонент модального вікна створення нового чату.
+ * Дозволяє створювати прямий чат з користувачем або груповий чат
+ * з кількома учасниками. Виконує пошук користувачів та створює чати
+ * через Supabase RPC-функції.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {Function} props.onClose - Функція закриття модального вікна.
+ * @param {Function} props.onChatCreated - Функція, що викликається після створення чату з передачею його ідентифікатора.
+ * @returns {JSX.Element} Рендер модального вікна створення чату.
+ */
 export default function NewChatModal({ onClose, onChatCreated }) {
     const { user } = useAuth();
     const [search, setSearch] = useState('');
@@ -14,7 +26,12 @@ export default function NewChatModal({ onClose, onChatCreated }) {
     const [groupName, setGroupName] = useState('');
     const [selectedUsers, setSelectedUsers] = useState([]);
 
-    // Функція для відображення ролі
+    /**
+     * Повертає інформацію про роль користувача для відображення.
+     *
+     * @param {string} role - Роль користувача.
+     * @returns {Object} Об'єкт з іконкою, міткою та кольором ролі.
+     */
     const getRoleLabel = (role) => {
         const roles = {
             'HEAD': { icon: '👑', label: 'Голова', color: '#8b5cf6' },
@@ -25,17 +42,26 @@ export default function NewChatModal({ onClose, onChatCreated }) {
         return roles[role] || { icon: '👤', label: role || 'Користувач', color: '#64748b' };
     };
 
-    // Анімація при відкритті
     useEffect(() => {
         setIsVisible(true);
         return () => setIsVisible(false);
     }, []);
 
+    /**
+     * Закриває модальне вікно з анімацією.
+     */
     const handleClose = () => {
         setIsVisible(false);
         setTimeout(onClose, 200);
     };
 
+    /**
+     * Виконує пошук користувачів за іменем або прізвищем.
+     *
+     * @async
+     * @param {string} query - Пошуковий запит.
+     * @returns {Promise<void>}
+     */
     const searchUsers = async (query) => {
         const safeQuery = query.replace(/[,"]/g, '').trim();
         if (safeQuery.length < 2) {
@@ -56,6 +82,14 @@ export default function NewChatModal({ onClose, onChatCreated }) {
         setLoading(false);
     };
 
+    /**
+     * Обробляє вибір користувача.
+     * Для прямого чату одразу створює чат, для групового додає до списку учасників.
+     *
+     * @async
+     * @param {Object} selectedUser - Обраний користувач.
+     * @returns {Promise<void>}
+     */
     const handleUserSelect = async (selectedUser) => {
         if (!isGroup) {
             const { data, error } = await supabase.rpc('get_or_create_direct_chat', {
@@ -71,6 +105,12 @@ export default function NewChatModal({ onClose, onChatCreated }) {
         }
     };
 
+    /**
+     * Створює груповий чат з вибраними учасниками.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleCreateGroup = async () => {
         if (!groupName.trim() || selectedUsers.length === 0) return;
 
@@ -155,7 +195,6 @@ export default function NewChatModal({ onClose, onChatCreated }) {
                         boxSizing: 'border-box'
                     }}
                 >
-                    {/* Header */}
                     <div style={{
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -201,7 +240,6 @@ export default function NewChatModal({ onClose, onChatCreated }) {
                         </button>
                     </div>
 
-                    {/* Group Toggle */}
                     <label style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -243,7 +281,6 @@ export default function NewChatModal({ onClose, onChatCreated }) {
                         </div>
                     </label>
 
-                    {/* Group Name Input */}
                     {isGroup && (
                         <div style={{ marginBottom: '20px' }}>
                             <label style={{
@@ -288,7 +325,6 @@ export default function NewChatModal({ onClose, onChatCreated }) {
                         </div>
                     )}
 
-                    {/* Selected Users Tags */}
                     {isGroup && selectedUsers.length > 0 && (
                         <div style={{ marginBottom: '16px' }}>
                             <label style={{
@@ -344,7 +380,6 @@ export default function NewChatModal({ onClose, onChatCreated }) {
                         </div>
                     )}
 
-                    {/* Search Input */}
                     <div style={{ marginBottom: '16px' }}>
                         <label style={{
                             fontSize: '12px',
@@ -392,7 +427,6 @@ export default function NewChatModal({ onClose, onChatCreated }) {
                         />
                     </div>
 
-                    {/* Search Results */}
                     <div style={{
                         flex: 1,
                         overflowY: 'auto',
@@ -503,7 +537,6 @@ export default function NewChatModal({ onClose, onChatCreated }) {
                         )}
                     </div>
 
-                    {/* Actions */}
                     <div style={{
                         display: 'flex',
                         gap: '12px',
