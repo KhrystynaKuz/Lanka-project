@@ -3,7 +3,16 @@ import { createClient } from '@supabase/supabase-js';
 
 import { supabase } from '../supabaseClient';
 
-// Компонент тосту
+/**
+ * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} props.message - Текст сповіщення.
+ * @param {string} props.type - Тип сповіщення ('info', 'success', 'error').
+ * @param {Function} props.onClose - Функція закриття сповіщення.
+ * @returns {JSX.Element} Рендер тосту.
+ */
 const Toast = ({ message, type, onClose }) => {
     React.useEffect(() => {
         const timer = setTimeout(() => {
@@ -20,7 +29,21 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
-// Компонент модального вікна підтвердження
+/**
+ * Компонент модального вікна підтвердження дії.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {boolean} props.isOpen - Чи відкрито модальне вікно.
+ * @param {Function} props.onClose - Функція закриття вікна.
+ * @param {Function} props.onConfirm - Функція підтвердження дії.
+ * @param {string} props.title - Заголовок модального вікна.
+ * @param {string} props.message - Текст повідомлення.
+ * @param {string} [props.confirmText="Так, виконати"] - Текст кнопки підтвердження.
+ * @param {string} [props.cancelText="Скасувати"] - Текст кнопки скасування.
+ * @param {boolean} [props.isDanger=false] - Чи є дія небезпечною (червона кнопка).
+ * @returns {JSX.Element|null} Рендер модального вікна або null, якщо закрито.
+ */
 const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Так, виконати", cancelText = "Скасувати", isDanger = false }) => {
     if (!isOpen) return null;
 
@@ -47,6 +70,14 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
     );
 };
 
+/**
+ * Головний компонент вкладки "Мої завдання".
+ * Відображає список активних завдань волонтера, дозволяє змінювати статус,
+ * завантажувати файли та надсилати звіти про виконання.
+ *
+ * @component
+ * @returns {JSX.Element} Рендер вкладки завдань.
+ */
 export default function TasksTab() {
     const [tasks, setTasks] = useState([]);
     const [files, setFiles] = useState({});
@@ -59,15 +90,29 @@ export default function TasksTab() {
     });
     const userId = localStorage.getItem('userId');
 
+    /**
+     * Додає нове сповіщення до списку.
+     *
+     * @param {string} message - Текст сповіщення.
+     * @param {string} [type='info'] - Тип сповіщення.
+     */
     const addToast = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
+    /**
+     * Видаляє сповіщення зі списку за ідентифікатором.
+     *
+     * @param {number} id - Ідентифікатор сповіщення.
+     */
     const removeToast = (id) => {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
 
+    /**
+     * Закриває модальне вікно підтвердження.
+     */
     const closeConfirmModal = () => {
         setConfirmModal({ isOpen: false, task: null, action: null });
     };
@@ -76,19 +121,22 @@ export default function TasksTab() {
         if (userId) fetchTasks();
     }, [userId]);
 
+    /**
+     * Завантажує список активних завдань волонтера з бекенду.
+     * Фільтрує завдання, чиї заявки вже закриті (FULFILLED або REJECTED).
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const fetchTasks = async () => {
         try {
-            // 1. Отримуємо всі завдання волонтера
             const res = await fetch(`http://localhost:8080/api/tasks/volunteer/${userId}`);
             const data = await res.json();
 
-            // 2. Відфільтровуємо лише ті завдання, які самі по собі ще не закриті
             const activeTasks = data.filter(t => t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS');
 
-            // 3. Збираємо унікальні ID заявок для цих завдань
             const uniqueRequestIds = [...new Set(activeTasks.map(t => t.request_id))];
 
-            // 4. Завантажуємо реальні статуси цих заявок
             const requestStatuses = {};
             await Promise.all(
                 uniqueRequestIds.map(async (reqId) => {
@@ -105,14 +153,10 @@ export default function TasksTab() {
                 })
             );
 
-            // 5. Остаточна фільтрація: відкидаємо завдання, чиї заявки закриті
             const finalFilteredTasks = activeTasks.filter(t => {
-                // Беремо статус із DTO (якщо бекенд його колись додасть) АБО з нашого окремого запиту
                 const reqStatus = t.request_status || t.requestStatus || requestStatuses[t.request_id];
-
                 const isRequestClosed = reqStatus === 'FULFILLED' || reqStatus === 'REJECTED';
-
-                return !isRequestClosed; // Залишаємо лише ті, де заявка не закрита
+                return !isRequestClosed;
             });
 
             setTasks(finalFilteredTasks);
@@ -123,11 +167,27 @@ export default function TasksTab() {
             setLoading(false);
         }
     };
+
+    /**
+     * Обробляє вибір файлу для завдання.
+     *
+     * @param {string|number} taskId - Ідентифікатор завдання.
+     * @param {File} file - Вибраний файл.
+     */
     const handleFileChange = (taskId, file) => {
         setFiles(prev => ({ ...prev, [taskId]: file }));
         addToast(`📎 Файл "${file.name}" додано до завдання`, "info");
     };
 
+    /**
+     * Завантажує файл до Supabase Storage.
+     *
+     * @async
+     * @param {File} file - Файл для завантаження.
+     * @param {string|number} taskId - Ідентифікатор завдання.
+     * @returns {Promise<string>} Публічне URL-посилання на завантажений файл.
+     * @throws {Error} Помилка при завантаженні.
+     */
     const uploadToSupabase = async (file, taskId) => {
         const fileExt = file.name.split('.').pop();
         const safeFileName = `report_${Date.now()}.${fileExt}`;
@@ -151,6 +211,14 @@ export default function TasksTab() {
         return publicUrlData.publicUrl;
     };
 
+    /**
+     * Надсилає звіт про виконання завдання.
+     * Завантажує прикріплений файл (якщо є) та відправляє дані на бекенд.
+     *
+     * @async
+     * @param {Object} task - Об'єкт завдання.
+     * @returns {Promise<void>}
+     */
     const handleTaskCompletion = async (task) => {
         const file = files[task.id];
         let fileUrls = [];
@@ -193,6 +261,12 @@ export default function TasksTab() {
         }
     };
 
+    /**
+     * Відкриває модальне вікно для підтвердження зміни статусу завдання.
+     *
+     * @param {Object} task - Об'єкт завдання.
+     * @param {string} newStatus - Новий статус ('IN_PROGRESS', 'CANCELLED').
+     */
     const openUpdateStatusModal = (task, newStatus) => {
         let title = "";
         let message = "";
@@ -223,6 +297,12 @@ export default function TasksTab() {
         });
     };
 
+    /**
+     * Виконує зміну статусу завдання після підтвердження.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const executeUpdateStatus = async () => {
         const { task, action } = confirmModal;
 
@@ -259,6 +339,12 @@ export default function TasksTab() {
         }
     };
 
+    /**
+     * Обробляє зміну статусу завдання.
+     *
+     * @param {Object} task - Об'єкт завдання.
+     * @param {string} newStatus - Новий статус.
+     */
     const handleStatusChange = (task, newStatus) => {
         openUpdateStatusModal(task, newStatus);
     };
@@ -298,7 +384,6 @@ export default function TasksTab() {
                             <h3>ЗАВДАННЯ №{task.id.toString().slice(-4)}</h3>
                             <span className="volunteer-task-link" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 ЗАЯВКА: {task.requestTitle || `№${task.request_id?.toString().slice(-4)}`}
-                                {/* Візуальний індикатор активної заявки */}
                                 <span style={{ padding: '2px 8px', background: '#dbeafe', color: '#1e40af', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 'bold' }}>Активна</span>
                             </span>
                         </div>

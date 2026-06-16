@@ -5,6 +5,18 @@ import ArchiveTab from './ArchiveTab.jsx';
 import ChatsTab from '../components/chat/ChatsTab.jsx';
 import BadgesTab from './BadgesTab.jsx';
 
+/**
+ * Головний компонент панелі волонтера.
+ * Відповідає за відображення вкладок (завдання, архів, чати, відзнаки),
+ * керування профілем користувача, завантаження/видалення документів
+ * та редагування особистих даних.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {Function} props.onLogout - Функція виходу з облікового запису.
+ * @param {Function} props.onBackToHome - Функція повернення на головну сторінку.
+ * @returns {JSX.Element} Рендер панелі волонтера.
+ */
 export default function Volunteer({ onLogout, onBackToHome }) {
     const [activeTab, setActiveTab] = useState('tasks');
     const [showDropdown, setShowDropdown] = useState(false);
@@ -28,6 +40,12 @@ export default function Volunteer({ onLogout, onBackToHome }) {
     const volunteerId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
 
+    /**
+     * Показує сповіщення (тост) користувачеві.
+     *
+     * @param {string} message - Текст повідомлення.
+     * @param {string} [type='info'] - Тип сповіщення ('info', 'success', 'error').
+     */
     const showNotification = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
@@ -36,6 +54,13 @@ export default function Volunteer({ onLogout, onBackToHome }) {
         }, 4000);
     };
 
+    /**
+     * Завантажує повну інформацію про користувача з бекенду.
+     * У разі успіху відкриває модальне вікно з даними.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const fetchFullProfile = async () => {
         if (!volunteerId) {
             showNotification('🚨 ID користувача не знайдено', 'error');
@@ -61,6 +86,10 @@ export default function Volunteer({ onLogout, onBackToHome }) {
         setLoading(false);
     };
 
+    /**
+     * Відкриває модальне вікно редагування профілю
+     * та попередньо заповнює форму наявними даними.
+     */
     const openEditProfileModal = () => {
         setEditForm({
             phone_number: fullUserData?.phone_number || '',
@@ -70,6 +99,13 @@ export default function Volunteer({ onLogout, onBackToHome }) {
         setShowEditProfileModal(true);
     };
 
+    /**
+     * Надсилає оновлені дані профілю на бекенд.
+     * У разі успіху оновлює відображення профілю.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const handleUpdateProfile = async () => {
         try {
             const res = await fetch('http://localhost:8080/api/profile/update-details', {
@@ -98,6 +134,14 @@ export default function Volunteer({ onLogout, onBackToHome }) {
         }
     };
 
+    /**
+     * Видаляє документ за його ідентифікатором.
+     * Перед видаленням запитує підтвердження у користувача.
+     *
+     * @async
+     * @param {string|number} docId - Ідентифікатор документа.
+     * @returns {Promise<void>}
+     */
     const deleteDocument = async (docId) => {
         if (!confirm('Видалити документ?')) return;
         try {
@@ -116,6 +160,14 @@ export default function Volunteer({ onLogout, onBackToHome }) {
         }
     };
 
+    /**
+     * Обробляє вибір файлу для завантаження.
+     * Відправляє файл на бекенд разом з ідентифікатором користувача.
+     *
+     * @async
+     * @param {Event} e - Подія вибору файлу з елемента input.
+     * @returns {Promise<void>}
+     */
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -155,7 +207,6 @@ export default function Volunteer({ onLogout, onBackToHome }) {
 
     return (
         <div className="volunteer-glass-container">
-            {/* КАНАЛ СПОВІЩЕНЬ */}
             <div className="toast-notifications-container">
                 {toasts.map(toast => (
                     <div key={toast.id} className={`toast-item toast-${toast.type}`}>
@@ -209,7 +260,6 @@ export default function Volunteer({ onLogout, onBackToHome }) {
                 {activeTab === 'badges' && <BadgesTab />}
             </main>
 
-            {/* МОДАЛЬНЕ ВІКНО РОЗШИРЕНОЇ ІНФОРМАЦІЇ */}
             {showFullProfileModal && fullUserData && (
                 <div className="modal-overlay" onClick={() => setShowFullProfileModal(false)}>
                     <div className="modal-content profile-modal" onClick={e => e.stopPropagation()}>
@@ -297,7 +347,6 @@ export default function Volunteer({ onLogout, onBackToHome }) {
                 </div>
             )}
 
-            {/* МОДАЛЬНЕ ВІКНО РЕДАГУВАННЯ ПРОФІЛЮ */}
             {showEditProfileModal && (
                 <div className="modal-overlay" onClick={() => setShowEditProfileModal(false)}>
                     <div className="modal-content small-modal" onClick={e => e.stopPropagation()}>

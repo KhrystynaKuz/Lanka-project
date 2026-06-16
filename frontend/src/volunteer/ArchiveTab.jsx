@@ -1,7 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './Volunteer.css';
 
-// Компонент тосту
+/**
+ * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} props.message - Текст сповіщення.
+ * @param {string} props.type - Тип сповіщення ('info', 'success', 'error', 'warning').
+ * @param {Function} props.onClose - Функція закриття сповіщення.
+ * @returns {JSX.Element} Рендер тосту.
+ */
 const Toast = ({ message, type, onClose }) => {
     React.useEffect(() => {
         const timer = setTimeout(() => {
@@ -18,6 +27,14 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
+/**
+ * Головний компонент вкладки "Архів".
+ * Відображає список архівних завдань волонтера (виконані, скасовані,
+ * або ті, чиї заявки були закриті). Дозволяє переглядати деталі та файли звітів.
+ *
+ * @component
+ * @returns {JSX.Element} Рендер вкладки архіву.
+ */
 export default function ArchiveTab() {
     const [archivedTasks, setArchivedTasks] = useState([]);
     const [expandedTaskId, setExpandedTaskId] = useState(null);
@@ -31,11 +48,22 @@ export default function ArchiveTab() {
     const hasLoadedRef = useRef(false);
     const toastShownRef = useRef(false);
 
+    /**
+     * Додає нове сповіщення до списку.
+     *
+     * @param {string} message - Текст сповіщення.
+     * @param {string} [type='info'] - Тип сповіщення.
+     */
     const addToast = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
+    /**
+     * Видаляє сповіщення зі списку за ідентифікатором.
+     *
+     * @param {number} id - Ідентифікатор сповіщення.
+     */
     const removeToast = (id) => {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
@@ -51,25 +79,28 @@ export default function ArchiveTab() {
             return;
         }
 
+        /**
+         * Завантажує всі архівні дані волонтера.
+         * Об'єднує офіційний архів з бекенду та завдання,
+         * чиї заявки були закриті (авто-архівація).
+         *
+         * @async
+         * @returns {Promise<void>}
+         */
         const fetchAllArchiveData = async () => {
             setLoading(true);
             try {
-                // 1. Отримуємо "офіційний" архів від бекенду (COMPLETED, CANCELLED)
                 const archiveRes = await fetch(`http://localhost:8080/api/archive/volunteer/${userId}`);
                 const officialArchive = archiveRes.ok ? await archiveRes.json() : [];
 
-                // 2. Отримуємо "активні" завдання
                 const activeRes = await fetch(`http://localhost:8080/api/tasks/volunteer/${userId}`);
                 const activeTasksRaw = activeRes.ok ? await activeRes.json() : [];
 
-                // Відсіюємо завдання, які вже є в офіційному архіві (щоб не робити зайвих запитів)
                 const officialArchiveIds = new Set(officialArchive.map(t => t.id));
                 const activeTasks = activeTasksRaw.filter(t => !officialArchiveIds.has(t.id));
 
-                // 3. Знаходимо унікальні ID заявок серед активних завдань
                 const uniqueRequestIds = [...new Set(activeTasks.map(t => t.request_id))];
 
-                // 4. Отримуємо статуси цих заявок
                 const requestStatuses = {};
                 await Promise.all(
                     uniqueRequestIds.map(async (reqId) => {
@@ -86,7 +117,6 @@ export default function ArchiveTab() {
                     })
                 );
 
-                // 5. Відбираємо "авто-архівовані" завдання (ASSIGNED/IN_PROGRESS, але заявка закрита)
                 const autoArchivedTasks = activeTasks
                     .filter(t => {
                         const reqStatus = t.request_status || t.requestStatus || requestStatuses[t.request_id];
@@ -97,7 +127,6 @@ export default function ArchiveTab() {
                         request_status: t.request_status || t.requestStatus || requestStatuses[t.request_id]
                     }));
 
-                // 6. Об'єднуємо обидва списки та видаляємо можливі дублікати за ID (на всякий випадок)
                 const combinedArchive = [...officialArchive, ...autoArchivedTasks];
                 const uniqueArchiveMap = new Map();
 
@@ -128,6 +157,13 @@ export default function ArchiveTab() {
         fetchAllArchiveData();
     }, [userId]);
 
+    /**
+     * Завантажує звіти для конкретного завдання.
+     *
+     * @async
+     * @param {string|number} taskId - Ідентифікатор завдання.
+     * @returns {Promise<void>}
+     */
     const fetchReports = async (taskId) => {
         try {
             const res = await fetch(`http://localhost:8080/api/archive/task/${taskId}/reports`);
@@ -139,6 +175,12 @@ export default function ArchiveTab() {
         }
     };
 
+    /**
+     * Розгортає або згортає деталі завдання.
+     * При розгортанні завантажує звіти.
+     *
+     * @param {string|number} taskId - Ідентифікатор завдання.
+     */
     const toggleExpand = (taskId) => {
         if (expandedTaskId !== taskId) {
             fetchReports(taskId);
@@ -146,6 +188,12 @@ export default function ArchiveTab() {
         setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
     };
 
+    /**
+     * Рендерить бейдж статусу архівного завдання.
+     *
+     * @param {Object} task - Об'єкт завдання.
+     * @returns {JSX.Element} Бейдж з відповідним статусом.
+     */
     const renderArchiveBadge = (task) => {
         if (task.status === 'CANCELLED') {
             return <span style={{ fontSize: '0.75rem', padding: '3px 8px', backgroundColor: '#fee2e2', color: '#ef4444', borderRadius: '12px', fontWeight: 'bold', border: '1px solid #fca5a5' }}>Скасовано ❌</span>;

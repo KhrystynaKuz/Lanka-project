@@ -3,7 +3,16 @@ import { createPortal } from 'react-dom';
 import html2pdf from 'html2pdf.js';
 import './Volunteer.css';
 
-// Компонент тосту (той самий, що в ManagementTab)
+/**
+ * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {string} props.message - Текст сповіщення.
+ * @param {string} props.type - Тип сповіщення ('info', 'success', 'error', 'warning').
+ * @param {Function} props.onClose - Функція закриття сповіщення.
+ * @returns {JSX.Element} Рендер тосту.
+ */
 const Toast = ({ message, type, onClose }) => {
     React.useEffect(() => {
         const timer = setTimeout(() => {
@@ -20,7 +29,15 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
-// Компонент порталу для тостів
+/**
+ * Компонент порталу для відображення тостів у глобальному контейнері.
+ *
+ * @component
+ * @param {Object} props - Властивості компонента.
+ * @param {Array} props.toasts - Масив сповіщень для відображення.
+ * @param {Function} props.onRemove - Функція видалення сповіщення за ідентифікатором.
+ * @returns {JSX.Element|null} Рендер порталу з тостами або null, якщо контейнер відсутній.
+ */
 const ToastPortal = ({ toasts, onRemove }) => {
     const [container, setContainer] = useState(null);
 
@@ -58,6 +75,14 @@ const ToastPortal = ({ toasts, onRemove }) => {
     );
 };
 
+/**
+ * Головний компонент вкладки "Відзнаки".
+ * Відображає рівень волонтера, прогрес до наступного рівня,
+ * список досягнень та дозволяє завантажити сертифікат.
+ *
+ * @component
+ * @returns {JSX.Element} Рендер вкладки відзнак.
+ */
 export default function BadgesTab() {
     const [levelData, setLevelData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -71,16 +96,35 @@ export default function BadgesTab() {
     const previousLevelRef = useRef(null);
     const previousTasksRef = useRef(null);
 
+    /**
+     * Додає нове сповіщення до списку.
+     *
+     * @param {string} message - Текст сповіщення.
+     * @param {string} [type='info'] - Тип сповіщення.
+     */
     const addToast = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
+    /**
+     * Видаляє сповіщення зі списку за ідентифікатором.
+     *
+     * @param {number} id - Ідентифікатор сповіщення.
+     */
     const removeToast = (id) => {
         setToasts(prev => prev.filter(toast => toast.id !== id));
     };
 
-    // ОРИГІНАЛЬНА ФУНКЦІЯ - НЕ ЗМІНЮВАЛАСЯ
+    /**
+     * Повертає мотиваційне повідомлення на основі поточного рівня,
+     * кількості виконаних завдань та факту підвищення рівня.
+     *
+     * @param {number} level - Номер поточного рівня.
+     * @param {number} tasksCompleted - Кількість виконаних завдань.
+     * @param {boolean} [isLevelUp=false] - Чи відбулося підвищення рівня.
+     * @returns {string} Мотиваційне повідомлення.
+     */
     const getMotivationalMessage = (level, tasksCompleted, isLevelUp = false) => {
         const levels = [
             { number: 1, name: "Новачок", minTasks: 0, maxTasks: 3, nextName: "Помічник",
@@ -133,7 +177,13 @@ export default function BadgesTab() {
         return currentLevel.message;
     };
 
-    // ОРИГІНАЛЬНА ФУНКЦІЯ - НЕ ЗМІНЮВАЛАСЯ
+    /**
+     * Завантажує дані про рівень, карту рівнів, досягнення та профіль користувача.
+     * Перевіряє зміну рівня та показує відповідні сповіщення.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     const fetchData = async () => {
         if (!userId) return;
 
@@ -157,7 +207,6 @@ export default function BadgesTab() {
             const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
             setUserName(fullName || "Волонтер");
 
-            // ТІЛЬКИ ТУТ ДОДАНО TOAST - ОРИГІНАЛЬНА ЛОГІКА НЕ ЗМІНЕНА
             if (oldLevel !== null && newLevel > oldLevel) {
                 const levelUpMsg = getMotivationalMessage(newLevel, newTasks, true);
                 addToast(levelUpMsg, "success");
@@ -185,7 +234,6 @@ export default function BadgesTab() {
         }
     };
 
-    // ОРИГІНАЛЬНИЙ useEffect - НЕ ЗМІНЮВАВСЯ (тільки додано addToast)
     useEffect(() => {
         if (hasLoadedRef.current) return;
         hasLoadedRef.current = true;
@@ -200,7 +248,6 @@ export default function BadgesTab() {
         return () => clearInterval(interval);
     }, [userId]);
 
-    // ОРИГІНАЛЬНИЙ badgeCatalog - НЕ ЗМІНЮВАВСЯ
     const badgeCatalog = [
         { id: "FIRST_TRIP", name: "Перший виїзд", icon: "🥇", desc: "Виконано твоє перше завдання." },
         { id: "FAST_HELP", name: "Швидка допомога", icon: "⚡", desc: "Завдання закрите швидше ніж за 2 години." },
@@ -214,7 +261,10 @@ export default function BadgesTab() {
 
     if (loading) return <div className="volunteer-loader">Завантаження...</div>;
 
-    // ОРИГІНАЛЬНА ФУНКЦІЯ - НЕ ЗМІНЮВАЛАСЯ (тільки додано addToast)
+    /**
+     * Завантажує PDF-сертифікат волонтера.
+     * Доступно лише для користувачів з рівнем 3 та вище.
+     */
     const downloadCertificate = () => {
         if (levelData.levelNumber < 3) {
             addToast("⚠️ Сертифікат доступний лише після досягнення 3-го рівня (Рятівник). Продовжуйте допомагати!", "warning");
@@ -260,7 +310,6 @@ export default function BadgesTab() {
         addToast("📄 Сертифікат успішно завантажено!", "success");
     };
 
-    // ОРИГІНАЛЬНИЙ JSX - НЕ ЗМІНЮВАВСЯ (тільки додано ToastPortal)
     return (
         <>
             <ToastPortal toasts={toasts} onRemove={removeToast} />
