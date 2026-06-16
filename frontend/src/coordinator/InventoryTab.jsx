@@ -1,16 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Coordinator.css';
 
-/**
- * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
- *
- * @component
- * @param {Object} props - Властивості компонента.
- * @param {string} props.message - Текст сповіщення.
- * @param {string} props.type - Тип сповіщення ('info', 'success', 'error', 'warning').
- * @param {Function} props.onClose - Функція закриття сповіщення.
- * @returns {JSX.Element} Рендер тосту.
- */
 const Toast = ({ message, type, onClose }) => {
     useEffect(() => {
         const timer = setTimeout(() => onClose(), 4000);
@@ -25,21 +15,6 @@ const Toast = ({ message, type, onClose }) => {
     );
 };
 
-/**
- * Компонент модального вікна підтвердження дії.
- *
- * @component
- * @param {Object} props - Властивості компонента.
- * @param {boolean} props.isOpen - Чи відкрито модальне вікно.
- * @param {Function} props.onClose - Функція закриття вікна.
- * @param {Function} props.onConfirm - Функція підтвердження дії.
- * @param {string} props.title - Заголовок модального вікна.
- * @param {string} props.message - Текст повідомлення.
- * @param {string} [props.confirmText="Так, видалити"] - Текст кнопки підтвердження.
- * @param {string} [props.cancelText="Скасувати"] - Текст кнопки скасування.
- * @param {boolean} [props.isDanger=true] - Чи є дія небезпечною.
- * @returns {JSX.Element|null} Рендер модального вікна або null, якщо закрито.
- */
 const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Так, видалити", cancelText = "Скасувати", isDanger = true }) => {
     useEffect(() => {
         const handleEsc = (e) => e.key === 'Escape' && isOpen && onClose();
@@ -64,14 +39,6 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
     );
 };
 
-/**
- * Головний компонент вкладки "Склад" для координатора.
- * Відповідає за управління складськими ресурсами: додавання нових товарів,
- * надходження, списання на заявки, перегляд історії транзакцій та пошук.
- *
- * @component
- * @returns {JSX.Element} Рендер вкладки складу координатора.
- */
 export default function InventoryTab() {
     const [warehouseItems, setWarehouseItems] = useState([]);
     const [editingItem, setEditingItem] = useState(null);
@@ -93,33 +60,18 @@ export default function InventoryTab() {
     const hasLoadedRef = useRef(false);
     const toastShownRef = useRef(false);
 
-    /**
-     * Додає нове сповіщення до списку.
-     *
-     * @param {string} message - Текст сповіщення.
-     * @param {string} [type='info'] - Тип сповіщення.
-     */
     const addToast = (message, type = 'info') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
     };
 
-    /**
-     * Видаляє сповіщення зі списку за ідентифікатором.
-     *
-     * @param {number} id - Ідентифікатор сповіщення.
-     */
     const removeToast = (id) => setToasts(prev => prev.filter(toast => toast.id !== id));
 
-    /**
-     * Завантажує список товарів зі складу з бекенду.
-     *
-     * @async
-     * @returns {Promise<void>}
-     */
     const loadInventory = async () => {
         try {
-            const res = await fetch('/api/warehouse');
+            const res = await fetch('/api/warehouse', {
+                credentials: 'include' // Додано для сесії
+            });
             if (!res.ok) throw new Error('Network error');
             const data = await res.json();
             setWarehouseItems(Array.isArray(data) ? data : []);
@@ -143,12 +95,6 @@ export default function InventoryTab() {
         item.item_name?.toLowerCase().includes(searchQuery.toLowerCase().trim())
     );
 
-    /**
-     * Створює новий тип товару на складі.
-     *
-     * @async
-     * @returns {Promise<void>}
-     */
     const createNewItemType = async () => {
         if (!editingItem.item_name?.trim() || !editingItem.unit_of_measure?.trim()) {
             addToast("⚠️ Заповніть коректно всі поля.", "warning");
@@ -166,6 +112,7 @@ export default function InventoryTab() {
             const response = await fetch('/api/warehouse', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // Додано для сесії
                 body: JSON.stringify(editingItem)
             });
             if (response.ok) {
@@ -183,12 +130,6 @@ export default function InventoryTab() {
         }
     };
 
-    /**
-     * Додає надходження товару на склад.
-     *
-     * @async
-     * @returns {Promise<void>}
-     */
     const handleAddStock = async () => {
         if (!transactionQty || transactionQty <= 0) {
             addToast("⚠️ Введіть коректну кількість", "warning");
@@ -202,6 +143,7 @@ export default function InventoryTab() {
             const response = await fetch(`/api/warehouse/transaction/${editingItem.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // Додано для сесії
                 body: JSON.stringify({
                     type: 'ADDITION',
                     quantity_changed: transactionQty
@@ -212,7 +154,7 @@ export default function InventoryTab() {
                 resetTransactionState();
                 addToast("✅ Надходження зафіксовано!", "success");
             } else {
-                addToast("🚨 Помилка при додаванні", "error");
+                addToast("🚨 Помилка при додаванні (Перевірте авторизацію)", "error");
             }
         } catch (err) {
             addToast("🚨 Критична помилка при додаванні", "error");
@@ -221,12 +163,6 @@ export default function InventoryTab() {
         }
     };
 
-    /**
-     * Виконує списання товару на заявку.
-     *
-     * @async
-     * @returns {Promise<void>}
-     */
     const handleSignOff = async () => {
         if (!selectedRequestId) {
             addToast("⚠️ Оберіть заявку", "warning");
@@ -244,6 +180,7 @@ export default function InventoryTab() {
             const response = await fetch(`/api/warehouse/book/${editingItem.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // Додано для сесії
                 body: JSON.stringify({
                     request_id: selectedRequestId,
                     quantity_changed: -Math.abs(transactionQty),
@@ -265,16 +202,11 @@ export default function InventoryTab() {
         }
     };
 
-    /**
-     * Завантажує історію транзакцій для конкретного товару.
-     *
-     * @async
-     * @param {string|number} itemId - Ідентифікатор товару.
-     * @returns {Promise<void>}
-     */
     const fetchHistory = async (itemId) => {
         try {
-            const res = await fetch(`/api/warehouse/history/${itemId}`);
+            const res = await fetch(`/api/warehouse/history/${itemId}`, {
+                credentials: 'include' // Додано для сесії
+            });
             if (res.ok) {
                 const data = await res.json();
                 setItemHistory(data);
@@ -285,15 +217,11 @@ export default function InventoryTab() {
         }
     };
 
-    /**
-     * Відкриває режим списання та завантажує доступні заявки.
-     *
-     * @async
-     * @returns {Promise<void>}
-     */
     const openSignOffMode = async () => {
         try {
-            const res = await fetch('/api/warehouse/requests/mine');
+            const res = await fetch('/api/warehouse/requests/mine', {
+                credentials: 'include' // Додано для сесії
+            });
             if (res.ok) {
                 setRequests(await res.json());
                 setModalMode('sign_off');
@@ -305,9 +233,6 @@ export default function InventoryTab() {
         }
     };
 
-    /**
-     * Скидає стан транзакції та закриває модальне вікно.
-     */
     const resetTransactionState = () => {
         setTransactionQty('');
         setSelectedRequestId('');
@@ -316,12 +241,6 @@ export default function InventoryTab() {
         setEditingItem(null);
     };
 
-    /**
-     * Виконує видалення товару з бекенду.
-     *
-     * @async
-     * @returns {Promise<void>}
-     */
     const performDelete = async () => {
         if (!itemToDelete) return;
 
@@ -329,7 +248,10 @@ export default function InventoryTab() {
         setIsProcessing(true);
 
         try {
-            const response = await fetch(`/api/warehouse/${itemToDelete.id}`, { method: 'DELETE' });
+            const response = await fetch(`/api/warehouse/${itemToDelete.id}`, {
+                method: 'DELETE',
+                credentials: 'include' // Додано для сесії
+            });
             if (response.ok) {
                 await loadInventory();
                 addToast("🗑️ Товар видалено", "success");
@@ -369,6 +291,8 @@ export default function InventoryTab() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '30px' }}>
                 <input
                     type="text"
+                    id="search_query"
+                    name="search_query"
                     className="coord-search-input"
                     placeholder="ПОШУК ТОВАРУ..."
                     value={searchQuery}
@@ -470,10 +394,12 @@ export default function InventoryTab() {
 
                                 <div style={{ padding: '25px', overflowY: 'auto', flex: 1, background: 'white' }}>
                                     <div style={{ marginBottom: '18px' }}>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
+                                        <label htmlFor="item_name_input" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
                                             НАЗВА ТОВАРУ
                                         </label>
                                         <input
+                                            id="item_name_input"
+                                            name="item_name_input"
                                             style={{
                                                 width: '100%',
                                                 padding: '12px 14px',
@@ -493,10 +419,12 @@ export default function InventoryTab() {
                                     </div>
 
                                     <div style={{ marginBottom: '18px' }}>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
+                                        <label htmlFor="unit_measure_input" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
                                             ОДИНИЦІ ВИМІРУ
                                         </label>
                                         <input
+                                            id="unit_measure_input"
+                                            name="unit_measure_input"
                                             style={{
                                                 width: '100%',
                                                 padding: '12px 14px',
@@ -515,10 +443,12 @@ export default function InventoryTab() {
                                     </div>
 
                                     <div style={{ marginBottom: '18px' }}>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
+                                        <label htmlFor="unit_price_input" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
                                             ЦІНА ЗА ОДИНИЦЮ (₴)
                                         </label>
                                         <input
+                                            id="unit_price_input"
+                                            name="unit_price_input"
                                             type="number"
                                             style={{
                                                 width: '100%',
@@ -785,10 +715,12 @@ export default function InventoryTab() {
                                     </p>
 
                                     <div style={{ marginBottom: '18px' }}>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
+                                        <label htmlFor="add_stock_qty" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
                                             КІЛЬКІСТЬ НАДХОДЖЕННЯ
                                         </label>
                                         <input
+                                            id="add_stock_qty"
+                                            name="add_stock_qty"
                                             type="number"
                                             style={{
                                                 width: '100%',
@@ -893,10 +825,12 @@ export default function InventoryTab() {
                                     </p>
 
                                     <div style={{ marginBottom: '18px' }}>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
+                                        <label htmlFor="request_select" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
                                             ОБЕРІТЬ ЗАЯВКУ
                                         </label>
                                         <select
+                                            id="request_select"
+                                            name="request_select"
                                             style={{
                                                 width: '100%',
                                                 padding: '12px 14px',
@@ -919,10 +853,12 @@ export default function InventoryTab() {
                                     </div>
 
                                     <div style={{ marginBottom: '18px' }}>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
+                                        <label htmlFor="sign_off_qty" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
                                             КІЛЬКІСТЬ ДО СПИСАННЯ
                                         </label>
                                         <input
+                                            id="sign_off_qty"
+                                            name="sign_off_qty"
                                             type="number"
                                             style={{
                                                 width: '100%',
@@ -943,10 +879,12 @@ export default function InventoryTab() {
                                     </div>
 
                                     <div style={{ marginBottom: '18px' }}>
-                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
+                                        <label htmlFor="transport_cost_input" style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e3a8a', marginBottom: '6px' }}>
                                             ВАРТІСТЬ ТРАНСПОРТУВАННЯ (₴)
                                         </label>
                                         <input
+                                            id="transport_cost_input"
+                                            name="transport_cost_input"
                                             type="number"
                                             style={{
                                                 width: '100%',

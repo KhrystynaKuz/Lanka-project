@@ -23,19 +23,30 @@ public class InventoryTransactionDAO {
 
             ps.setObject(1, transaction.getId());
             ps.setObject(2, transaction.getInventory_id());
-            ps.setObject(3, transaction.getRequest_id());
+
+            // Безпечна обробка null для request_id (запобігає 500 Internal Server Error)
+            if (transaction.getRequest_id() != null) {
+                ps.setObject(3, transaction.getRequest_id());
+            } else {
+                ps.setNull(3, Types.OTHER);
+            }
+
             ps.setObject(4, transaction.getUser_id());
             ps.setInt(5, transaction.getQuantity_changed());
             ps.setObject(6, transaction.getTransaction_date());
             ps.setString(7, transaction.getType() != null ? transaction.getType() : "ADDITION");
-            ps.setBigDecimal(8, transaction.getTransportation_cost());
+
+            if (transaction.getTransportation_cost() != null) {
+                ps.setBigDecimal(8, transaction.getTransportation_cost());
+            } else {
+                ps.setNull(8, Types.NUMERIC);
+            }
 
             ps.executeUpdate();
         }
     }
 
     public List<InventoryTransaction> getTransactionsByInventoryId(UUID inventoryId) throws SQLException {
-        // Додаємо JOIN з таблицею users та конкатенацію імені
         String sql = "SELECT t.id, t.inventory_id, t.request_id, t.user_id, t.quantity_changed, " +
                 "t.transaction_date, t.type, t.transportation_cost, " +
                 "u.first_name || ' ' || u.last_name AS user_full_name " +
@@ -60,8 +71,6 @@ public class InventoryTransactionDAO {
                     transaction.setTransaction_date(rs.getObject("transaction_date", OffsetDateTime.class));
                     transaction.setType(rs.getString("type"));
                     transaction.setTransportation_cost(rs.getBigDecimal("transportation_cost"));
-
-                    // Мапимо нове поле
                     transaction.setUser_full_name(rs.getString("user_full_name"));
 
                     list.add(transaction);
@@ -69,18 +78,5 @@ public class InventoryTransactionDAO {
             }
         }
         return list;
-    }
-
-    private InventoryTransaction mapRowToTransaction(ResultSet rs) throws SQLException {
-        InventoryTransaction transaction = new InventoryTransaction();
-        transaction.setId(rs.getObject("id", UUID.class));
-        transaction.setInventory_id(rs.getObject("inventory_id", UUID.class));
-        transaction.setRequest_id(rs.getObject("request_id", UUID.class));
-        transaction.setUser_id(rs.getObject("user_id", UUID.class));
-        transaction.setQuantity_changed(rs.getInt("quantity_changed"));
-        transaction.setTransaction_date(rs.getObject("transaction_date", OffsetDateTime.class));
-        transaction.setType(rs.getString("type"));
-        transaction.setTransportation_cost(rs.getBigDecimal("transportation_cost"));
-        return transaction;
     }
 }

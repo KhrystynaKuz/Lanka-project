@@ -307,4 +307,28 @@ public class RequestDAO {
         }
         return list;
     }
+
+    public List<Request> getRequestsByVolunteerDepartments(UUID userId) throws SQLException {
+        String sql = "SELECT DISTINCT r.* FROM requests r " +
+                "JOIN tasks t ON r.id = t.request_id " +
+                "JOIN user_departments ud ON t.department_id = ud.department_id " +
+                "WHERE ud.user_id = ? " +
+                "ORDER BY r.created_at DESC";
+
+        List<Request> list = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setObject(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    // Використовуйте ваш існуючий метод мапінгу
+                    list.add(mapRowToRequest(rs));
+                }
+            }
+        }
+        return list;
+    }
 }
