@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import './Home.css';
-import { API_BASE_URL } from '.App'
+import { API_BASE_URL } from '.App';
 /**
  * Головна публічна сторінка додатку.
  * Відображає інформацію про організацію, активні збори,
