@@ -6,7 +6,7 @@ import ReportsTab from './ReportsTab';
 import SiteEditorTab from './SiteEditorTab';
 import InventoryTab from './InventoryTab';
 import './Manager.css';
-import { API_BASE_URL } from '.App'
+import { API_BASE_URL } from '.App';
 
 /**
  * Головний компонент панелі менеджера/адміністратора.

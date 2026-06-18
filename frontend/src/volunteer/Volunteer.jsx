@@ -4,7 +4,7 @@ import TasksTab from './TasksTab.jsx';
 import ArchiveTab from './ArchiveTab.jsx';
 import ChatsTab from '../components/chat/ChatsTab.jsx';
 import BadgesTab from './BadgesTab.jsx';
-import { API_BASE_URL } from '.App'
+import { API_BASE_URL } from '.App';
 
 /**
  * Головний компонент панелі волонтера.
