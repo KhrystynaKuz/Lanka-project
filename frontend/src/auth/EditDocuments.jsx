@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './EditDocuments.css';
-import { API_BASE_URL } from '.App';
+import { API_BASE_URL } from '..App';
 
 
 /**

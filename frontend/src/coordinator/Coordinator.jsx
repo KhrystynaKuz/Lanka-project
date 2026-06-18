@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './Coordinator.css';
 import '../volunteer/Volunteer.css';
-import { API_BASE_URL } from '.App';
+import { API_BASE_URL } from '..App';
 
 import DepartmentTasksTab from './DepartmentTasksTab';
 import TasksTab from '../volunteer/TasksTab.jsx';
