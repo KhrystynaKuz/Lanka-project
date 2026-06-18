@@ -34,7 +34,7 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
          */
         const fetchSettings = async () => {
             try {
-                const response = await fetch('${API_BASE_URL}/api/site-editor/settings');
+                const response = await fetch(`${API_BASE_URL}/api/site-editor/settings`);
                 if (response.ok) {
                     const data = await response.json();
                     setSiteContent({
