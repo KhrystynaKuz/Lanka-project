@@ -3,7 +3,7 @@ import CreateRequestTab from './CreateRequestTab';
 import MyRequestsTab from './MyRequestsTab';
 import ChatsTab from '../components/chat/ChatsTab.jsx';
 import './Customer.css';
-import { API_BASE_URL } from '..App';
+import { API_BASE_URL } from '../App';
 
 /**
  * Головний компонент панелі замовника.

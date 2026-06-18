@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './Volunteer.css';
-import { API_BASE_URL } from '..App';
+import { API_BASE_URL } from '../App';
 /**
  * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
  *

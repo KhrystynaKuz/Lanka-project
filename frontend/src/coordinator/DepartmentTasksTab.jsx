@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Coordinator.css';
-import { API_BASE_URL } from '..App';
+import { API_BASE_URL } from '../App';
 
 /**
  * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.

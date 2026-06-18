@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { API_BASE_URL } from '..App';
+import { API_BASE_URL } from '../App';
 
 import { supabase } from '../supabaseClient';
 
