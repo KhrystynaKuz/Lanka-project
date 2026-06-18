@@ -17,7 +17,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/badges")
-@CrossOrigin(origins = "*")
+@CrossOrigin(originPatterns = "*")
 public class BadgesController {
 
     @Autowired

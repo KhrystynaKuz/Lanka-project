@@ -14,7 +14,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/profile/documents")
-@CrossOrigin(origins = "*")
+@CrossOrigin(originPatterns = "*")
 public class RegisterController {
 
     @Autowired

@@ -17,7 +17,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/site-editor")
-@CrossOrigin(origins = "*")
+@CrossOrigin(originPatterns = "*")
 public class SiteEditorController {
 
     private final SettingsDAO settingsDAO;

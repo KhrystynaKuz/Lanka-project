@@ -17,7 +17,7 @@ import java.util.UUID;
  */
 @RestController("customerRequestController")
 @RequestMapping("/api/requests")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(originPatterns = "http://localhost:5173")
 public class RequestController {
 
     private final RequestDAO requestDAO;
