@@ -23,7 +23,10 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/tasks")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+    "http://localhost:5173",
+    "https://lanka-project.onrender.com"
+})
 public class TaskController {
 
     @Autowired

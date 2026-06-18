@@ -139,7 +139,7 @@ export default function RequestsTab() {
             .then(data => setNewCount(data.newCount))
             .catch(err => console.error("Помилка завантаження лічильника:", err));
 
-        fetch('${API_BASE_URL}/api/departments')
+        fetch(`${API_BASE_URL}/api/departments`)
             .then(res => {
                 if (!res.ok) throw new Error();
                 return res.json();

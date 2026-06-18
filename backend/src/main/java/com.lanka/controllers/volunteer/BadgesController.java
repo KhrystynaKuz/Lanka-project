@@ -17,7 +17,10 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/badges")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+    "http://localhost:5173",
+    "https://lanka-project.onrender.com"
+})
 public class BadgesController {
 
     @Autowired

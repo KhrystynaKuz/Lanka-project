@@ -66,7 +66,7 @@ export default function ManagementTab({showNotification}) {
      */
     const fetchPendingUsers = async () => {
         try {
-            const response = await fetch('${API_BASE_URL}/api/management/volunteers/pending');
+            const response = await fetch(`${API_BASE_URL}/api/management/volunteers/pending`);
             if (!response.ok) throw new Error("Помилка завантаження черги");
             const data = await response.json();
             setVerificationList(data);
@@ -87,7 +87,7 @@ export default function ManagementTab({showNotification}) {
      */
     const fetchPendingDocuments = async () => {
         try {
-            const response = await fetch('${API_BASE_URL}/api/management/documents/pending-all');
+            const response = await fetch(`${API_BASE_URL}/api/management/documents/pending-all`);
             if (!response.ok) throw new Error("Помилка завантаження документів");
             const data = await response.json();
             setPendingDocs(data);
@@ -121,7 +121,7 @@ export default function ManagementTab({showNotification}) {
      */
     const fetchCustomers = async () => {
         try {
-            const response = await fetch('${API_BASE_URL}/api/management/customers');
+            const response = await fetch(`${API_BASE_URL}/api/management/customers`);
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -150,7 +150,7 @@ export default function ManagementTab({showNotification}) {
         const fetchDepartments = async () => {
             setLoading(true);
             try {
-                const response = await fetch('${API_BASE_URL}/api/management/departments');
+                const response = await fetch(`${API_BASE_URL}/api/management/departments`);
                 if (!response.ok) throw new Error('Помилка сервера');
                 const data = await response.json();
                 setDepartments(data);
@@ -174,7 +174,7 @@ export default function ManagementTab({showNotification}) {
          */
         const fetchVolunteers = async () => {
             setVolunteersLoading(true);
-            let url = '${API_BASE_URL}/api/management/volunteers';
+            let url = `${API_BASE_URL}/api/management/volunteers`;
 
             if (selectedDept) {
                 url = `${API_BASE_URL}/api/management/departments/${selectedDept.id}/volunteers`;
@@ -321,7 +321,7 @@ export default function ManagementTab({showNotification}) {
      */
     const sendDocStatus = async (docId, status, reason) => {
         try {
-            const response = await fetch('${API_BASE_URL}/api/management/documents/status', {
+            const response = await fetch(`${API_BASE_URL}/api/management/documents/status`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({docId, status, reason})
@@ -352,7 +352,7 @@ export default function ManagementTab({showNotification}) {
         };
 
         try {
-            const response = await fetch('${API_BASE_URL}/api/management/departments/add', {
+            const response = await fetch(`${API_BASE_URL}/api/management/departments/add`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(newDeptData)
@@ -429,7 +429,7 @@ export default function ManagementTab({showNotification}) {
         if (!editingDept) return;
 
         try {
-            const response = await fetch('${API_BASE_URL}/api/management/departments/update', {
+            const response = await fetch(`${API_BASE_URL}/api/management/departments/update`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(editingDept)
@@ -488,7 +488,7 @@ export default function ManagementTab({showNotification}) {
                     coordinatorId: userId
                 }));
 
-                const volunteersResponse = await fetch('${API_BASE_URL}/api/management/volunteers');
+                const volunteersResponse = await fetch(`${API_BASE_URL}/api/management/volunteers`);
                 if (volunteersResponse.ok) {
                     const updatedVolunteers = await volunteersResponse.json();
                     setVolunteers(updatedVolunteers);

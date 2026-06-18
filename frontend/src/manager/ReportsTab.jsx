@@ -61,7 +61,7 @@ export default function ReportsTab({ showNotification }) {
          */
         const fetchDepartments = async () => {
             try {
-                const response = await fetch('${API_BASE_URL}/api/management/departments');
+                const response = await fetch(`${API_BASE_URL}/api/management/departments`);
                 if (response.ok) {
                     const data = await response.json();
                     setDepartmentsList(data);

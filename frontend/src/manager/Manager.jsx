@@ -131,7 +131,7 @@ export default function Header({ onLogOut, onBackToHome }) {
      */
     const handleUpdateProfile = async () => {
         try {
-            const res = await fetch('${API_BASE_URL}/api/profile/update-details', {
+            const res = await fetch(`${API_BASE_URL}/api/profile/update-details`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

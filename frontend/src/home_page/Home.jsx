@@ -56,7 +56,7 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
          */
         const fetchActiveFundraisers = async () => {
             try {
-                const response = await fetch('${API_BASE_URL}/api/site-editor/fundraisers');
+                const response = await fetch(`${API_BASE_URL}/api/site-editor/fundraisers`);
                 if (response.ok) {
                     const data = await response.json();
                     const visibleFundraisers = data.filter(f => !f.is_hidden);
@@ -75,7 +75,7 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
          */
         const fetchReports = async () => {
             try {
-                const response = await fetch('${API_BASE_URL}/api/site-editor/reports');
+                const response = await fetch(`${API_BASE_URL}/api/site-editor/reports`);
                 if (response.ok) {
                     const data = await response.json();
                     setReports(data);

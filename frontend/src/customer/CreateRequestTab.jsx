@@ -102,7 +102,7 @@ export default function CreateRequestTab({ userId, onSuccessSubmit }) {
         };
 
         try {
-            const response = await fetch('${API_BASE_URL}/api/requests/create', {
+            const response = await fetch(`${API_BASE_URL}/api/requests/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
