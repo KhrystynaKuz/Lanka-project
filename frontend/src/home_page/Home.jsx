@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import './Home.css';
-
+import { API_BASE_URL } from '.App'
 /**
  * Головна публічна сторінка додатку.
  * Відображає інформацію про організацію, активні збори,
@@ -34,7 +34,7 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
          */
         const fetchSettings = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/site-editor/settings');
+                const response = await fetch('${API_BASE_URL}/api/site-editor/settings');
                 if (response.ok) {
                     const data = await response.json();
                     setSiteContent({
@@ -56,7 +56,7 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
          */
         const fetchActiveFundraisers = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/site-editor/fundraisers');
+                const response = await fetch('${API_BASE_URL}/api/site-editor/fundraisers');
                 if (response.ok) {
                     const data = await response.json();
                     const visibleFundraisers = data.filter(f => !f.is_hidden);
@@ -75,7 +75,7 @@ export default function Home({isLoggedIn, onLogOut, onNavigateToLogin}) {
          */
         const fetchReports = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/site-editor/reports');
+                const response = await fetch('${API_BASE_URL}/api/site-editor/reports');
                 if (response.ok) {
                     const data = await response.json();
                     setReports(data);

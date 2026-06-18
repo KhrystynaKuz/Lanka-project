@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-
+import { API_BASE_URL } from '.App';
 /**
  * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
  *
@@ -130,7 +130,7 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
     const fetchRequests = async () => {
         if (!userId) return;
         try {
-            const response = await fetch(`http://localhost:8080/api/requests/customer/${userId}`);
+            const response = await fetch(`${API_BASE_URL}/api/requests/customer/${userId}`);
             if (response.ok) {
                 const data = await response.json();
                 setRequests(data);
@@ -180,7 +180,7 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
         const { requestId } = confirmModal;
 
         try {
-            const response = await fetch(`http://localhost:8080/api/requests/delete/${requestId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/requests/delete/${requestId}`, {
                 method: 'DELETE'
             });
 

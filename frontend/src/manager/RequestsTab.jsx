@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '.App';
 
 /**
  * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
@@ -138,7 +139,7 @@ export default function RequestsTab() {
             .then(data => setNewCount(data.newCount))
             .catch(err => console.error("Помилка завантаження лічильника:", err));
 
-        fetch('http://localhost:8080/api/departments')
+        fetch('${API_BASE_URL}/api/departments')
             .then(res => {
                 if (!res.ok) throw new Error();
                 return res.json();

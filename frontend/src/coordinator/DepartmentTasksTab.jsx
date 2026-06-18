@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Coordinator.css';
+import { API_BASE_URL } from '.App';
 
 /**
  * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
@@ -123,7 +124,7 @@ export default function DepartmentTasksTab() {
         const loadCoordinatorData = async () => {
             setLoading(true);
             try {
-                const volsRes = await fetch(`http://localhost:8080/api/departments/coordinator/${userId}/volunteers`);
+                const volsRes = await fetch(`${API_BASE_URL}/api/departments/coordinator/${userId}/volunteers`);
                 if (volsRes.ok) {
                     setDepartmentVolunteers(await volsRes.json());
                 } else {
@@ -131,14 +132,14 @@ export default function DepartmentTasksTab() {
                     addToast("🚨 Помилка отримання списку волонтерів", "error");
                 }
 
-                const reqsRes = await fetch(`http://localhost:8080/api/departments/coordinator/${userId}/requests`);
+                const reqsRes = await fetch(`${API_BASE_URL}/api/departments/coordinator/${userId}/requests`);
                 if (reqsRes.ok) {
                     const reqsData = await reqsRes.json();
                     setRequests(reqsData);
 
                     const tasksMap = {};
                     for (const req of reqsData) {
-                        const tasksRes = await fetch(`http://localhost:8080/api/tasks/request/${req.id}`);
+                        const tasksRes = await fetch(`${API_BASE_URL}/api/tasks/request/${req.id}`);
                         if (tasksRes.ok) {
                             tasksMap[req.id] = await tasksRes.json();
                         } else {
@@ -220,7 +221,7 @@ export default function DepartmentTasksTab() {
 
         if (!isNew) {
             try {
-                const res = await fetch(`http://localhost:8080/api/tasks/${taskId}`, { method: 'DELETE' });
+                const res = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error("Помилка видалення");
             } catch (err) {
                 addToast("🚨 Не вдалося видалити завдання з БД", "error");
@@ -290,7 +291,7 @@ export default function DepartmentTasksTab() {
         });
 
         try {
-            const res = await fetch(`http://localhost:8080/api/tasks/request/${pendingSaveReqId}/batch`, {
+            const res = await fetch(`${API_BASE_URL}/api/tasks/request/${pendingSaveReqId}/batch`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(tasksToSave)
@@ -325,7 +326,7 @@ export default function DepartmentTasksTab() {
      */
     const handleRequestStatusChange = async (reqId, newStatus) => {
         try {
-            const res = await fetch(`http://localhost:8080/api/requests/${reqId}/status`, {
+            const res = await fetch(`${API_BASE_URL}/api/requests/${reqId}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus, departmentIds: [] })

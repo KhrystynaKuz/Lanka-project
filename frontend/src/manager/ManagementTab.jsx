@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import './Manager.css';
+import { API_BASE_URL } from '.App';
 
 /**
  * Головний компонент вкладки "Керування" для адміністратора/менеджера.
@@ -12,7 +13,6 @@ import './Manager.css';
  * @returns {JSX.Element} Рендер вкладки керування.
  */
 export default function ManagementTab({showNotification}) {
-    const API_BASE_URL = 'http://localhost:8080';
 
     const [verificationList, setVerificationList] = useState([]);
     const [userDocs, setUserDocs] = useState({});
@@ -66,7 +66,7 @@ export default function ManagementTab({showNotification}) {
      */
     const fetchPendingUsers = async () => {
         try {
-            const response = await fetch('http://localhost:8080/api/management/volunteers/pending');
+            const response = await fetch('${API_BASE_URL}/api/management/volunteers/pending');
             if (!response.ok) throw new Error("Помилка завантаження черги");
             const data = await response.json();
             setVerificationList(data);
@@ -87,7 +87,7 @@ export default function ManagementTab({showNotification}) {
      */
     const fetchPendingDocuments = async () => {
         try {
-            const response = await fetch('http://localhost:8080/api/management/documents/pending-all');
+            const response = await fetch('${API_BASE_URL}/api/management/documents/pending-all');
             if (!response.ok) throw new Error("Помилка завантаження документів");
             const data = await response.json();
             setPendingDocs(data);
@@ -121,7 +121,7 @@ export default function ManagementTab({showNotification}) {
      */
     const fetchCustomers = async () => {
         try {
-            const response = await fetch('http://localhost:8080/api/management/customers');
+            const response = await fetch('${API_BASE_URL}/api/management/customers');
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -150,7 +150,7 @@ export default function ManagementTab({showNotification}) {
         const fetchDepartments = async () => {
             setLoading(true);
             try {
-                const response = await fetch('http://localhost:8080/api/management/departments');
+                const response = await fetch('${API_BASE_URL}/api/management/departments');
                 if (!response.ok) throw new Error('Помилка сервера');
                 const data = await response.json();
                 setDepartments(data);
@@ -174,10 +174,10 @@ export default function ManagementTab({showNotification}) {
          */
         const fetchVolunteers = async () => {
             setVolunteersLoading(true);
-            let url = 'http://localhost:8080/api/management/volunteers';
+            let url = '${API_BASE_URL}/api/management/volunteers';
 
             if (selectedDept) {
-                url = `http://localhost:8080/api/management/departments/${selectedDept.id}/volunteers`;
+                url = `${API_BASE_URL}/api/management/departments/${selectedDept.id}/volunteers`;
             }
 
             try {
@@ -207,7 +207,7 @@ export default function ManagementTab({showNotification}) {
         } else {
             if (!userDocs[userId]) {
                 try {
-                    const response = await fetch(`http://localhost:8080/api/management/documents/${userId}`);
+                    const response = await fetch(`${API_BASE_URL}/api/management/documents/${userId}`);
                     const data = await response.json();
                     setUserDocs(prev => ({...prev, [userId]: data}));
                 } catch (err) {
@@ -321,7 +321,7 @@ export default function ManagementTab({showNotification}) {
      */
     const sendDocStatus = async (docId, status, reason) => {
         try {
-            const response = await fetch('http://localhost:8080/api/management/documents/status', {
+            const response = await fetch('${API_BASE_URL}/api/management/documents/status', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({docId, status, reason})
@@ -352,7 +352,7 @@ export default function ManagementTab({showNotification}) {
         };
 
         try {
-            const response = await fetch('http://localhost:8080/api/management/departments/add', {
+            const response = await fetch('${API_BASE_URL}/api/management/departments/add', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(newDeptData)
@@ -400,7 +400,7 @@ export default function ManagementTab({showNotification}) {
      */
     const executeDeleteDepartment = async () => {
         try {
-            const response = await fetch(`http://localhost:8080/api/management/departments/${editingDept.id}`, {
+            const response = await fetch(`${API_BASE_URL}/api/management/departments/${editingDept.id}`, {
                 method: 'DELETE',
             });
 
@@ -429,7 +429,7 @@ export default function ManagementTab({showNotification}) {
         if (!editingDept) return;
 
         try {
-            const response = await fetch('http://localhost:8080/api/management/departments/update', {
+            const response = await fetch('${API_BASE_URL}/api/management/departments/update', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(editingDept)
@@ -473,7 +473,7 @@ export default function ManagementTab({showNotification}) {
      */
     const executeSetCoordinator = async (deptId, userId) => {
         try {
-            const response = await fetch(`http://localhost:8080/api/management/departments/${deptId}/set-coordinator`, {
+            const response = await fetch(`${API_BASE_URL}/api/management/departments/${deptId}/set-coordinator`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(userId)
@@ -488,7 +488,7 @@ export default function ManagementTab({showNotification}) {
                     coordinatorId: userId
                 }));
 
-                const volunteersResponse = await fetch('http://localhost:8080/api/management/volunteers');
+                const volunteersResponse = await fetch('${API_BASE_URL}/api/management/volunteers');
                 if (volunteersResponse.ok) {
                     const updatedVolunteers = await volunteersResponse.json();
                     setVolunteers(updatedVolunteers);
@@ -537,7 +537,7 @@ export default function ManagementTab({showNotification}) {
         if (!selectedUserId || !selectedDept) return;
 
         try {
-            const response = await fetch(`http://localhost:8080/api/management/departments/${selectedDept.id}/add-volunteer`, {
+            const response = await fetch(`${API_BASE_URL}/api/management/departments/${selectedDept.id}/add-volunteer`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(selectedUserId)
@@ -566,7 +566,7 @@ export default function ManagementTab({showNotification}) {
      */
     const handleOpenVolInfo = async (vol) => {
         try {
-            const response = await fetch(`http://localhost:8080/api/management/volunteers/${vol.id}/details`);
+            const response = await fetch(`${API_BASE_URL}/api/management/volunteers/${vol.id}/details`);
             const data = await response.json();
             setViewingVol(data);
         } catch (error) {
@@ -583,7 +583,7 @@ export default function ManagementTab({showNotification}) {
      */
     const handleOpenCustomerInfo = async (customer) => {
         try {
-            const response = await fetch(`http://localhost:8080/api/management/customers/${customer.id}/details`);
+            const response = await fetch(`${API_BASE_URL}/api/management/customers/${customer.id}/details`);
             if (!response.ok) throw new Error('Не вдалося завантажити деталі');
             const data = await response.json();
 
@@ -606,7 +606,7 @@ export default function ManagementTab({showNotification}) {
         setShowAddVolModal(false);
 
         try {
-            const response = await fetch(`http://localhost:8080/api/management/departments/${dept.id}/coordinator`);
+            const response = await fetch(`${API_BASE_URL}/api/management/departments/${dept.id}/coordinator`);
             let coordId = null;
 
             if (response.ok) {
@@ -662,7 +662,7 @@ export default function ManagementTab({showNotification}) {
      */
     const executeRemoveVolunteer = async (userId) => {
         try {
-            const response = await fetch(`http://localhost:8080/api/management/departments/${selectedDept.id}/remove-volunteer?userId=${userId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/management/departments/${selectedDept.id}/remove-volunteer?userId=${userId}`, {
                 method: 'DELETE'
             });
 

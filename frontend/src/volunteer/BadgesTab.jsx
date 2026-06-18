@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import html2pdf from 'html2pdf.js';
 import './Volunteer.css';
+import { API_BASE_URL } from '.App';
 
 /**
  * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
@@ -189,10 +190,10 @@ export default function BadgesTab() {
 
         try {
             const [level, map, badges, profile] = await Promise.all([
-                fetch(`http://localhost:8080/api/badges/${userId}/level`).then(res => res.json()),
-                fetch(`http://localhost:8080/api/badges/${userId}/map`).then(res => res.json()),
-                fetch(`http://localhost:8080/api/badges/${userId}/achievements`).then(res => res.json()),
-                fetch(`http://localhost:8080/api/badges/${userId}/profile`).then(res => res.json())
+                fetch(`${API_BASE_URL}/api/badges/${userId}/level`).then(res => res.json()),
+                fetch(`${API_BASE_URL}/api/badges/${userId}/map`).then(res => res.json()),
+                fetch(`${API_BASE_URL}/api/badges/${userId}/achievements`).then(res => res.json()),
+                fetch(`${API_BASE_URL}/api/badges/${userId}/profile`).then(res => res.json())
             ]);
 
             const oldLevel = previousLevelRef.current;

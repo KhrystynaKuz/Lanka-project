@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './EditDocuments.css';
+import { API_BASE_URL } from '.App'
 
-const API_BASE_URL = 'http://localhost:8080';
 
 /**
  * Компонент сторінки редагування документів після відхилення.

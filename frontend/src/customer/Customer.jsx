@@ -3,6 +3,7 @@ import CreateRequestTab from './CreateRequestTab';
 import MyRequestsTab from './MyRequestsTab';
 import ChatsTab from '../components/chat/ChatsTab.jsx';
 import './Customer.css';
+import { API_BASE_URL } from '.App'
 
 /**
  * Головний компонент панелі замовника.
@@ -87,7 +88,7 @@ export default function Customer({ onLogOut }) {
 
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:8080/api/profile/full-info-by-id?userId=${currentUserId}`);
+            const res = await fetch(`${API_BASE_URL}/api/profile/full-info-by-id?userId=${currentUserId}`);
             const data = await res.json();
             if (res.ok) {
                 setFullUserData(data);
@@ -126,7 +127,7 @@ export default function Customer({ onLogOut }) {
      */
     const handleUpdateProfile = async () => {
         try {
-            const res = await fetch('http://localhost:8080/api/profile/update-details', {
+            const res = await fetch('${API_BASE_URL}/api/profile/update-details', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -176,7 +177,7 @@ export default function Customer({ onLogOut }) {
      */
     const executeDeleteDocument = async (docId) => {
         try {
-            const res = await fetch(`http://localhost:8080/api/profile/documents/delete?docId=${docId}`, {
+            const res = await fetch(`${API_BASE_URL}/api/profile/documents/delete?docId=${docId}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
@@ -212,7 +213,7 @@ export default function Customer({ onLogOut }) {
         formData.append('title', file.name);
 
         try {
-            const res = await fetch(`http://localhost:8080/api/profile/registration/documents/upload`, {
+            const res = await fetch(`${API_BASE_URL}/api/profile/registration/documents/upload`, {
                 method: 'POST',
                 body: formData
             });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-
+import { API_BASE_URL } from '.App';
 /**
  * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
  *
@@ -82,7 +82,7 @@ export default function SiteEditorTab() {
          */
         const fetchAllData = async () => {
             try {
-                const res = await fetch('http://localhost:8080/api/site-editor/settings');
+                const res = await fetch('${API_BASE_URL}/api/site-editor/settings');
                 if (res.ok) {
                     const data = await res.json();
                     setHomeTitle(data.home_title || 'ЛАНКА');
@@ -92,12 +92,12 @@ export default function SiteEditorTab() {
             } catch (e) { console.error("Settings error", e); addToast("🚨 Помилка завантаження налаштувань", "error"); }
 
             try {
-                const res = await fetch('http://localhost:8080/api/site-editor/fundraisers');
+                const res = await fetch('${API_BASE_URL}/api/site-editor/fundraisers');
                 if (res.ok) setFundraisers(await res.json());
             } catch (e) { console.error("Fundraisers error", e); addToast("🚨 Помилка завантаження зборів", "error"); }
 
             try {
-                const res = await fetch('http://localhost:8080/api/site-editor/reports');
+                const res = await fetch('${API_BASE_URL}/api/site-editor/reports');
                 if (res.ok) {
                     const data = await res.json();
                     setReportPhotos(data.filter(r => r.type === 'photo'));
@@ -155,7 +155,7 @@ export default function SiteEditorTab() {
     const handleSaveHomeBlock = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:8080/api/site-editor/update-home', {
+            const response = await fetch('${API_BASE_URL}/api/site-editor/update-home', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -241,7 +241,7 @@ export default function SiteEditorTab() {
     const handleSaveAllFundraisers = async () => {
         setIsFundraisersLoading(true);
         try {
-            const response = await fetch('http://localhost:8080/api/site-editor/fundraisers/save-all', {
+            const response = await fetch('${API_BASE_URL}/api/site-editor/fundraisers/save-all', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(fundraisers)
@@ -249,7 +249,7 @@ export default function SiteEditorTab() {
 
             if (response.ok) {
                 addToast("💰 Актуальні збори успішно синхронізовано та збережено!", "success");
-                const freshResponse = await fetch('http://localhost:8080/api/site-editor/fundraisers');
+                const freshResponse = await fetch('${API_BASE_URL}/api/site-editor/fundraisers');
                 if (freshResponse.ok) {
                     const freshData = await freshResponse.json();
                     setFundraisers(freshData);
@@ -331,7 +331,7 @@ export default function SiteEditorTab() {
         ];
 
         try {
-            const res = await fetch('http://localhost:8080/api/site-editor/reports/save-all', {
+            const res = await fetch('${API_BASE_URL}/api/site-editor/reports/save-all', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataToSave)

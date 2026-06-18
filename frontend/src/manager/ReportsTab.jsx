@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
+import { API_BASE_URL } from '.App';
 
 /**
  * Форматує числове значення як грошову суму в гривнях.
@@ -60,7 +61,7 @@ export default function ReportsTab({ showNotification }) {
          */
         const fetchDepartments = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/management/departments');
+                const response = await fetch('${API_BASE_URL}/api/management/departments');
                 if (response.ok) {
                     const data = await response.json();
                     setDepartmentsList(data);
@@ -83,7 +84,7 @@ export default function ReportsTab({ showNotification }) {
         showNotification("📊 Формування звіту...", "info");
 
         try {
-            let url = `http://localhost:8080/api/management/reports?startDate=${startDate}&endDate=${endDate}`;
+            let url = `${API_BASE_URL}/api/management/reports?startDate=${startDate}&endDate=${endDate}`;
             if (department) {
                 url += `&departmentId=${department}`;
             }

@@ -8,6 +8,7 @@ import Volunteer from "./volunteer/Volunteer.jsx";
 import Coordinator from './coordinator/Coordinator.jsx';
 import EditDocuments from './auth/EditDocuments.jsx';
 import './App.css';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 /**
  * Компонент кастомного модального вікна для повідомлень.

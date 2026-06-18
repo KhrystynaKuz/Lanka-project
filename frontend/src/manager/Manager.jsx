@@ -6,6 +6,7 @@ import ReportsTab from './ReportsTab';
 import SiteEditorTab from './SiteEditorTab';
 import InventoryTab from './InventoryTab';
 import './Manager.css';
+import { API_BASE_URL } from '.App'
 
 /**
  * Головний компонент панелі менеджера/адміністратора.
@@ -91,7 +92,7 @@ export default function Header({ onLogOut, onBackToHome }) {
 
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:8080/api/profile/full-info-by-id?userId=${userId}`);
+            const res = await fetch(`${API_BASE_URL}/api/profile/full-info-by-id?userId=${userId}`);
             const data = await res.json();
             if (res.ok) {
                 setFullUserData(data);
@@ -130,7 +131,7 @@ export default function Header({ onLogOut, onBackToHome }) {
      */
     const handleUpdateProfile = async () => {
         try {
-            const res = await fetch('http://localhost:8080/api/profile/update-details', {
+            const res = await fetch('${API_BASE_URL}/api/profile/update-details', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -180,7 +181,7 @@ export default function Header({ onLogOut, onBackToHome }) {
      */
     const executeDeleteDocument = async (docId) => {
         try {
-            const res = await fetch(`http://localhost:8080/api/profile/documents/delete?docId=${docId}`, {
+            const res = await fetch(`${API_BASE_URL}/api/profile/documents/delete?docId=${docId}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
@@ -216,7 +217,7 @@ export default function Header({ onLogOut, onBackToHome }) {
         formData.append('title', file.name);
 
         try {
-            const res = await fetch(`http://localhost:8080/api/profile/registration/documents/upload`, {
+            const res = await fetch(`${API_BASE_URL}/api/profile/registration/documents/upload`, {
                 method: 'POST',
                 body: formData
             });

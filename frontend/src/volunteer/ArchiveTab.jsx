@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './Volunteer.css';
-
+import { API_BASE_URL } from '.App';
 /**
  * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
  *
@@ -90,10 +90,10 @@ export default function ArchiveTab() {
         const fetchAllArchiveData = async () => {
             setLoading(true);
             try {
-                const archiveRes = await fetch(`http://localhost:8080/api/archive/volunteer/${userId}`);
+                const archiveRes = await fetch(`${API_BASE_URL}/api/archive/volunteer/${userId}`);
                 const officialArchive = archiveRes.ok ? await archiveRes.json() : [];
 
-                const activeRes = await fetch(`http://localhost:8080/api/tasks/volunteer/${userId}`);
+                const activeRes = await fetch(`${API_BASE_URL}/api/tasks/volunteer/${userId}`);
                 const activeTasksRaw = activeRes.ok ? await activeRes.json() : [];
 
                 const officialArchiveIds = new Set(officialArchive.map(t => t.id));
@@ -106,7 +106,7 @@ export default function ArchiveTab() {
                     uniqueRequestIds.map(async (reqId) => {
                         if (!reqId) return;
                         try {
-                            const reqRes = await fetch(`http://localhost:8080/api/requests/${reqId}`);
+                            const reqRes = await fetch(`${API_BASE_URL}/api/requests/${reqId}`);
                             if (reqRes.ok) {
                                 const reqData = await reqRes.json();
                                 requestStatuses[reqId] = reqData.status;
@@ -166,7 +166,7 @@ export default function ArchiveTab() {
      */
     const fetchReports = async (taskId) => {
         try {
-            const res = await fetch(`http://localhost:8080/api/archive/task/${taskId}/reports`);
+            const res = await fetch(`${API_BASE_URL}/api/archive/task/${taskId}/reports`);
             if (!res.ok) throw new Error('Помилка завантаження звітів');
             const data = await res.json();
             setTaskReports(prev => ({ ...prev, [taskId]: data }));

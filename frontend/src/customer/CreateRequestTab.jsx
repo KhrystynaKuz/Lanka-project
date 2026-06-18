@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import { API_BASE_URL } from '.App';
 /**
  * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
  *
@@ -102,7 +102,7 @@ export default function CreateRequestTab({ userId, onSuccessSubmit }) {
         };
 
         try {
-            const response = await fetch('http://localhost:8080/api/requests/create', {
+            const response = await fetch('${API_BASE_URL}/api/requests/create', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

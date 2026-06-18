@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { API_BASE_URL } from '.App';
 
 import { supabase } from '../supabaseClient';
 
@@ -130,7 +131,7 @@ export default function TasksTab() {
      */
     const fetchTasks = async () => {
         try {
-            const res = await fetch(`http://localhost:8080/api/tasks/volunteer/${userId}`);
+            const res = await fetch(`${API_BASE_URL}/api/tasks/volunteer/${userId}`);
             const data = await res.json();
 
             const activeTasks = data.filter(t => t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS');
@@ -142,7 +143,7 @@ export default function TasksTab() {
                 uniqueRequestIds.map(async (reqId) => {
                     if (!reqId) return;
                     try {
-                        const reqRes = await fetch(`http://localhost:8080/api/requests/${reqId}`);
+                        const reqRes = await fetch(`${API_BASE_URL}/api/requests/${reqId}`);
                         if (reqRes.ok) {
                             const reqData = await reqRes.json();
                             requestStatuses[reqId] = reqData.status;
@@ -231,7 +232,7 @@ export default function TasksTab() {
                 fileUrls.push(url);
             }
 
-            const response = await fetch(`http://localhost:8080/api/tasks/submit-report`, {
+            const response = await fetch(`${API_BASE_URL}/api/tasks/submit-report`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -309,7 +310,7 @@ export default function TasksTab() {
         setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: action, updating: true } : t));
 
         try {
-            const response = await fetch(`http://localhost:8080/api/tasks/update-status`, {
+            const response = await fetch(`${API_BASE_URL}/api/tasks/update-status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...task, status: action })
