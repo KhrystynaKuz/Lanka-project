@@ -30,10 +30,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/management")
-@CrossOrigin(origins = {
-    "http://localhost:5173",
-    "https://lanka-project.onrender.com"
-}, methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.DELETE, RequestMethod.OPTIONS})
+@CrossOrigin(origins = {"*"}, methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class ManagementController {
 
     @Autowired

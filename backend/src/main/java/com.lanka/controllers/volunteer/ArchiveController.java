@@ -17,10 +17,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/archive")
-@CrossOrigin(origins = {
-    "http://localhost:5173",
-    "https://lanka-project.onrender.com"
-})
+@CrossOrigin(origins = {"*"})
 public class ArchiveController {
 
     @Autowired

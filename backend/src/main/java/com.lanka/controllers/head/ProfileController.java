@@ -20,11 +20,7 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/profile")
-@CrossOrigin(
-        origins = {
-    "http://localhost:5173",
-    "https://lanka-project.onrender.com"
-},
+@CrossOrigin(origins = {"*"},
         allowCredentials = "true",
         allowedHeaders = "*",
         methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS}
