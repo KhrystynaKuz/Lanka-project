@@ -16,12 +16,9 @@ public class DatabaseConfig {
     private static final String DB_PASSWORD;
 
     static {
-        Dotenv dotenv = Dotenv.configure()
-                .directory("./backend")
-                .load();
-        DB_URL = dotenv.get("DB_URL");
-        DB_USER = dotenv.get("DB_USER");
-        DB_PASSWORD = dotenv.get("DB_PASSWORD");
+        DB_URL = System.getenv("DB_URL");
+        DB_USER = System.getenv("DB_USER");
+        DB_PASSWORD = System.getenv("DB_PASSWORD");
 
         try {
             Class.forName("org.postgresql.Driver");

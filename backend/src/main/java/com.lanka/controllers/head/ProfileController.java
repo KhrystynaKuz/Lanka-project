@@ -20,7 +20,7 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/profile")
-@CrossOrigin(origins = {"*"},
+@CrossOrigin(origins = "*",
         allowCredentials = "true",
         allowedHeaders = "*",
         methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS}

@@ -17,7 +17,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/archive")
-@CrossOrigin(origins = {"*"})
+@CrossOrigin(origins = "*")
 public class ArchiveController {
 
     @Autowired

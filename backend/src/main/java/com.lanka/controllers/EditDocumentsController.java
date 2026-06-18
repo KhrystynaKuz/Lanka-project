@@ -15,7 +15,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/documents")
-@CrossOrigin(origins = {"http://localhost:5173", "https://lanka-project.onrender.com"})
+@CrossOrigin(origins = "*")
 public class EditDocumentsController {
 
     @Autowired

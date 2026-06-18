@@ -23,7 +23,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/tasks")
-@CrossOrigin(origins = {"*"})
+@CrossOrigin(origins = "*")
 public class TaskController {
 
     @Autowired
