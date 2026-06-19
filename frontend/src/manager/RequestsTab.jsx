@@ -360,8 +360,8 @@ export default function RequestsTab() {
     const handleSearch = () => {
         setLoading(true);
         const url = searchQuery.trim()
-            ? `/api/requests/search?title=${encodeURIComponent(searchQuery.trim())}`
-            : '/api/requests';
+            ? `${API_BASE_URL}/api/requests/search?title=${encodeURIComponent(searchQuery.trim())}`
+            : `${API_BASE_URL}/api/requests`;
 
         fetch(url)
             .then(res => res.json())

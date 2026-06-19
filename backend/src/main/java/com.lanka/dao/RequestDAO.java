@@ -305,15 +305,12 @@ public class RequestDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setObject(1, requestId);
             try (ResultSet rs = ps.executeQuery()) {
-                System.out.println("REQUEST = " + requestId);
 
                 while (rs.next()) {
                     String dep = rs.getString("name");
-                    System.out.println("FOUND DEPARTMENT = " + dep);
                     departments.add(dep);
                 }
 
-                System.out.println("RESULT = " + departments);
             }
         }
         return departments;
