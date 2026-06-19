@@ -12,6 +12,7 @@ import java.util.UUID;
  * REST controller for high-level management of warehouse inventory.
  */
 @RestController
+@CrossOrigin(originPatterns = "*")
 @RequestMapping("/api/head/warehouse")
 public class WarehouseController {
 

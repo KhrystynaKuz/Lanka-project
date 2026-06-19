@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../App';
 
 /**
  * Компонент модального вікна підтвердження дії.
