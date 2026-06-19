@@ -70,7 +70,9 @@ export default function InventoryTab() {
 
     const loadInventory = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/warehouse`);
+            const res = await fetch(`${API_BASE_URL}/api/warehouse`, {
+                credentials: 'include' // Додано для сесії
+            });
             if (!res.ok) throw new Error('Network error');
             const data = await res.json();
             setWarehouseItems(Array.isArray(data) ? data : []);
@@ -111,6 +113,7 @@ export default function InventoryTab() {
             const response = await fetch(`${API_BASE_URL}/api/warehouse`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // Додано для сесії
                 body: JSON.stringify(editingItem)
             });
             if (response.ok) {
@@ -141,6 +144,7 @@ export default function InventoryTab() {
             const response = await fetch(`${API_BASE_URL}/api/warehouse/transaction/${editingItem.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // Додано для сесії
                 body: JSON.stringify({
                     type: 'ADDITION',
                     quantity_changed: transactionQty
@@ -177,6 +181,7 @@ export default function InventoryTab() {
             const response = await fetch(`${API_BASE_URL}/api/warehouse/book/${editingItem.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // Додано для сесії
                 body: JSON.stringify({
                     request_id: selectedRequestId,
                     quantity_changed: -Math.abs(transactionQty),
@@ -200,7 +205,9 @@ export default function InventoryTab() {
 
     const fetchHistory = async (itemId) => {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/warehouse/history/${itemId}`);
+            const res = await fetch(`${API_BASE_URL}/api/warehouse/history/${itemId}`, {
+                credentials: 'include' // Додано для сесії
+            });
             if (res.ok) {
                 const data = await res.json();
                 setItemHistory(data);
@@ -213,7 +220,9 @@ export default function InventoryTab() {
 
     const openSignOffMode = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/warehouse/requests/mine`);
+            const res = await fetch(`${API_BASE_URL}/api/warehouse/requests/mine`, {
+                credentials: 'include' // Додано для сесії
+            });
             if (res.ok) {
                 setRequests(await res.json());
                 setModalMode('sign_off');
@@ -241,7 +250,8 @@ export default function InventoryTab() {
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/warehouse/${itemToDelete.id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                credentials: 'include' // Додано для сесії
             });
             if (response.ok) {
                 await loadInventory();
