@@ -106,6 +106,7 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
             if (userData && userData.role) {
                 await fetch(`${API_BASE_URL}/api/auth/login-session`, {
                     method: 'POST',
+                    credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: userId })
                 });
