@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Coordinator.css';
+import { API_BASE_URL } from '../App';
 
 const Toast = ({ message, type, onClose }) => {
     useEffect(() => {
@@ -69,7 +70,7 @@ export default function InventoryTab() {
 
     const loadInventory = async () => {
         try {
-            const res = await fetch('/api/warehouse', {
+            const res = await fetch(`${API_BASE_URL}/api/warehouse`, {
                 credentials: 'include' // Додано для сесії
             });
             if (!res.ok) throw new Error('Network error');
@@ -109,7 +110,7 @@ export default function InventoryTab() {
         setIsProcessing(true);
 
         try {
-            const response = await fetch('/api/warehouse', {
+            const response = await fetch(`${API_BASE_URL}/api/warehouse`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include', // Додано для сесії
@@ -140,7 +141,7 @@ export default function InventoryTab() {
         setIsProcessing(true);
 
         try {
-            const response = await fetch(`/api/warehouse/transaction/${editingItem.id}`, {
+            const response = await fetch(`${API_BASE_URL}/api/warehouse/transaction/${editingItem.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include', // Додано для сесії
@@ -177,7 +178,7 @@ export default function InventoryTab() {
         setIsProcessing(true);
 
         try {
-            const response = await fetch(`/api/warehouse/book/${editingItem.id}`, {
+            const response = await fetch(`${API_BASE_URL}/api/warehouse/book/${editingItem.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include', // Додано для сесії
@@ -204,7 +205,7 @@ export default function InventoryTab() {
 
     const fetchHistory = async (itemId) => {
         try {
-            const res = await fetch(`/api/warehouse/history/${itemId}`, {
+            const res = await fetch(`${API_BASE_URL}/api/warehouse/history/${itemId}`, {
                 credentials: 'include' // Додано для сесії
             });
             if (res.ok) {
@@ -219,7 +220,7 @@ export default function InventoryTab() {
 
     const openSignOffMode = async () => {
         try {
-            const res = await fetch('/api/warehouse/requests/mine', {
+            const res = await fetch(`${API_BASE_URL}/api/warehouse/requests/mine`, {
                 credentials: 'include' // Додано для сесії
             });
             if (res.ok) {
@@ -248,7 +249,7 @@ export default function InventoryTab() {
         setIsProcessing(true);
 
         try {
-            const response = await fetch(`/api/warehouse/${itemToDelete.id}`, {
+            const response = await fetch(`${API_BASE_URL}/api/warehouse/${itemToDelete.id}`, {
                 method: 'DELETE',
                 credentials: 'include' // Додано для сесії
             });

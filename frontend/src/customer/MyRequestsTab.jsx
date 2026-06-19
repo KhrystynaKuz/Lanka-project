@@ -298,7 +298,7 @@ export default function MyRequestsTab({ userId, onGoToChat }) {
             </div>
 
             {isLoading ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#fff' }}>Завантаження заявок...</div>
+                <div style={{ textAlign: 'center', padding: '20px', color: '#1e3a8a' }}>Завантаження заявок...</div>
             ) : requests.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '35px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', color: '#ccc' }}>
                     Ви ще не створили жодної заявки.
