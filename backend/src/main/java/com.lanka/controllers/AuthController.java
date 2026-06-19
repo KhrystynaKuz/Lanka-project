@@ -97,11 +97,20 @@ public class AuthController {
      * @param session The current HTTP session.
      */
     @PostMapping("/login-session")
-    public void loginSession(@RequestBody Map<String, String> payload, HttpSession session) {
+    public ResponseEntity<?> loginSession(
+            @RequestBody Map<String, String> payload,
+            HttpSession session
+    ) {
         String userId = payload.get("userId");
+
         if (userId != null) {
             session.setAttribute("userId", UUID.fromString(userId));
+
+            System.out.println("SESSION ID = " + session.getId());
+            System.out.println("USER ID = " + session.getAttribute("userId"));
         }
+
+        return ResponseEntity.ok(session.getId());
     }
 
     /**
