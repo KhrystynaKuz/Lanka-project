@@ -117,7 +117,7 @@ export default function RequestsTab() {
      */
     const loadCoreData = () => {
         setLoadingRequests(true);
-        fetch('/api/requests')
+        fetch(`${API_BASE_URL}/api/requests`)
             .then(res => {
                 if (!res.ok) throw new Error();
                 return res.json();
@@ -131,7 +131,7 @@ export default function RequestsTab() {
     };
 
     useEffect(() => {
-        fetch('/api/requests/stats')
+        fetch(`${API_BASE_URL}/api/requests/stats`)
             .then(res => {
                 if (!res.ok) throw new Error();
                 return res.json();
@@ -153,7 +153,7 @@ export default function RequestsTab() {
     useEffect(() => {
         if (showPendingDropdown && pendingRequests.length === 0) {
             setLoading(true);
-            fetch('/api/requests/pending')
+            fetch(`${API_BASE_URL}/api/requests/pending`)
                 .then(res => {
                     if (!res.ok) throw new Error();
                     return res.json();
@@ -189,7 +189,7 @@ export default function RequestsTab() {
             }
         }
 
-        fetch(`/api/requests/${id}/status`, {
+        fetch(`${API_BASE_URL}/api/requests/${id}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -249,7 +249,7 @@ export default function RequestsTab() {
      * @param {string} newStatus - Новий статус.
      */
     const updateRequestStatus = (id, newStatus) => {
-        fetch(`/api/requests/${id}/status`, {
+        fetch(`${API_BASE_URL}/api/requests/${id}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -301,7 +301,7 @@ export default function RequestsTab() {
      * @param {string|number} id - Ідентифікатор заявки.
      */
     const executeDeleteFetch = (id) => {
-        fetch(`/api/requests/${id}`, { method: 'DELETE' })
+        fetch(`${API_BASE_URL}/api/requests/${id}`, { method: 'DELETE' })
             .then(res => {
                 if (!res.ok) throw new Error("Помилка при видаленні з сервера");
                 return res.json();

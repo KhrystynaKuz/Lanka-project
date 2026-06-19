@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
 import { supabase } from '../supabaseClient';
-
+import { API_BASE_URL } from '../App';
 /**
  * Головний компонент сторінки входу.
  * Відповідає за автентифікацію користувача через Supabase,
@@ -104,7 +104,7 @@ export default function Login({ onLoginSuccess, onBackToHome, onNavigateToRegist
             const userData = await dbResponse.json();
 
             if (userData && userData.role) {
-                await fetch('/api/auth/login-session', {
+                await fetch(`${API_BASE_URL}/api/auth/login-session`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: userId })

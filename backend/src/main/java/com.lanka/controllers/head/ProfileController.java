@@ -20,11 +20,11 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/profile")
-/*@CrossOrigin(originPatterns = "*",
+@CrossOrigin(originPatterns = "*",
         allowCredentials = "true",
         allowedHeaders = "*",
         methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS}
-)*/
+)
 public class ProfileController {
 
     private final UserDAO userDAO;

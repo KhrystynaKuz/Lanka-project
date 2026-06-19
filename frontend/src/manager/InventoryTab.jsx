@@ -68,7 +68,7 @@ export default function InventoryTab({ showNotification }) {
      */
     const loadInventory = async () => {
         try {
-            const res = await fetch('/api/head/warehouse');
+            const res = await fetch(`${API_BASE_URL}/api/head/warehouse`);
             if (res.ok) {
                 const data = await res.json();
                 setWarehouseItems(Array.isArray(data) ? data : []);
@@ -138,7 +138,7 @@ export default function InventoryTab({ showNotification }) {
      */
     const fetchHistory = async (itemId) => {
         try {
-            const res = await fetch(`/api/warehouse/history/${itemId}`);
+            const res = await fetch(`${API_BASE_URL}/api/warehouse/history/${itemId}`);
             if (res.ok) {
                 const data = await res.json();
                 setItemHistory(Array.isArray(data) ? data : []);
@@ -167,7 +167,7 @@ export default function InventoryTab({ showNotification }) {
      */
     const executeDelete = async () => {
         try {
-            const response = await fetch(`/api/head/warehouse/${confirmDelete.itemId}`, { method: 'DELETE' });
+            const response = await fetch(`${API_BASE_URL}/api/head/warehouse/${confirmDelete.itemId}`, { method: 'DELETE' });
             if (response.ok) {
                 await loadInventory();
                 showNotification("🗑️ Товар успішно видалено", "success");

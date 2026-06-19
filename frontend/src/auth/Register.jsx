@@ -35,7 +35,7 @@ export default function Register({ onRegisterSuccess, onBackToLogin, onBackToHom
 
     const SUPABASE_BASE_URL = 'https://dxgywtqqzpyrueostjdy.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_avyWvNv3SrmJZGmaMszNrw_AGJptVhK';
-    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    const API_BASE_URL = import.meta.env.VITE_API_URL;
 
     /**
      * Завантажує список відділів з бекенду.
