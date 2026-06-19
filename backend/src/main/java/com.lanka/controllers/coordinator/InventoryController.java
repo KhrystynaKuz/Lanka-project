@@ -22,15 +22,8 @@ import java.util.UUID;
  */
 @RestController
 @CrossOrigin(
-        origins = "*",
-        allowedHeaders = "*",
-        methods = {
-                RequestMethod.GET,
-                RequestMethod.POST,
-                RequestMethod.PUT,
-                RequestMethod.DELETE,
-                RequestMethod.OPTIONS
-        }
+        origins = "https://lanka-project.onrender.com",
+        allowCredentials = "true"
 )
 @RequestMapping("/api/warehouse")
 public class InventoryController {

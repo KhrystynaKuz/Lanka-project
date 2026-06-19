@@ -12,7 +12,10 @@ import java.util.UUID;
  * REST controller for high-level management of warehouse inventory.
  */
 @RestController
-@CrossOrigin(originPatterns = "*")
+@CrossOrigin(
+        origins = "https://lanka-project.onrender.com",
+        allowCredentials = "true"
+)
 @RequestMapping("/api/head/warehouse")
 public class WarehouseController {
 
