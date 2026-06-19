@@ -20,7 +20,8 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(originPatterns = "*")
+@CrossOrigin(origins = "https://lanka-project.onrender.com",
+        allowCredentials = "true")
 public class AuthController {
 
     private final UserDAO userDAO;
