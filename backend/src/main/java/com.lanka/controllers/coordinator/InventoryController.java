@@ -21,6 +21,17 @@ import java.util.UUID;
  * Provides endpoints for retrieving, adding, deleting inventory, and managing stock transactions.
  */
 @RestController
+@CrossOrigin(
+        origins = "*",
+        allowedHeaders = "*",
+        methods = {
+                RequestMethod.GET,
+                RequestMethod.POST,
+                RequestMethod.PUT,
+                RequestMethod.DELETE,
+                RequestMethod.OPTIONS
+        }
+)
 @RequestMapping("/api/warehouse")
 public class InventoryController {
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Register.css';
+import { API_BASE_URL } from '../App';
 
 /**
  * Головний компонент сторінки реєстрації.
