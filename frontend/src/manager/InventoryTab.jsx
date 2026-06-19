@@ -106,7 +106,7 @@ export default function InventoryTab({ showNotification }) {
             return;
         }
 
-        const url = isNew ? '/api/head/warehouse' : `/api/head/warehouse/${editingItem.id}`;
+        const url = isNew ? `${API_BASE_URL}/api/head/warehouse` : `${API_BASE_URL}/api/head/warehouse/${editingItem.id}`;
         try {
             const response = await fetch(url, {
                 method: isNew ? 'POST' : 'PUT',
