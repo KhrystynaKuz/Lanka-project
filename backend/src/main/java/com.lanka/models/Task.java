@@ -26,6 +26,7 @@ public class Task {
     private OffsetDateTime created_at;
     private OffsetDateTime completed_at;
     private String requestTitle;
+    private String reportUrls;
 
     public Task() {}
 
@@ -123,4 +124,11 @@ public class Task {
     }
     public String getRequestTitle() { return requestTitle; }
     public void setRequestTitle(String requestTitle) { this.requestTitle = requestTitle; }
+
+    public String getReportUrls() {
+        return reportUrls;
+    }
+    public void setReportUrls(String reportUrls) {
+        this.reportUrls = reportUrls;
+    }
 }

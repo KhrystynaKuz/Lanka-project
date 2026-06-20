@@ -377,6 +377,18 @@ export default function DepartmentTasksTab() {
         }
     };
 
+    // Helper to safely parse report URLs directly from the task object
+    const getReportUrls = (task) => {
+        if (task.reportUrls) {
+            try {
+                return JSON.parse(task.reportUrls);
+            } catch (e) {
+                return [];
+            }
+        }
+        return [];
+    };
+
     if (loading) return <div className="coord-tasks-section" style={{ padding: '40px', textAlign: 'center', color: '#1e3a8a', fontWeight: '600' }}><p>Завантаження даних координатора...</p></div>;
 
     const allowedRequestStatuses = ['APPROVED', 'IN_PROGRESS', 'FULFILLED'];
@@ -559,6 +571,7 @@ export default function DepartmentTasksTab() {
                                         <div className="coord-subtasks-list" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                             {reqTasks.map((task, index) => {
                                                 const isEditable = !isRequestLocked && (task.status === 'ASSIGNED' || task.isNew);
+                                                const reportUrls = getReportUrls(task);
 
                                                 return (
                                                     <div className="request-full-card" key={task.id} style={{
@@ -663,6 +676,40 @@ export default function DepartmentTasksTab() {
                                                                     }}
                                                                 />
                                                             </div>
+
+                                                            {/* 🔥 REPORT SECTION FOR COMPLETED TASKS */}
+                                                            {task.status === 'COMPLETED' && (
+                                                                <div style={{
+                                                                    marginTop: '8px',
+                                                                    padding: '10px',
+                                                                    backgroundColor: 'rgba(240, 253, 244, 0.6)',
+                                                                    border: '1px solid rgba(74, 222, 128, 0.3)',
+                                                                    borderRadius: '8px'
+                                                                }}>
+                                                                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#166534', display: 'block', marginBottom: '6px' }}>
+                                                                        📄 Звіт про виконання:
+                                                                    </span>
+                                                                    {reportUrls.length > 0 ? (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                                            {reportUrls.map((url, i) => (
+                                                                                <a
+                                                                                    key={i}
+                                                                                    href={url}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    style={{ fontSize: '13px', color: '#2563eb', textDecoration: 'underline', wordBreak: 'break-all' }}
+                                                                                >
+                                                                                    {url.split('/').pop() || 'Переглянути документ'}
+                                                                                </a>
+                                                                            ))}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span style={{ fontSize: '13px', color: '#4b5563', fontStyle: 'italic' }}>
+                                                                            Відсутні прикріплені файли
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
 
                                                         {isEditable && (

@@ -99,7 +99,11 @@ public class TaskDAO {
      * @throws SQLException If a database access error occurs.
      */
     public List<Task> getAllTasks() throws SQLException {
-        String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id ORDER BY t.created_at DESC";
+        String sql = "SELECT t.*, r.title as request_title, rep.attached_files_urls as report_urls " +
+                "FROM tasks t " +
+                "LEFT JOIN requests r ON t.request_id = r.id " +
+                "LEFT JOIN reports rep ON t.id = rep.task_id " +
+                "ORDER BY t.created_at DESC";
         List<Task> list = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -118,7 +122,11 @@ public class TaskDAO {
      * @throws SQLException If a database access error occurs.
      */
     public Task getTaskById(UUID id) throws SQLException {
-        String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id WHERE t.id = ?";
+        String sql = "SELECT t.*, r.title as request_title, rep.attached_files_urls as report_urls " +
+                "FROM tasks t " +
+                "LEFT JOIN requests r ON t.request_id = r.id " +
+                "LEFT JOIN reports rep ON t.id = rep.task_id " +
+                "WHERE t.id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setObject(1, id);
@@ -137,7 +145,11 @@ public class TaskDAO {
      * @throws SQLException If a database access error occurs.
      */
     public List<Task> getTasksByRequestId(UUID requestId) throws SQLException {
-        String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id WHERE t.request_id = ? ORDER BY t.created_at ASC";
+        String sql = "SELECT t.*, r.title as request_title, rep.attached_files_urls as report_urls " +
+                "FROM tasks t " +
+                "LEFT JOIN requests r ON t.request_id = r.id " +
+                "LEFT JOIN reports rep ON t.id = rep.task_id " +
+                "WHERE t.request_id = ? ORDER BY t.created_at ASC";
         List<Task> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -157,7 +169,11 @@ public class TaskDAO {
      * @throws SQLException If a database access error occurs.
      */
     public List<Task> getTasksByVolunteerId(UUID volunteerId) throws SQLException {
-        String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id WHERE t.assigned_volunteer_id = ? ORDER BY t.status ASC, t.created_at DESC";
+        String sql = "SELECT t.*, r.title as request_title, rep.attached_files_urls as report_urls " +
+                "FROM tasks t " +
+                "LEFT JOIN requests r ON t.request_id = r.id " +
+                "LEFT JOIN reports rep ON t.id = rep.task_id " +
+                "WHERE t.assigned_volunteer_id = ? ORDER BY t.status ASC, t.created_at DESC";
         List<Task> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -177,7 +193,11 @@ public class TaskDAO {
      * @throws SQLException If a database access error occurs.
      */
     public List<Task> getTasksByCoordinatorId(UUID coordinatorId) throws SQLException {
-        String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id WHERE t.coordinator_id = ? ORDER BY t.created_at DESC";
+        String sql = "SELECT t.*, r.title as request_title, rep.attached_files_urls as report_urls " +
+                "FROM tasks t " +
+                "LEFT JOIN requests r ON t.request_id = r.id " +
+                "LEFT JOIN reports rep ON t.id = rep.task_id " +
+                "WHERE t.coordinator_id = ? ORDER BY t.created_at DESC";
         List<Task> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -198,7 +218,11 @@ public class TaskDAO {
      * @throws SQLException If a database access error occurs.
      */
     public List<Task> getTasksByVolunteerAndStatus(UUID volunteerId, TaskStatus status) throws SQLException {
-        String sql = "SELECT t.*, r.title as request_title FROM tasks t LEFT JOIN requests r ON t.request_id = r.id WHERE t.assigned_volunteer_id = ? AND t.status = ?::task_status ORDER BY t.created_at DESC";
+        String sql = "SELECT t.*, r.title as request_title, rep.attached_files_urls as report_urls " +
+                "FROM tasks t " +
+                "LEFT JOIN requests r ON t.request_id = r.id " +
+                "LEFT JOIN reports rep ON t.id = rep.task_id " +
+                "WHERE t.assigned_volunteer_id = ? AND t.status = ?::task_status ORDER BY t.created_at DESC";
         List<Task> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -211,8 +235,6 @@ public class TaskDAO {
         return list;
     }
 
-    // --- NEW METHOD FOR ARCHIVE ---
-
     /**
      * Retrieves tasks that have been either completed or cancelled for a volunteer.
      *
@@ -221,8 +243,9 @@ public class TaskDAO {
      * @throws SQLException If a database access error occurs.
      */
     public List<Task> getArchivedTasksByVolunteerId(UUID volunteerId) throws SQLException {
-        String sql = "SELECT t.*, r.title as request_title FROM tasks t " +
+        String sql = "SELECT t.*, r.title as request_title, rep.attached_files_urls as report_urls FROM tasks t " +
                 "LEFT JOIN requests r ON t.request_id = r.id " +
+                "LEFT JOIN reports rep ON t.id = rep.task_id " +
                 "WHERE t.assigned_volunteer_id = ? AND t.status::text IN ('COMPLETED', 'CANCELLED') " +
                 "ORDER BY t.completed_at DESC";
         List<Task> list = new ArrayList<>();
@@ -317,6 +340,13 @@ public class TaskDAO {
         // Safely set request title from the LEFT JOIN
         try {
             task.setRequestTitle(rs.getString("request_title"));
+        } catch (SQLException e) {
+            // Ignored if column isn't present
+        }
+
+        // Safely set report URLs from the LEFT JOIN
+        try {
+            task.setReportUrls(rs.getString("report_urls"));
         } catch (SQLException e) {
             // Ignored if column isn't present
         }
