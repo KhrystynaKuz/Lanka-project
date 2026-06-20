@@ -139,31 +139,12 @@ export default function DepartmentTasksTab() {
 
                     const tasksMap = {};
                     for (const req of reqsData) {
-                        const taskResults = await Promise.all(
-                            reqsData.map(async (req) => {
-                                const tasksRes = await fetch(
-                                    `${API_BASE_URL}/api/tasks/request/${req.id}`
-                                );
-
-                                if (tasksRes.ok) {
-                                    return {
-                                        reqId: req.id,
-                                        tasks: await tasksRes.json()
-                                    };
-                                }
-
-                                return {
-                                    reqId: req.id,
-                                    tasks: []
-                                };
-                            })
-                        );
-
-                        const tasksMap = {};
-
-                        taskResults.forEach(result => {
-                            tasksMap[result.reqId] = result.tasks;
-                        });
+                        const tasksRes = await fetch(`${API_BASE_URL}/api/tasks/request/${req.id}`);
+                        if (tasksRes.ok) {
+                            tasksMap[req.id] = await tasksRes.json();
+                        } else {
+                            tasksMap[req.id] = [];
+                        }
                     }
                     setTasksByRequest(tasksMap);
                 }
