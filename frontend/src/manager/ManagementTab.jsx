@@ -240,15 +240,10 @@ export default function ManagementTab({showNotification}) {
     const handleApprove = async (docId) => {
         const success = await sendDocStatus(docId, 'APPROVED', null);
         if (success) {
-            setUserDocs(prev => {
-                const newDocs = {...prev};
-                for (const userId in newDocs) {
-                    newDocs[userId] = newDocs[userId].map(doc =>
-                        doc.id === docId ? {...doc, status: 'APPROVED'} : doc
-                    );
-                }
-                return newDocs;
-            });
+            showNotification("✅ Документ успішно затверджено!", "success");
+
+            await fetchPendingDocuments();
+            await fetchPendingUsers();
         }
     };
 
@@ -649,7 +644,7 @@ export default function ManagementTab({showNotification}) {
     const handleUpdateDocStatus = async (docId, status) => {
         const success = await sendDocStatus(docId, status, null);
         if (success) {
-            setPendingDocs(prev => prev.filter(d => d.id !== docId));
+            await fetchPendingDocuments();
         }
     };
 
