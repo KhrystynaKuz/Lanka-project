@@ -238,12 +238,14 @@ export default function ManagementTab({showNotification}) {
      * @returns {Promise<void>}
      */
     const handleApprove = async (docId) => {
+        setPendingDocs(prevDocs => prevDocs.filter(doc => doc.id !== docId));
+
         const success = await sendDocStatus(docId, 'APPROVED', null);
         if (success) {
             showNotification("✅ Документ успішно затверджено!", "success");
-
-            await fetchPendingDocuments();
             await fetchPendingUsers();
+        } else {
+            await fetchPendingDocuments();
         }
     };
 
@@ -278,30 +280,41 @@ export default function ManagementTab({showNotification}) {
             ? `${API_BASE_URL}/api/management/documents/reject`
             : `${API_BASE_URL}/api/management/documents/reject-verified`;
 
+        const currentDocId = activeDocId;
+        const currentUserId = activeUserId;
+        const currentReason = rejectReason;
+
+        if (isInitialVerification) {
+            setVerificationList(prev => prev.filter(item => item.user.id !== currentUserId));
+        } else {
+            setPendingDocs(prev => prev.filter(doc => doc.id !== currentDocId));
+        }
+
+        setShowRejectModal(false);
+        setRejectReason("");
+
         try {
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    docId: activeDocId,
-                    userId: activeUserId,
-                    reason: rejectReason
+                    docId: currentDocId,
+                    userId: currentUserId,
+                    reason: currentReason
                 })
             });
 
             if (response.ok) {
                 showNotification("Документ відхилено", "success");
-                setShowRejectModal(false);
-                setRejectReason("");
-
-                if (isInitialVerification) {
-                    fetchPendingUsers();
-                } else {
-                    fetchPendingDocuments();
-                }
+            } else {
+                showNotification("Помилка при відхиленні на сервері", "error");
+                if (isInitialVerification) fetchPendingUsers();
+                else fetchPendingDocuments();
             }
         } catch (err) {
-            showNotification("Помилка", "error");
+            showNotification("Помилка з'єднання", "error");
+            if (isInitialVerification) fetchPendingUsers();
+            else fetchPendingDocuments();
         }
     };
 
@@ -322,7 +335,6 @@ export default function ManagementTab({showNotification}) {
                 body: JSON.stringify({docId, status, reason})
             });
             if (response.ok) {
-                showNotification("Статус оновлено!", "success");
                 return true;
             }
             return false;
