@@ -379,10 +379,19 @@ export default function DepartmentTasksTab() {
 
     // Helper to safely parse report URLs directly from the task object
     const getReportUrls = (task) => {
-        if (task.reportUrls) {
+        const urlsData = task.attached_files_urls || task.attachedFilesUrls || task.report_urls || task.reportUrls;
+
+        if (urlsData) {
+            if (Array.isArray(urlsData)) {
+                return urlsData;
+            }
+
             try {
-                return JSON.parse(task.reportUrls);
+                return JSON.parse(urlsData);
             } catch (e) {
+                if (typeof urlsData === 'string' && urlsData.trim().startsWith('http')) {
+                    return [urlsData];
+                }
                 return [];
             }
         }
