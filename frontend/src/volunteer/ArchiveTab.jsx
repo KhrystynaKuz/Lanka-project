@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './Volunteer.css';
 import { API_BASE_URL } from '../App';
+
 /**
  * Компонент сповіщення (тосту), яке автоматично зникає через 4 секунди.
  *
@@ -295,29 +296,42 @@ export default function ArchiveTab() {
                                                 : <span style={{ color: '#64748b', fontStyle: 'italic' }}>Закрито разом із заявкою</span>}
                                         </p>
 
-                                        <p><strong>Завантажені файли:</strong></p>
+                                        <p><strong>Звіти:</strong></p>
 
                                         {isDimmed ? (
                                             <p className="volunteer-no-files" style={{ color: '#ef4444' }}>Завдання було скасовано або заявку відхилено. Файли відсутні.</p>
                                         ) : taskReports[task.id] && taskReports[task.id].length > 0 ? (
                                             <ul className="volunteer-file-list">
-                                                {taskReports[task.id].map(report =>
-                                                    report.attached_files_urls.map((url, i) => (
-                                                        <li key={i}>
+                                                {taskReports[task.id].map((report, reportIndex) => {
+                                                    const urls = Array.isArray(report.attached_files_urls) ? report.attached_files_urls : [];
+                                                    const reportName = report.content || `Звіт ${reportIndex + 1}`;
+
+                                                    if (urls.length === 0) {
+                                                        return (
+                                                            <li key={`text-only-${report.id || reportIndex}`}>
+                                                                <span className="volunteer-no-files" style={{ color: '#475569' }}>
+                                                                    Файлів не прикріплено
+                                                                </span>
+                                                            </li>
+                                                        );
+                                                    }
+
+                                                    return urls.map((url, i) => (
+                                                        <li key={`${report.id || reportIndex}-${i}`}>
                                                             <a
                                                                 href={url}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="volunteer-file-link"
                                                             >
-                                                                📄 Файл звіту {i + 1}
+                                                                📄 {reportName}{urls.length > 1 ? ` (Файл ${i + 1})` : ''}
                                                             </a>
                                                         </li>
-                                                    ))
-                                                )}
+                                                    ));
+                                                })}
                                             </ul>
                                         ) : (
-                                            <p className="volunteer-no-files">Файлів немає</p>
+                                            <p className="volunteer-no-files">Звітів немає</p>
                                         )}
                                     </div>
                                 )}
