@@ -90,7 +90,9 @@ export default function ManagementTab({showNotification}) {
             const response = await fetch(`${API_BASE_URL}/api/management/documents/pending-all`);
             if (!response.ok) throw new Error("Помилка завантаження документів");
             const data = await response.json();
-            setPendingDocs(data);
+
+            const filteredData = data.filter(doc => doc.status === 'PENDING' || !doc.status);
+            setPendingDocs(filteredData);
         } catch (err) {
             console.error("Помилка:", err);
         }
