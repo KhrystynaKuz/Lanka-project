@@ -360,6 +360,7 @@ export default function InventoryTab() {
                         {modalMode === 'create' && (
                             <>
                                 <div style={{
+                                    flexShrink: 0,
                                     padding: '20px 25px',
                                     background: '#3b82f6',
                                     borderTopLeftRadius: '20px',
@@ -471,7 +472,7 @@ export default function InventoryTab() {
                                     </div>
                                 </div>
 
-                                <div style={{ padding: '0 25px 25px 25px', background: 'white' }}>
+                                <div style={{ flexShrink: 0, padding: '0 25px 25px 25px', background: 'white' }}>
                                     <div style={{ display: 'flex', gap: '12px' }}>
                                         <button
                                             style={{
@@ -522,6 +523,7 @@ export default function InventoryTab() {
                         {modalMode === 'info' && (
                             <>
                                 <div style={{
+                                    flexShrink: 0,
                                     padding: '20px 25px',
                                     background: '#3b82f6',
                                     borderTopLeftRadius: '20px',
@@ -555,7 +557,7 @@ export default function InventoryTab() {
                                     </div>
                                 </div>
 
-                                <div style={{ padding: '25px', background: 'white' }}>
+                                <div style={{ padding: '25px', background: 'white', overflowY: 'auto', flex: 1 }}>
                                     <div style={{
                                         background: '#f1f5f9',
                                         borderRadius: '12px',
@@ -628,7 +630,7 @@ export default function InventoryTab() {
                                     </div>
                                 </div>
 
-                                <div style={{ padding: '0 25px 25px 25px', background: 'white' }}>
+                                <div style={{ flexShrink: 0, padding: '0 25px 25px 25px', background: 'white' }}>
                                     <div style={{ display: 'flex', gap: '12px' }}>
                                         <button
                                             style={{
@@ -680,6 +682,7 @@ export default function InventoryTab() {
                         {modalMode === 'add_stock' && (
                             <>
                                 <div style={{
+                                    flexShrink: 0,
                                     padding: '20px 25px',
                                     background: '#3b82f6',
                                     borderTopLeftRadius: '20px',
@@ -710,7 +713,7 @@ export default function InventoryTab() {
                                     </div>
                                 </div>
 
-                                <div style={{ padding: '25px', background: 'white' }}>
+                                <div style={{ padding: '25px', background: 'white', overflowY: 'auto', flex: 1 }}>
                                     <p style={{ marginBottom: '15px', color: '#1e3a8a', fontWeight: 'bold' }}>
                                         {editingItem.item_name}
                                     </p>
@@ -742,7 +745,7 @@ export default function InventoryTab() {
                                     </div>
                                 </div>
 
-                                <div style={{ padding: '0 25px 25px 25px', background: 'white' }}>
+                                <div style={{ flexShrink: 0, padding: '0 25px 25px 25px', background: 'white' }}>
                                     <div style={{ display: 'flex', gap: '12px' }}>
                                         <button
                                             style={{
@@ -790,6 +793,7 @@ export default function InventoryTab() {
                         {modalMode === 'sign_off' && (
                             <>
                                 <div style={{
+                                    flexShrink: 0,
                                     padding: '20px 25px',
                                     background: '#3b82f6',
                                     borderTopLeftRadius: '20px',
@@ -820,7 +824,7 @@ export default function InventoryTab() {
                                     </div>
                                 </div>
 
-                                <div style={{ padding: '25px', background: 'white' }}>
+                                <div style={{ padding: '25px', background: 'white', overflowY: 'auto', flex: 1 }}>
                                     <p style={{ marginBottom: '15px', fontWeight: 'bold', color: '#1e3a8a' }}>
                                         {editingItem.item_name} | В наявності: {editingItem.quantity} {editingItem.unit_of_measure}
                                     </p>
@@ -917,7 +921,7 @@ export default function InventoryTab() {
                                     </div>
                                 </div>
 
-                                <div style={{ padding: '0 25px 25px 25px', background: 'white' }}>
+                                <div style={{ flexShrink: 0, padding: '0 25px 25px 25px', background: 'white' }}>
                                     <div style={{ display: 'flex', gap: '12px' }}>
                                         <button
                                             style={{
@@ -965,6 +969,7 @@ export default function InventoryTab() {
                         {modalMode === 'history' && (
                             <>
                                 <div style={{
+                                    flexShrink: 0,
                                     padding: '20px 25px',
                                     background: '#3b82f6',
                                     borderTopLeftRadius: '20px',
@@ -995,7 +1000,7 @@ export default function InventoryTab() {
                                     </div>
                                 </div>
 
-                                <div style={{ padding: '25px', background: 'white' }}>
+                                <div style={{ padding: '25px', background: 'white', overflowY: 'auto', flex: 1 }}>
                                     <div style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '20px' }}>
                                         {itemHistory.length === 0 ? (
                                             <div style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b', fontSize: '0.95rem' }}>
