@@ -491,15 +491,14 @@ public class ManagementController {
             String reason = payload.get("reason");
             UUID userId = UUID.fromString(payload.get("userId"));
 
+            documentDAO.updateDocumentStatus(docId, "REJECTED", reason);
+            userDAO.updateVerificationStatus(userId, false);
+
             User user = userDAO.findById(userId)
                     .orElseThrow(() -> new RuntimeException("Користувача не знайдено"));
 
             String targetEmail = getTargetEmail(user.getEmail());
             emailService.sendRejectionEmail(targetEmail, reason);
-
-            documentDAO.updateDocumentStatus(docId, "REJECTED", reason);
-
-            userDAO.updateVerificationStatus(userId, false);
 
             return ResponseEntity.ok("Повідомлення відправлено на: " + targetEmail + ", статус користувача оновлено.");
         } catch (Exception e) {
@@ -544,15 +543,14 @@ public class ManagementController {
             String reason = payload.get("reason");
             UUID userId = UUID.fromString(payload.get("userId"));
 
+            documentDAO.updateDocumentStatus(docId, "REJECTED", reason);
+            documentDAO.deleteRejectedDocuments(userId);
+
             User user = userDAO.findById(userId)
                     .orElseThrow(() -> new RuntimeException("Користувача не знайдено"));
             String targetEmail = getTargetEmail(user.getEmail());
 
             emailService.sendRejectionEmail(targetEmail, reason);
-
-            documentDAO.updateDocumentStatus(docId, "REJECTED", reason);
-
-            documentDAO.deleteRejectedDocuments(userId);
 
             return ResponseEntity.ok("Документ відхилено, статус верифікації збережено.");
         } catch (Exception e) {
