@@ -22,7 +22,7 @@ public class DocumentDAO {
      */
     public void addDocument(UUID userId, String type, String fileUrl) throws SQLException {
         String sql = "INSERT INTO user_documents (id, user_id, type, file_url, status, uploaded_at) " +
-                "VALUES (?, ?, ?, ?, 'PENDING'::public.document_status, ?)";
+                "VALUES (?, ?, ?, ?, CAST('PENDING' AS public.document_status), ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -91,7 +91,7 @@ public class DocumentDAO {
      * @throws SQLException If a database access error occurs.
      */
     public void updateDocumentStatus(UUID docId, String status, String rejectionReason) throws SQLException {
-        String sql = "UPDATE user_documents SET status = ?::document_status, rejection_reason = ?, verified_at = NOW() WHERE id = ?";
+        String sql = "UPDATE user_documents SET status = CAST(? AS public.document_status), rejection_reason = ?, verified_at = NOW() WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, status);
@@ -109,7 +109,7 @@ public class DocumentDAO {
      * @throws SQLException If a database access error occurs.
      */
     public Map<String, Object> getRejectionDetails(UUID userId) throws SQLException {
-        String sql = "SELECT rejection_reason FROM user_documents WHERE user_id = ? AND status = 'REJECTED' ORDER BY uploaded_at DESC LIMIT 1";
+        String sql = "SELECT rejection_reason FROM user_documents WHERE user_id = ? AND status = CAST('REJECTED' AS public.document_status) ORDER BY uploaded_at DESC LIMIT 1";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -132,7 +132,7 @@ public class DocumentDAO {
      * @throws SQLException If a database access error occurs.
      */
     public void resetDocumentsToPending(UUID userId) throws SQLException {
-        String sql = "UPDATE user_documents SET status = 'PENDING'::document_status, rejection_reason = NULL, verified_at = NULL WHERE user_id = ? AND status = 'REJECTED'";
+        String sql = "UPDATE user_documents SET status = CAST('PENDING' AS public.document_status), rejection_reason = NULL, verified_at = NULL WHERE user_id = ? AND status = CAST('REJECTED' AS public.document_status)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -170,7 +170,7 @@ public class DocumentDAO {
      * @throws SQLException If a database access error occurs.
      */
     public boolean areAllDocumentsApproved(UUID userId) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM user_documents WHERE user_id = ? AND status != 'APPROVED'::document_status";
+        String sql = "SELECT COUNT(*) FROM user_documents WHERE user_id = ? AND status != CAST('APPROVED' AS public.document_status)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -192,7 +192,7 @@ public class DocumentDAO {
      * @throws SQLException If a database access error occurs.
      */
     public void deleteRejectedDocuments(UUID userId) throws SQLException {
-        String sql = "DELETE FROM user_documents WHERE user_id = ? AND status = 'REJECTED'";
+        String sql = "DELETE FROM user_documents WHERE user_id = ? AND status = CAST('REJECTED' AS public.document_status)";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setObject(1, userId);
